@@ -1,5 +1,5 @@
 import json
-from langchain_ollama import OllamaLLM
+from langchain_ollama import ChatOllama
 from langchain_core.prompts import ChatPromptTemplate, MessagesPlaceholder
 from langchain_core.output_parsers import PydanticOutputParser
 from pydantic import BaseModel
@@ -34,10 +34,7 @@ examples = [
     }
 ]
 
-llm = OllamaLLM(model="llama3.2", temperature=0.0)
-
-# Parser per output strutturato
-parser = PydanticOutputParser(pydantic_object=PDDLAction)
+llm = ChatOllama(model="llama3.2", temperature=0.0).with_structured_output(PDDLAction)
 
 
 example_messages = [
@@ -51,8 +48,7 @@ example_messages = [
 prompt = ChatPromptTemplate.from_messages([
     ("system", f"""You are an expert in PDDL (Planning Domain Definition Language). 
 Y               Our task is to extract structured PDDL action definitions from natural language descriptions.
-                Return ONLY a valid JSON object (no explanations, no comments, no Python code), matching exactly this schema:
-                {parser.get_format_instructions().replace('{', '{{').replace('}', '}}')}"""),
+                Return ONLY a valid JSON object (no explanations, no comments, no Python code)"""),
     MessagesPlaceholder(variable_name="examples"),
     ("human", "{action_description}")
 ])
@@ -94,22 +90,8 @@ formatted_prompt = prompt.invoke({"examples": [msg for example in example_messag
 response = llm.invoke(formatted_prompt)
 
 # Mostra i risultati
-try:
-    # Prova a validare l'output
-    pddl_action = parser.parse(response)
+print(response)
     
-    print("\n✅ PDDLAction estratta con successo:")
-    print(f"Nome: {pddl_action.name}")
-    print(f"Parametri: {pddl_action.parameters}")
-    print(f"Precondizioni: {pddl_action.preconditions}")
-    print(f"Effetti: {pddl_action.effects}")
-    
-    
-    print("\n🎯 Sintassi PDDL:")
-    print(render_pddl_action(pddl_action))
-    
-except Exception as e:
-    print("\n❌ Errore durante la validazione dell'output:")
-    print(f"Errore: {e}")
-    print("\nRisposta grezza del modello:")
-    print(response)
+print("\n🎯 Sintassi PDDL:")
+
+print(render_pddl_action(response))
