@@ -15,10 +15,43 @@ from langgraph.prebuilt import ToolNode, tools_condition
 from langgraph.types import Command, interrupt
 from typing_extensions import TypedDict
 from langchain.agents import AgentExecutor
-from langchain.tools import BaseTool
 
 
-examples = [
+examples_problem = [
+    {
+        "input": "An example of problem.pddl file.",
+        "output": f"""(define (problem blocksworld-example)
+    (:domain blocksworld)
+
+    (:objects
+        red yellow blue orange - block
+    )
+
+    (:init
+        (ontable yellow)
+        (ontable orange)
+        (ontable red)
+        (on blue orange)
+        (clear blue)
+        (clear red)
+        (clear yellow)
+        (handempty)
+    )
+
+    (:goal
+        (and
+            (on orange blue)
+            (ontable blue)
+            (ontable yellow)
+            (ontable red)
+            (clear orange)
+            (clear yellow)
+            (clear red))
+    )
+)"""
+    }]
+
+examples_domain = [
     {
         "input": "An example of domain.pddl file.",
         "output": f"""(define (domain blocksworld) 
@@ -77,52 +110,25 @@ examples = [
             (not (holding ?x))
             (not (clear ?y)))
     )
-)"""
-    },
-    {
-        "input": "An example of problem.pddl file.",
-        "output": f"""(define (problem blocksworld-example)
-    (:domain blocksworld)
+)"""}]
 
-    (:objects
-        red yellow blue orange - block
-    )
-
-    (:init
-        (ontable yellow)
-        (ontable orange)
-        (ontable red)
-        (on blue orange)
-        (clear blue)
-        (clear red)
-        (clear yellow)
-        (handempty)
-    )
-
-    (:goal
-        (and
-            (on orange blue)
-            (ontable blue)
-            (ontable yellow)
-            (ontable red)
-            (clear orange)
-            (clear yellow)
-            (clear red))
-    )
-)"""
-    }
-]
-
-example_messages = [
+example_messages_problem = [
     [
         ("user", ex["input"]),
         ("assistant", ex["output"])
     ]
-    for ex in examples
+    for ex in examples_problem
 ]
 
 
-llm = ChatOllama(model="llama3.2")
+example_messages_domain = [
+    [
+        ("user", ex["input"]),
+        ("assistant", ex["output"])
+    ]
+    for ex in examples_domain
+]
+
 
 
 class QuestMasterState(TypedDict):
@@ -130,6 +136,7 @@ class QuestMasterState(TypedDict):
 
     file_path: str
     lore: str
+    story: str
     domain_pddl: str
     problem_pddl: str
 
@@ -141,46 +148,133 @@ def CaricaLore_node(state: QuestMasterState):
     return {"lore": content}
 
 
-#Genera un file PDDL dal documento di lore
-def GeneraPDDL_node(state: QuestMasterState):
-    prompt = ChatPromptTemplate.from_messages([("system", f"""You are a skilled PDDL domain and problem generator.
-                Generate a complete PDDL domain and problem text representing the story included in the lore document.
-                Each line of PDDL code should be followed by a comment explaining what the line does.
-                Example comment style: ; This line declares the predicate 'at'---.
-                Do no insert other text at the begin or end of the response.
-                Return the domain first, then the problem, separated clearly by a line in this way: "------".
-                Here some examples of domain.pddl file and problem.pddl file:""" ), 
-                MessagesPlaceholder(variable_name="examples"),
-                ("user", "Given the following Lore Document describing a quest: {lore_text} generate the domain and problem PDDL.")])
+def GeneraStoria_node(state: QuestMasterState):
+    llm = ChatOllama(model="mistral", temperature=0.7)
+    prompt = ChatPromptTemplate.from_messages([("system", f"""You are a narrative engine that creates interactive stories in the style of a "choose your own adventure" book.
+        Given a LORE document, generate the full interactive story in one pass.
+        Each section must:
+                        - Present a brief scene
+                        - End with a set of choices between the min and max branching factor included in the lore document
+                        - Clearly indicate which section each choice leads to (e.g., "Go to Section 2")
+                        - The story should be complete with all branches written
+        Structure: 
+                Section 1:
+                Text...
+                Choices:
+                    - Do X → Go to Section 2
+                    - Do Y → Go to Section 3
+                Section 2:
+                Text...
+                Choices:
+                - ...
+        For final sections do no add the choices.
+        DO NOT STOP at the first section or ask for input, but continue until all section are fully written and the story include all possible paths. Be sure do not go over the max depth constraints in the lore document."""),
+    ("user", "Given the following Lore Document: {lore_text} generate a fully narrative and interactive story.")])
     
-    formatted_prompt = prompt.invoke({"examples": [msg for example in example_messages for msg in example],
-                                    "lore_text": state["lore"]})
+    print("LLM invocato per la creazione della storia \n")
+    formatted_prompt = prompt.invoke({"lore_text": state["lore"]})
     response_llm = llm.invoke(formatted_prompt)
     response = response_llm.content
 
+    print(response)
+    return{"story": response}
+
+
+#Genera un file PDDL dal documento di lore
+def GeneraPDDL_node(state: QuestMasterState):
+    llm = ChatOllama(model="mistral", temperature=0.1)
+    prompt = ChatPromptTemplate.from_messages([("system", f"""You are a skilled PDDL problem and domain generator.
+                Generate a complete PDDL problem and domain text representing the given story.
+                Each line of PDDL code should be followed by a comment explaining what the line does. Example comment style: ; This line declares the predicate 'at'---.
+                Do no insert other text at the begin or end of the response.
+                Return the problem pddl first, then the domain pddl.
+                Here some examples of domain.pddl file and problem.pddl file:""" ), 
+                MessagesPlaceholder(variable_name="examples"),
+                ("user", "Given the following narrative story: {story_text}. Generate the pddl problem file and the pddl domain file.")])
+    
+    formatted_prompt = prompt.invoke({"examples": [msg for example in example_messages for msg in example],
+                                    "story_text": state["story"]})
+    
     print("LLM per generare il PDDL invocato \n")
+    response_llm = llm.invoke(formatted_prompt)
+    response = response_llm.content
+
     print("Risposta: ", response)
 
     try:
         # Splitta domain e problem PDDL
-        if "(define (problem" in response:
-            domain_pddl, problem_pddl = response.split("(define (problem", 1)
-            domain_file = open("domain.pddl", "w")
-            domain_file.write(domain_pddl)
-            domain_file.close()
+        if "(define (domain" in response:
+            problem_pddl, domain_pddl = response.split("(define (domain", 1)
+            
+            print("Problem: ", problem_pddl, "\n Domain: ", domain_pddl, "\n")
 
-            problem_pddl = "(define (problem " + problem_pddl
             problem_file = open("problem.pddl", "w")
             problem_file.write(problem_pddl)
             problem_file.close()
 
+            domain_file = "(define (domain " + domain_file
+            domain_file = open("domain.pddl", "w")
+            domain_file.write(domain_pddl)
+            domain_file.close()
         else:
             # fallback
             raise Exception("Splitting non avvenuto con successo. (define (problem non era presente")
         return {"domain_pddl": domain_pddl.strip(), "problem_pddl": problem_pddl.strip()}
     except Exception as e:
-        return f"Errore nella generazione della narrativa: {e}"
+        return f"Errore nella generazione dei PDDL: {e}"
+    
 
+
+def GeneraPDDLdomain_node(state: QuestMasterState):
+    llm = ChatOllama(model="mistral", temperature=0.1)
+    prompt = ChatPromptTemplate.from_messages([("system", f"""You are a skilled PDDL domain generator.
+                Generate a complete domain PDDL representing the given story.
+                Do no insert other text at the begin or end of the response, return only the domain pddl.
+                Here some examples of domain PDDL file:""" ), 
+                MessagesPlaceholder(variable_name="examples"),
+                ("user", "Given the following narrative story: {story_text}. Generate the PDDL domain file.")])
+    
+    formatted_prompt = prompt.invoke({"examples": [msg for example in example_messages_domain for msg in example],
+                                    "story_text": state["story"]})
+    
+    print("LLM per generare il PDDL domain invocato \n")
+    response_llm = llm.invoke(formatted_prompt)
+    domain_pddl = response_llm.content.strip()
+
+    print("Risposta: ", domain_pddl)
+
+    domain_file = open("domain.pddl", "w")
+    domain_file.write(domain_pddl)
+    domain_file.close()
+
+    return {"domain_pddl": domain_pddl}
+    
+
+
+def GeneraPDDLproblem_node(state: QuestMasterState):
+    llm = ChatOllama(model="mistral", temperature=0.1)
+    prompt = ChatPromptTemplate.from_messages([("system", f"""You are a skilled PDDL problem generator.
+                Generate a complete problem PDD representing the given story and that follow the following PDDL domain file: {{{{domain_pddl}}}}.
+                Do no insert other text at the begin or end of the response, return only the problem pddl.
+                Here some examples of problem.pddl file:""" ), 
+                MessagesPlaceholder(variable_name="examples"),
+                ("user", "Given the following narrative story: {story_text}. Generate the PDDL problem file.")])
+    
+    formatted_prompt = prompt.invoke({"domain_pddl": state["domain_pddl"],
+                                    "examples": [msg for example in example_messages_problem for msg in example],
+                                    "story_text": state["story"]})
+    
+    print("LLM per generare il PDDL problem invocato \n")
+    response_llm = llm.invoke(formatted_prompt)
+    problem_pddl = response_llm.content.strip()
+
+    print("Risposta: ", problem_pddl)
+
+    problem_file = open("problem.pddl", "w")
+    problem_file.write(problem_pddl)
+    problem_file.close()
+
+    return {"problem_pddl": problem_pddl}
 
 
 
@@ -310,7 +404,13 @@ builder = StateGraph(QuestMasterState)
 
 
 builder.add_node("carica_lore", CaricaLore_node)
-builder.add_node("genera_pddl", GeneraPDDL_node)
+builder.add_node("genera_storia", GeneraStoria_node)
+
+#builder.add_node("genera_pddl", GeneraPDDL_node)
+
+builder.add_node("genera_problem_pddl", GeneraPDDLproblem_node)
+builder.add_node("genera_domain_pddl", GeneraPDDLdomain_node)
+
 builder.add_node("validate_pddl", Validate_node)
 
 #builder.add_node("reflect", ReflectAgent())
@@ -318,7 +418,13 @@ builder.add_node("validate_pddl", Validate_node)
 
 
 builder.add_edge(START, "carica_lore")
-builder.add_edge("carica_lore", "genera_pddl")
+builder.add_edge("carica_lore", "genera_storia")
+
+#builder.add_edge("genera_storia", "genera_pddl")
+builder.add_edge("genera_storia", "genera_domain_pddl")
+builder.add_edge("genera_domain_pddl", "genera_problem_pddl")
+
+
 #builder.add_edge("genera_pddl", "validate_pddl")
 
 
@@ -347,7 +453,7 @@ graph = builder.compile()
 print("Costruzione del grafo avvenuta con successo")
 
 
-# --- Avvia l'esecuzione (esempio) ---
+# --- Avvia l'esecuzione ---
 if __name__ == "__main__":
     result = graph.invoke({"file_path": "lore_document.txt"})
-    #print("\nRisultato finale:", result)
+
