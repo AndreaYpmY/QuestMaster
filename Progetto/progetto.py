@@ -3,10 +3,11 @@
 import subprocess
 import tempfile
 import os
+import requests
 
 from typing import Annotated, List, Optional
 from langchain_ollama import ChatOllama
-from langchain_core.prompts import ChatPromptTemplate
+from langchain_core.prompts import ChatPromptTemplate, MessagesPlaceholder
 
 from langgraph.graph import (StateGraph, START, END)
 from langgraph.graph.message import add_messages
@@ -15,6 +16,110 @@ from langgraph.types import Command, interrupt
 from typing_extensions import TypedDict
 from langchain.agents import AgentExecutor
 from langchain.tools import BaseTool
+
+
+examples = [
+    {
+        "input": "An example of domain.pddl file.",
+        "output": f"""(define (domain blocksworld) 
+    (:requirements :strips :typing)
+
+    (:types
+        block
+    )
+
+    (:predicates
+        (on ?x - block ?y - block)
+        (ontable ?x - block)
+        (clear ?x - block)
+        (holding ?x - block)
+        (handempty)
+    )
+
+    (:action pick-up
+        :parameters (?x - block)
+        :precondition (and (clear ?x) (ontable ?x) (handempty))
+        :effect (and
+            (not (ontable ?x))
+            (not (clear ?x))
+            (not (handempty))
+            (holding ?x))
+    )
+
+    (:action put-down
+        :parameters (?x - block)
+        :precondition (holding ?x)
+        :effect (and
+            (ontable ?x)
+            (clear ?x)
+            (handempty)
+            (not (holding ?x)))
+    )
+
+    (:action unstack
+        :parameters (?x - block ?y - block)
+        :precondition (and (on ?x ?y) (clear ?x) (handempty))
+        :effect (and
+            (holding ?x)
+            (clear ?y)
+            (not (on ?x ?y))
+            (not (clear ?x))
+            (not (handempty)))
+    )
+
+    (:action stack
+        :parameters (?x - block ?y - block)
+        :precondition (and (holding ?x) (clear ?y))
+        :effect (and
+            (on ?x ?y)
+            (clear ?x)
+            (handempty)
+            (not (holding ?x))
+            (not (clear ?y)))
+    )
+)"""
+    },
+    {
+        "input": "An example of problem.pddl file.",
+        "output": f"""(define (problem blocksworld-example)
+    (:domain blocksworld)
+
+    (:objects
+        red yellow blue orange - block
+    )
+
+    (:init
+        (ontable yellow)
+        (ontable orange)
+        (ontable red)
+        (on blue orange)
+        (clear blue)
+        (clear red)
+        (clear yellow)
+        (handempty)
+    )
+
+    (:goal
+        (and
+            (on orange blue)
+            (ontable blue)
+            (ontable yellow)
+            (ontable red)
+            (clear orange)
+            (clear yellow)
+            (clear red))
+    )
+)"""
+    }
+]
+
+example_messages = [
+    [
+        ("user", ex["input"]),
+        ("assistant", ex["output"])
+    ]
+    for ex in examples
+]
 
 
 llm = ChatOllama(model="llama3.2")
@@ -39,43 +144,47 @@ def CaricaLore_node(state: QuestMasterState):
 #Genera un file PDDL dal documento di lore
 def GeneraPDDL_node(state: QuestMasterState):
     prompt = ChatPromptTemplate.from_messages([("system", f"""You are a skilled PDDL domain and problem generator.
-                Generate a complete PDDL domain and problem text representing the story. Each line of PDDL code should be followed by a comment explaining what the line does.
-                Return the domain first, then the problem, separated clearly by a line "---PROBLEM---".Example comment style: ; This line declares the predicate 'at'---""" ), 
-                ("user", "Given the following Lore Document describing a quest: {lore_text}")])
+                Generate a complete PDDL domain and problem text representing the story included in the lore document.
+                Each line of PDDL code should be followed by a comment explaining what the line does.
+                Example comment style: ; This line declares the predicate 'at'---.
+                Do no insert other text at the begin or end of the response.
+                Return the domain first, then the problem, separated clearly by a line in this way: "------".
+                Here some examples of domain.pddl file and problem.pddl file:""" ), 
+                MessagesPlaceholder(variable_name="examples"),
+                ("user", "Given the following Lore Document describing a quest: {lore_text} generate the domain and problem PDDL.")])
     
-    formatted_prompt = prompt.invoke({"lore_text": state["lore"]})
+    formatted_prompt = prompt.invoke({"examples": [msg for example in example_messages for msg in example],
+                                    "lore_text": state["lore"]})
     response_llm = llm.invoke(formatted_prompt)
     response = response_llm.content
 
-    print("LLM per generare il PDDL invocato")
+    print("LLM per generare il PDDL invocato \n")
+    print("Risposta: ", response)
 
     try:
         # Splitta domain e problem PDDL
-        if "---PROBLEM---" in response:
-            domain_pddl, problem_pddl = response.split("---PROBLEM---", 1)
-            print("Domain: ", domain_pddl)
-            print("Problem:", problem_pddl)
+        if "(define (problem" in response:
+            domain_pddl, problem_pddl = response.split("(define (problem", 1)
+            domain_file = open("domain.pddl", "w")
+            domain_file.write(domain_pddl)
+            domain_file.close()
+
+            problem_pddl = "(define (problem " + problem_pddl
+            problem_file = open("problem.pddl", "w")
+            problem_file.write(problem_pddl)
+            problem_file.close()
+
         else:
             # fallback
-            raise Exception("Splitting non avvenuto con successo. ---Problem--- non era presente")
+            raise Exception("Splitting non avvenuto con successo. (define (problem non era presente")
         return {"domain_pddl": domain_pddl.strip(), "problem_pddl": problem_pddl.strip()}
     except Exception as e:
         return f"Errore nella generazione della narrativa: {e}"
 
 
+
+
 """
-# --- Tool: PDDL Validator ---
-class ValidatePDDLTool(BaseTool):
-    name = "validate_pddl"
-    description = "Valida i file PDDL usando Fast Downward"
-
-    def _run(self, inputs):
-        domain_file = inputs["domain_pddl"]
-        problem_file = inputs["problem_pddl"]
-        # Stub: Sostituire con subprocess.run per Fast Downward
-        is_valid = "(:goal" in problem_file
-        return {"is_valid": is_valid, "log": "Stub: validazione passata" if is_valid else "Errore"}
-
 # --- Tool: Reflection Agent ---
 class ReflectAgent(BaseTool):
     name = "reflect"
@@ -104,9 +213,45 @@ class ReflectAgent(BaseTool):
 def ask_author_fn(context):
     print("\nSuggerimento del sistema:", context["suggestion"])
     return {"status": "approved"}  # Stub: Simula l'approvazione automatica
+"""
+
+def Validate_node(state: QuestMasterState):
+    url = 'http://solver.planning.domains/solve'
+
+    with open("domain.pddl", "r") as domain_file, open("problem.pddl", "r") as problem_file:
+        payload = {
+            "domain": domain_file.read(),
+            "problem": problem_file.read()
+        }
+
+    headers = {"Content-Type": "application/json"}
+
+    try:
+        response = requests.post(url, json=payload, headers=headers)
+
+        # Debug in caso di fallimento
+        print("HTTP Status Code:", response.status_code)
+        print("Response content:", response.text[:500])  # stampiamo solo i primi 500 caratteri
+
+        response.raise_for_status()  # Lancia errore per HTTP 4xx o 5xx
+        result = response.json()  # Questo ora è sicuro
+
+        if result.get("status") == "ok":
+            print("Piano:", result["result"]["plan"])
+        else:
+            print("Errore nel planner:", result.get("result"))
+        return result
+
+    except requests.exceptions.RequestException as e:
+        print(f"Errore durante la richiesta al planner: {e}")
+        return {"status": "error", "message": str(e)}
+
+    except ValueError as e:
+        print(f"Errore nel parsing JSON: {e}")
+        return {"status": "error", "message": f"Risposta non in formato JSON: {response.text}"}
 
 
-
+"""
 def validate_with_fast_downward(domain_str, problem_str):
     with tempfile.TemporaryDirectory() as tempdir:
         domain_path = os.path.join(tempdir, "domain.pddl")
@@ -159,7 +304,6 @@ class ValidatePDDLTool(BaseTool):
 """
 
 
-
 # --- Costruzione del Grafo ---
 builder = StateGraph(QuestMasterState)
 
@@ -167,14 +311,16 @@ builder = StateGraph(QuestMasterState)
 
 builder.add_node("carica_lore", CaricaLore_node)
 builder.add_node("genera_pddl", GeneraPDDL_node)
-#builder.add_node("validate_pddl", ValidatePDDLTool())
+builder.add_node("validate_pddl", Validate_node)
+
 #builder.add_node("reflect", ReflectAgent())
 #builder.add_node("ask_author", ask_author_fn)
 
 
 builder.add_edge(START, "carica_lore")
 builder.add_edge("carica_lore", "genera_pddl")
-#builder.add_edge("generate_pddl", "validate_pddl")
+#builder.add_edge("genera_pddl", "validate_pddl")
+
 
 """builder.add_conditional_edges("validate_pddl", 
     lambda x: "valid" if x["is_valid"] else "invalid",
@@ -204,4 +350,4 @@ print("Costruzione del grafo avvenuta con successo")
 # --- Avvia l'esecuzione (esempio) ---
 if __name__ == "__main__":
     result = graph.invoke({"file_path": "lore_document.txt"})
-    print("\nRisultato finale:", result)
+    #print("\nRisultato finale:", result)
