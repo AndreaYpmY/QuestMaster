@@ -3,6 +3,11 @@ import tempfile
 import os
 import requests
 
+from dotenv import load_dotenv
+load_dotenv()
+
+from langchain_openai import ChatOpenAI
+
 from typing import Annotated, List, Optional
 from langchain_ollama import ChatOllama
 from langchain_core.prompts import ChatPromptTemplate, MessagesPlaceholder
@@ -357,7 +362,8 @@ def CaricaLore_node(state: QuestMasterState):
 
 # 2. Genera la storia interattiva
 def GeneraStoria_node(state: QuestMasterState):
-    llm = ChatOllama(model=MODEL, temperature=0.7)
+    llm = ChatOpenAI(model="gpt-4o-mini",temperature=0.7)
+    #llm = ChatOllama(model=MODEL, temperature=0.7)
     prompt = ChatPromptTemplate.from_messages([("system", f"""You are a narrative engine that creates interactive stories for QuestMaster system.
         Given a LORE document, generate a complete interactive story that will be later converted to PDDL.
         
@@ -400,7 +406,8 @@ def GeneraStoria_node(state: QuestMasterState):
 
 # 3A. Genera il PDDL domain
 def GeneraPDDLdomain_node(state: QuestMasterState):
-    llm = ChatOllama(model=MODEL, temperature=0.1)
+    llm = ChatOpenAI(model="gpt-4o-mini",temperature=0)
+    #llm = ChatOllama(model=MODEL, temperature=0.1)
     prompt = ChatPromptTemplate.from_messages([("system", f"""You are an expert PDDL domain generator for the QuestMaster interactive story system.
                 
                 Generate a complete and valid PDDL domain file from the given interactive story.
@@ -415,29 +422,29 @@ def GeneraPDDLdomain_node(state: QuestMasterState):
                 
                 Standard PDDL structure to follow:
                 (define (domain quest-domain)
-                  (:requirements :strips :typing :negative-preconditions)
-                  (:types
+                    (:requirements :strips :typing :negative-preconditions)
+                    (:types
                     ; Define object types with comments
                     location character item - object
-                  )
-                  (:predicates
+                    )
+                    (:predicates
                     ; Define predicates with clear comments
                     (at ?obj - object ?loc - location) ; Object is at location
                     (has ?char - character ?item - item) ; Character has item
                     ; ... more predicates
-                  )
-                  (:action action-name
+                    )
+                    (:action action-name
                     :parameters (?param - type)
                     :precondition (and
-                      ; Conditions that must be true
+                    ; Conditions that must be true
                     )
                     :effect (and
-                      ; Changes to the world state
+                    ; Changes to the world state
                     )
-                  )
                 )
+            )
                 
-                Return ONLY the PDDL domain code, no other text.""" ), 
+                Return ONLY the PDDL domain code, which begins with "(define (domain...", no other text.""" ), 
                 MessagesPlaceholder(variable_name="examples"),
                 ("user", "Interactive Story: {story_text}\n\nGenerate the corresponding PDDL domain file with detailed comments.")])
     
@@ -459,7 +466,8 @@ def GeneraPDDLdomain_node(state: QuestMasterState):
 
 # 3B. Genera il PDDL problem
 def GeneraPDDLproblem_node(state: QuestMasterState):
-    llm = ChatOllama(model=MODEL, temperature=0.1)
+    llm = ChatOpenAI(model="gpt-4o-mini",temperature=0)
+    #llm = ChatOllama(model=MODEL, temperature=0.1)
     prompt = ChatPromptTemplate.from_messages([("system", f"""You are an expert PDDL problem generator for the QuestMaster system.
                 
                 Generate a complete PDDL problem file that corresponds to the given story and domain.
@@ -474,30 +482,30 @@ def GeneraPDDLproblem_node(state: QuestMasterState):
                 
                 Standard PDDL problem structure:
                 (define (problem quest-problem)
-                  (:domain quest-domain)
-                  (:objects
+                    (:domain quest-domain)
+                (:objects
                     ; Define all story objects with their types
                     player - character ; The main character
                     location1 location2 - location ; Story locations
                     key sword - item ; Story items
-                  )
-                  (:init
+                    )
+                (:init
                     ; Initial world state - where story begins
                     (at player location1) ; Player starts here
                     (at key location2) ; Key is here
                     ; ... more initial conditions
-                  )
-                  (:goal
+                    )
+                (:goal
                     ; Goal condition - what needs to be achieved
                     (and
-                      (goal-achieved) ; Story objective completed
-                      ; ... other goal conditions
+                    (goal-achieved) ; Story objective completed
+                    ; ... other goal conditions
                     )
-                  )
                 )
+            )
                 
                 The problem MUST be solvable by a classical planner given the domain.
-                Return ONLY the PDDL problem code, no other text.""" ), 
+                Return ONLY the PDDL problem code, which begins with "(define (problem...", no other text.""" ), 
                 MessagesPlaceholder(variable_name="examples"),
                 ("user", "Story: {story_text}\n\nDomain PDDL: {domain_pddl}\n\nGenerate the corresponding PDDL problem file with detailed comments.")])
     
@@ -548,7 +556,7 @@ class ReflectAgent(BaseTool):
 def ask_author_fn(context):
     print("\nSuggerimento del sistema:", context["suggestion"])
     return {"status": "approved"}  # Stub: Simula l'approvazione automatica
-"""
+
 
 def Validate_node(state: QuestMasterState):
     url = 'http://solver.planning.domains/solve'
@@ -586,7 +594,6 @@ def Validate_node(state: QuestMasterState):
         return {"status": "error", "message": f"Risposta non in formato JSON: {response.text}"}
 
 
-"""
 def validate_with_fast_downward(domain_str, problem_str):
     with tempfile.TemporaryDirectory() as tempdir:
         domain_path = os.path.join(tempdir, "domain.pddl")
@@ -636,16 +643,16 @@ class ValidatePDDLTool(BaseTool):
         problem = inputs["problem_pddl"]
         is_valid, log = validate_with_fast_downward(domain, problem)
         return {"is_valid": is_valid, "log": log}
-"""
+
 #Genera un file PDDL dal documento di lore
 def GeneraPDDL_node(state: QuestMasterState):
     llm = ChatOllama(model=MODEL, temperature=0.1)
-    prompt = ChatPromptTemplate.from_messages([("system", f"""You are a skilled PDDL problem and domain generator.
+    prompt = ChatPromptTemplate.from_messages([("system", fYou are a skilled PDDL problem and domain generator.
                 Generate a complete PDDL problem and domain text representing the given story.
                 Each line of PDDL code should be followed by a comment explaining what the line does. Example comment style: ; This line declares the predicate 'at'---.
                 Do no insert other text at the begin or end of the response.
                 Return the problem pddl first, then the domain pddl.
-                Here some examples of domain.pddl file and problem.pddl file:""" ), 
+                Here some examples of domain.pddl file and problem.pddl file: ), 
                 MessagesPlaceholder(variable_name="examples"),
                 ("user", "Given the following narrative story: {story_text}. Generate the pddl problem file and the pddl domain file.")])
     
@@ -678,9 +685,8 @@ def GeneraPDDL_node(state: QuestMasterState):
             raise Exception("3# Splitting non avvenuto con successo. (define (problem non era presente")
         return {"domain_pddl": domain_pddl.strip(), "problem_pddl": problem_pddl.strip()}
     except Exception as e:
-        return f"3# Errore nella generazione dei PDDL: {e}"
-    
-
+        return f"3# Errore nella generazione dei PDDL: {e} 
+"""
 
 
 
@@ -692,17 +698,19 @@ def GeneraPDDL_node(state: QuestMasterState):
 builder = StateGraph(QuestMasterState)
 
 # --- Aggiunta dei nodi al grafo ---
+
 # 1. Carica il documento di lore
 builder.add_node("carica_lore", CaricaLore_node)
 
 # 2. Genera la storia
 builder.add_node("genera_storia", GeneraStoria_node)
 
-#builder.add_node("genera_pddl", GeneraPDDL_node)
 
 # 3. Genera i file PDDL
-#builder.add_node("genera_problem_pddl", GeneraPDDLproblem_node)
-#builder.add_node("genera_domain_pddl", GeneraPDDLdomain_node)
+builder.add_node("genera_domain_pddl", GeneraPDDLdomain_node)
+builder.add_node("genera_problem_pddl", GeneraPDDLproblem_node)
+#builder.add_node("genera_pddl", GeneraPDDL_node)
+
 
 # 4. Validazione del PDDL
 #builder.add_node("validate_pddl", Validate_node)

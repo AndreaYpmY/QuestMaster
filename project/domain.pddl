@@ -1,179 +1,155 @@
-(define (domain crystal-domain)
-  (:requirements :strips :typing :negative-preconditions)
+(define (domain dungeon-exploration)
+    (:requirements :strips :typing)               ; PDDL requirements declaration
 
-  (:types
-    location - object
-    person - entity
-    entity - object
-    object - object
-    key - object
-    temple - location
-    clearing - location
-    puzzle-room - location
-    hero - person
-    forest-spirit - entity
-    dark-warden - entity
-    crystal-of-light - object)
-
-  (:predicates
-    (in ?loc - location) ; Object is at location
-    (has-key ?h - person ?k - key) ; Person has key
-    (in-village ?h - person) ; Person in village
-    (lost ?o - object) ; Object lost
-    (guards-temple ?d - entity) ; Entity guards temple
-    (solved-puzzle ?p - puzzle-room) ; Puzzle solved
-    (possessed-crystal ?h - person ?c - crystal-of-light) ; Person possesses crystal
-    (in-clearing ?h - person ?c - clearing) ; Person in clearing
-    (in-temple ?h - person ?t - temple) ; Person in temple
-    (approached ?h - person ?f - forest-spirit ?c - clearing) ; Person approached forest spirit
-    (solved-puzzle ?p - puzzle-room) ; Puzzle solved
-    (possessed-crystal ?h - person ?c - crystal-of-light)
-    (guarded-by-dark-warden ?t - temple ?d - dark-warden) ; Temple guarded by dark warden
-    (present-in-clearing ?f - forest-spirit ?c - clearing) ; Forest spirit present in clearing
-  )
-
-  (:action take-key
-    :parameters (?h - person ?k - key)
-    :precondition (and 
-      (in ?h - person village)
-      (has-key ?h - person ?k - key)
-      (not (in-temple ?h - person temple))
+    (:types
+        location character item - object           ; Basic object hierarchy
+        village square forest cliff temple - location ; Specific location types
+        hero elder monster spirit - character       ; Character types
+        feather herbs rope dagger key - item        ; Item types
+        gold - object                               ; Currency type
     )
-    :effect (and 
-      (in-temple ?h - person temple)
-      (lost ?k - key)
-    )
-  )
 
-  (:action approach-forest-spirit
-    :parameters (?h - person ?f - forest-spirit ?c - clearing)
-    :precondition (and 
-      (in-clearing ?h - person ?c - clearing)
-      (present-in-clearing ?f - forest-spirit ?c - clearing)
-      (not (approached ?h - person ?f - forest-spirit ?c - clearing))
+    (:predicates
+        (at ?obj - object ?loc - location)        ; Object/character is at a location
+        (connected ?loc1 - location ?loc2 - location) ; Locations are connected
+        (has-item ?char - character ?item - item) ; Character has an item
+        (door-open ?from - location ?to - location) ; Door state between locations
+        (monster-defeated ?m - monster)           ; Monster defeat status
+        (quest-accepted)                          ; Quest has been accepted
+        (feather-retrieved)                       ; Feather has been retrieved
+        (treasure-found)                          ; Victory condition
+        (gold-amount ?char - character ?amount - gold) ; Amount of gold a character has
     )
-    :effect (and 
-      (approached ?h - person ?f - forest-spirit ?c - clearing)
-      (in-clearing ?h - person ?c - clearing)
+
+    (:action speak-to-elder
+        :parameters (?h - hero ?e - elder ?loc - location)
+        :precondition (and 
+            (at ?h ?loc)                         ; Hero is at the elder's location
+            (at ?e ?loc)                         ; Elder is at the same location
+        )
+        :effect (and 
+            (quest-accepted)                     ; Quest to prove worth is accepted
+        )
     )
-  )
 
-  (:action solve-puzzle
-    :parameters (?p - puzzle-room)
-    :precondition (and 
-      (in-temple ?hero temple)
-      (solved-puzzle ?p - puzzle-room)
-      (not (possessed-crystal ?hero temple))
+    (:action gather-supplies
+        :parameters (?h - hero ?loc - location)
+        :precondition (at ?h ?loc)                ; Hero is at the market location
+        :effect (and 
+            ; Supplies can be gathered, but specific effects depend on choices made
+        )
     )
-    :effect (and 
-      (in-clearing ?hero clearing)
-      (solved-puzzle ?p - puzzle-room)
-      (possessed-crystal ?hero temple)
+
+    (:action buy-item
+        :parameters (?h - hero ?item - item ?cost - gold ?loc - location)
+        :precondition (and 
+            (at ?h ?loc)                         ; Hero is at the market
+            (gold-amount ?h ?amount)             ; Hero has a certain amount of gold
+            (>= ?amount ?cost)                   ; Hero can afford the item
+        )
+        :effect (and 
+            (has-item ?h ?item)                  ; Hero now has the item
+            (not (gold-amount ?h ?amount))       ; Update gold amount after purchase
+        )
     )
-  )
 
-  (:action leave-clearing
-    :parameters (?h - person)
-    :precondition (and 
-      (in-clearing ?h - person ?c - clearing)
-      (not (approached ?h - person ?f - forest-spirit ?c - clearing))
+    (:action accept-quest
+        :parameters (?h - hero ?e - elder)
+        :precondition (and 
+            (quest-accepted)                     ; Quest has been accepted
+        )
+        :effect (and 
+            (feather-retrieved)                  ; Feather quest is now active
+        )
     )
-    :effect (and 
-      (in-village ?h - person)
-      (lost ?k - key)
+
+    (:action retrieve-feather
+        :parameters (?h - hero ?loc - location)
+        :precondition (and 
+            (at ?h ?loc)                         ; Hero is at the cliff location
+            (feather-retrieved)                  ; Quest to retrieve feather is active
+        )
+        :effect (and 
+            (has-item ?h feather)                ; Hero retrieves the feather
+        )
     )
-  )
 
-  (:action leave-temple
-    :parameters (?h - person)
-    :precondition (and 
-      (in-temple ?h - person temple)
-      (not (possessed-crystal ?hero temple))
+    (:action enter-forest
+        :parameters (?h - hero ?loc - location)
+        :precondition (at ?h ?loc)                ; Hero is at the forest entrance
+        :effect (and 
+            (at ?h forest)                       ; Hero enters the forest
+        )
     )
-    :effect (and 
-      (in-village ?h - person)
-      (lost ?k - key)
+
+    (:action encounter-spirit
+        :parameters (?h - hero ?s - spirit)
+        :precondition (and 
+            (at ?h forest)                       ; Hero is in the forest
+            (at ?s forest)                       ; Spirit is present in the forest
+        )
+        :effect (and 
+            ; Spirit interaction can lead to various outcomes
+        )
     )
-  )
 
-  (:action possessed-crystal
-    :parameters (?h - person ?c - crystal-of-light)
-    :precondition (and 
-      (in-temple ?h - person temple)
-      (possessed-crystal ?h - person ?c - crystal-of-light)
+    (:action solve-riddle
+        :parameters (?h - hero ?s - spirit ?answer - string)
+        :precondition (and 
+            (at ?h forest)                       ; Hero is in the forest
+            (at ?s forest)                       ; Spirit is present
+        )
+        :effect (and 
+            (if (equal ?answer "an echo")        ; Correct answer
+                (treasure-found)                ; Hero finds the key
+                (not (treasure-found))          ; Incorrect answer
+            )
+        )
     )
-    :effect (and 
-      (in-village ?h - person)
-      (lost ?k - key)
+
+    (:action return-to-elder
+        :parameters (?h - hero ?e - elder)
+        :precondition (and 
+            (has-item ?h feather)                ; Hero has the feather
+            (at ?h village)                      ; Hero is at the village
+            (at ?e village)                      ; Elder is at the village
+        )
+        :effect (and 
+            (treasure-found)                     ; Quest is completed
+        )
     )
-  )
 
-  (:action guarded-by-dark-warden
-    :parameters (?t - temple ?d - dark-warden)
-    :precondition (and 
-      (in-temple ?hero temple)
-      (guarded-by-dark-warden ?t - temple ?d - dark-warden)
+    (:action enter-temple
+        :parameters (?h - hero ?loc - location ?k - key)
+        :precondition (and 
+            (at ?h ?loc)                         ; Hero is at the temple
+            (has-item ?h ?k)                     ; Hero has the key
+        )
+        :effect (and 
+            (at ?h temple)                       ; Hero enters the temple
+        )
     )
-    :effect (and 
-      (in-village ?h - person)
-      (lost ?k - key)
+
+    (:action fight-dark-warden
+        :parameters (?h - hero ?m - monster)
+        :precondition (and 
+            (at ?h temple)                       ; Hero is in the temple
+            (at ?m temple)                       ; Dark Warden is present
+        )
+        :effect (and 
+            (monster-defeated ?m)                ; Dark Warden is defeated
+            (treasure-found)                     ; Hero finds the Crystal of Light
+        )
     )
-  )
 
-  (:action approached
-    :parameters (?h - person ?f - forest-spirit ?c - clearing)
-    :precondition (and 
-      (in-clearing ?h - person ?c - clearing)
-      (present-in-clearing ?f - forest-spirit ?c - clearing)
-      (not (approached ?h - person ?f - forest-spirit ?c - clearing))
+    (:action negotiate-with-dark-warden
+        :parameters (?h - hero ?m - monster)
+        :precondition (and 
+            (at ?h temple)                       ; Hero is in the temple
+            (at ?m temple)                       ; Dark Warden is present
+        )
+        :effect (and 
+            ; Negotiation can lead to various outcomes
+        )
     )
-    :effect (and 
-      (approached ?h - person ?f - forest-spirit ?c - clearing)
-      (in-clearing ?h - person ?c - clearing)
-    )
-  )
-
-)
-
-(define (problem crystal-of-light-init)
-
-  (defparam :domain crystal-domain
-    ((hero -person)
-     (forest-spirit -entity)
-     (temple -location)
-     (crystal-of-light -object)))
-
-  (defparam :objects crystal-of-light
-    (key -object))
-
-  (defparam :locations temple
-    (clearing -location)
-    (statue -location))
-
-  (defparam :actions
-    (take-key (hero key) temple)
-    (approach-forest-spirit (hero forest-spirit clearing) temple)
-    (solve-puzzle (hero temple puzzle-room))
-    (leave-clearing (hero clearing))
-    (leave-temple (hero temple))
-    (possessed-crystal (hero temple crystal-of-light))
-    (guarded-by-dark-warden (temple dark-warden))
-    (approached (hero forest-spirit clearing))
-  )
-
-  (defparam :predicates
-    (in-village (hero village))
-    (lost key)
-    (in-clearing (hero clearing))
-    (solved-puzzle (hero temple))
-    (possessed-crystal (hero temple crystal-of-light))
-    (guarded-by-dark-warden (temple dark-warden))
-    (present-in-clearing (forest-spirit clearing))
-  )
-
-  (defparam :init
-    ((hero in-village)
-     (crystal-of-light lost)
-     (dark-warden guards-temple)
-     (forest-spirit present-in-clearing)))
 )
