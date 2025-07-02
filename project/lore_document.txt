@@ -20,4 +20,4 @@ Branching Factor:
 
 Depth Constraints:
 - Min: 2
-- Max: 6
+- Max: 4

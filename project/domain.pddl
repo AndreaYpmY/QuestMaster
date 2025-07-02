@@ -1,253 +1,425 @@
-(define (domain dawnmere-quest)
-    (:requirements :strips :typing :negative-preconditions) ; Use STRIPS, typing, and negation
+(define (domain dungeon-exploration)
+    (:requirements :strips :typing :negative-preconditions)
 
     (:types
-        location character item - object               ; Basic object types
-        hero - character                               ; The main player character
-        village forest temple temple_entrance perimeter chamber - location ; Specific locations
-        crystal key - item                             ; Important quest items
-        dark_warden - character                        ; Antagonist character
-        forest_spirit - character                      ; Helpful NPC
+        location character item - object
+        village forest temple - location
+        hero npc - character
+        dark-warden forest-spirit - npc
+        crystal magical-key supplies gift - item
     )
 
     (:predicates
-        ; Location predicates
-        (at ?c - character ?l - location)             ; Character is at a location
-        (accessible ?l - location)                     ; Location is accessible
-        (connected ?from - location ?to - location)   ; Locations are connected
+        (at ?obj - object ?loc - location)
+        (connected ?loc1 - location ?loc2 - location)
+        (path-blocked ?loc1 - location ?loc2 - location)
 
-        ; Item possession predicates
-        (has ?c - character ?i - item)                 ; Character has an item
+        (alive ?h - hero)
+        (armed ?h - hero)
+        (has-key ?h - hero)
+        (knows-oath ?h - hero)
+        (rested ?h - hero)
 
-        ; Quest state predicates
-        (crystal_possessed)                             ; Crystal of Light is possessed
-        (dark_warden_defeated)                          ; Dark Warden has been defeated
-        (temple_accessible)                             ; Temple can be accessed
-        (forest_spirit_helped)                          ; Forest spirit has been helped
-        (magical_key_possessed)                         ; Magical key is possessed
-        (temple_reached)                                ; Temple has been reached
-        (supplies_gathered)                             ; Supplies have been gathered
-        (rested)                                        ; Hero has rested
-        (quest_complete)                                ; Quest is complete
+        (crystal-lost)
+        (crystal-possessed ?h - hero)
+        (key-held-by-spirit)
+        (key-received ?h - hero)
+
+        (guards ?npc - npc ?loc - location)
+        (friendly ?npc - npc)
+        (nearby ?npc - npc ?loc - location)
+        (willing-to-help ?npc - npc)
+        (considering-aid ?npc - npc)
+        (alerted ?npc - npc)
+        (defeated ?npc - npc)
+
+        (proved-worthiness ?h - hero)
+        (gift-offered ?h - hero)
+        (trial-underway ?h - hero)
+        (has-guidance ?h - hero)
+        (entered-temple ?h - hero)
+        (scouted-temple ?h - hero)
+        (found-weakness ?h - hero)
+        (sneaking ?h - hero)
+        (negotiating ?h - hero)
+        (engaged-in-combat ?h - hero)
+        (escaped-with-crystal ?h - hero)
+
+        (has-item ?h - hero ?i - item)
     )
 
-    ; Actions for hero movement and preparation
-    (:action journey_to_whispering_forest
-        :parameters (?h - hero ?from - location ?to - forest)
-        :precondition (and
-            (at ?h ?from)                               ; Hero is at starting location
-            (or (equal ?from village) (equal ?from forest)) ; From village or forest
-            (equal ?to forest)                          ; Destination is Whispering Forest
-        )
-        :effect (and
-            (at ?h ?to)                                 ; Hero moves to Whispering Forest
-            (not (at ?h ?from))                         ; Hero leaves previous location
-        )
-    )
-
-    (:action prepare_in_dawnmere
-        :parameters (?h - hero ?loc - village)
-        :precondition (at ?h ?loc)                       ; Hero is in Dawnmere
-        :effect (supplies_gathered)                      ; Supplies gathered
-    )
-
-    (:action wait_in_dawnmere
-        :parameters (?h - hero ?loc - village)
-        :precondition (at ?h ?loc)                       ; Hero is in Dawnmere
-        :effect ()                                       ; No state change, delay action
-    )
-
-    (:action return_to_dawnmere
-        :parameters (?h - hero ?from - location ?to - village)
-        :precondition (and
-            (at ?h ?from)                               ; Hero is at some location
-            (or (equal ?from forest) (equal ?from temple_entrance)) ; From forest or temple entrance
-            (equal ?to village)                          ; Destination is Dawnmere
-        )
-        :effect (and
-            (at ?h ?to)                                 ; Hero returns to Dawnmere
-            (not (at ?h ?from))                         ; Hero leaves previous location
-        )
-    )
-
-    ; Actions related to the forest spirit and magical key
-    (:action seek_forest_spirit
-        :parameters (?h - hero ?f - forest_spirit ?loc - forest)
-        :precondition (at ?h ?loc)                       ; Hero is in Whispering Forest
-        :effect ()                                       ; Narrative action, no direct state change
-    )
-
-    (:action perform_deed_of_kindness
-        :parameters (?h - hero ?loc - forest)
-        :precondition (at ?h ?loc)                       ; Hero is in Whispering Forest
-        :effect (and
-            (forest_spirit_helped)                        ; Forest spirit helped
-            (magical_key_possessed)                       ; Magical key obtained
-        )
-    )
-
-    (:action recite_ancient_oath
-        :parameters (?h - hero ?loc - forest)
-        :precondition (at ?h ?loc)                       ; Hero is in Whispering Forest
-        :effect (and
-            (forest_spirit_helped)                        ; Forest spirit helped
-            (magical_key_possessed)                       ; Magical key obtained
-        )
-    )
-
-    (:action explore_forest_for_clues
-        :parameters (?h - hero ?loc - forest)
-        :precondition (at ?h ?loc)                       ; Hero is in Whispering Forest
-        :effect ()                                       ; Narrative action, no direct state change
-    )
-
-    (:action follow_glowing_trail
-        :parameters (?h - hero ?loc - forest)
-        :precondition (at ?h ?loc)
-        :effect ()                                       ; Leads to forest spirit encounter
-    )
-
-    (:action investigate_tree_markings
-        :parameters (?h - hero ?loc - forest)
-        :precondition (at ?h ?loc)
-        :effect ()                                       ; Leads to forest spirit encounter
-    )
-
-    (:action rest_in_forest
-        :parameters (?h - hero ?loc - forest)
-        :precondition (and
-            (at ?h ?loc)
-            (forest_spirit_helped)
-            (magical_key_possessed)
-        )
-        :effect (rested)                                 ; Hero has rested
-    )
-
-    (:action explore_forest_further
-        :parameters (?h - hero ?loc - forest)
-        :precondition (and
-            (at ?h ?loc)
-            (forest_spirit_helped)
-            (magical_key_possessed)
-        )
-        :effect (rested)                                 ; Hero gains rest/exploration benefit
-    )
-
-    ; Actions related to temple access
-    (:action proceed_to_temple_entrance
-        :parameters (?h - hero ?from - forest ?to - temple_entrance)
+    (:action travel
+        :parameters (?h - hero ?from - location ?to - location)
         :precondition (and
             (at ?h ?from)
-            (forest_spirit_helped)
-            (magical_key_possessed)
-            (equal ?from forest)
-            (equal ?to temple_entrance)
+            (connected ?from ?to)
+            (alive ?h)
+            (not (path-blocked ?from ?to))
         )
         :effect (and
-            (at ?h ?to)                                 ; Hero moves to temple entrance
-            (temple_accessible)                          ; Temple is accessible now
-            (temple_reached)                             ; Temple reached
+            (at ?h ?to)
             (not (at ?h ?from))
         )
     )
 
-    (:action scout_temple_perimeter
-        :parameters (?h - hero ?loc - temple_entrance)
-        :precondition (and
-            (at ?h ?loc)
-            (temple_accessible)
-            (temple_reached)
-        )
-        :effect ()                                       ; Narrative scouting action
-    )
-
-    (:action find_secret_entrance
-        :parameters (?h - hero ?from - perimeter ?to - chamber)
-        :precondition (and
-            (at ?h ?from)
-            (temple_accessible)
-            (temple_reached)
-            (equal ?from perimeter)
-            (equal ?to chamber)
-        )
-        :effect (and
-            (at ?h ?to)                                 ; Hero sneaks inside temple chamber
-            (not (at ?h ?from))
-        )
-    )
-
-    (:action enter_temple_directly
-        :parameters (?h - hero ?from - temple_entrance ?to - chamber)
-        :precondition (and
-            (at ?h ?from)
-            (temple_accessible)
-            (temple_reached)
-            (equal ?from temple_entrance)
-            (equal ?to chamber)
-        )
-        :effect (and
-            (at ?h ?to)                                 ; Hero enters temple chamber directly
-            (not (at ?h ?from))
-        )
-    )
-
-    ; Actions related to confronting the Dark Warden
-    (:action engage_dark_warden_battle
-        :parameters (?h - hero ?dw - dark_warden ?loc - chamber)
-        :precondition (and
-            (at ?h ?loc)
-            (at ?dw ?loc)
-            (temple_accessible)
-            (temple_reached)
-            (not (dark_warden_defeated))
-        )
-        :effect (dark_warden_defeated)                   ; Dark Warden defeated
-    )
-
-    (:action attempt_negotiation_dark_warden
-        :parameters (?h - hero ?dw - dark_warden ?loc - chamber)
-        :precondition (and
-            (at ?h ?loc)
-            (at ?dw ?loc)
-            (temple_accessible)
-            (temple_reached)
-            (not (dark_warden_defeated))
-        )
-        :effect ()                                       ; Negotiation attempt, no state change
-    )
-
-    (:action retrieve_crystal_of_light
-        :parameters (?h - hero ?loc - chamber ?c - crystal)
-        :precondition (and
-            (at ?h ?loc)
-            (dark_warden_defeated)
-            (not (crystal_possessed))
-        )
-        :effect (crystal_possessed)                       ; Hero obtains the Crystal of Light
-    )
-
-    (:action exit_temple_return_dawnmere
-        :parameters (?h - hero ?from - chamber ?to - village)
-        :precondition (and
-            (at ?h ?from)
-            (crystal_possessed)
-            (dark_warden_defeated)
-            (equal ?from chamber)
-            (equal ?to village)
-        )
-        :effect (and
-            (at ?h ?to)                                 ; Hero returns to Dawnmere
-            (quest_complete)                            ; Quest is complete
-            (not (at ?h ?from))
-        )
-    )
-
-    (:action celebrate_restoration
+    (:action gather-supplies
         :parameters (?h - hero ?loc - village)
         :precondition (and
             (at ?h ?loc)
-            (quest_complete)
+            (alive ?h)
+            (not (armed ?h))
         )
-        :effect ()                                       ; End of quest celebration, no state change
+        :effect (and
+            (armed ?h)
+            (has-item ?h supplies)
+        )
+    )
+
+    (:action train-with-elder
+        :parameters (?h - hero ?loc - village)
+        :precondition (and
+            (at ?h ?loc)
+            (armed ?h)
+            (alive ?h)
+            (not (knows-oath ?h))
+        )
+        :effect (knows-oath ?h)
+    )
+
+    (:action rest-in-village
+        :parameters (?h - hero ?loc - village)
+        :precondition (and
+            (at ?h ?loc)
+            (alive ?h)
+            (not (rested ?h))
+        )
+        :effect (rested ?h)
+    )
+
+    (:action approach-forest-spirit
+        :parameters (?h - hero ?loc - forest ?spirit - forest-spirit)
+        :precondition (and
+            (at ?h ?loc)
+            (nearby ?spirit ?loc)
+            (alive ?h)
+            (not (proved-worthiness ?h))
+        )
+        :effect (proved-worthiness ?h)
+    )
+
+    (:action explore-forest
+        :parameters (?h - hero ?loc - forest)
+        :precondition (and
+            (at ?h ?loc)
+            (alive ?h)
+            (not (trial-underway ?h))
+        )
+        :effect (trial-underway ?h)
+    )
+
+    (:action return-to-dawnmere
+        :parameters (?h - hero ?from - forest ?to - village)
+        :precondition (and
+            (at ?h ?from)
+            (connected ?from ?to)
+            (alive ?h)
+        )
+        :effect (and
+            (at ?h ?to)
+            (not (at ?h ?from))
+        )
+    )
+
+    (:action recite-oath
+        :parameters (?h - hero ?spirit - forest-spirit ?loc - forest)
+        :precondition (and
+            (at ?h ?loc)
+            (proved-worthiness ?h)
+            (knows-oath ?h)
+            (alive ?h)
+            (not (considering-aid ?spirit))
+        )
+        :effect (considering-aid ?spirit)
+    )
+
+    (:action offer-gift
+        :parameters (?h - hero ?spirit - forest-spirit ?loc - forest ?gift - gift)
+        :precondition (and
+            (at ?h ?loc)
+            (alive ?h)
+            (has-item ?h ?gift)
+            (not (gift-offered ?h))
+        )
+        :effect (gift-offered ?h)
+    )
+
+    (:action request-trial
+        :parameters (?h - hero ?spirit - forest-spirit)
+        :precondition (and
+            (gift-offered ?h)
+            (alive ?h)
+            (not (trial-underway ?h))
+        )
+        :effect (trial-underway ?h)
+    )
+
+    (:action solve-riddle
+        :parameters (?h - hero)
+        :precondition (and
+            (trial-underway ?h)
+            (alive ?h)
+        )
+        :effect (and
+            (proved-worthiness ?h)
+            (not (trial-underway ?h))
+        )
+    )
+
+    (:action show-courage
+        :parameters (?h - hero)
+        :precondition (and
+            (trial-underway ?h)
+            (alive ?h)
+        )
+        :effect (and
+            (proved-worthiness ?h)
+            (not (trial-underway ?h))
+        )
+    )
+
+    (:action accept-magical-key
+        :parameters (?h - hero ?spirit - forest-spirit ?loc - forest)
+        :precondition (and
+            (at ?h ?loc)
+            (considering-aid ?spirit)
+            (proved-worthiness ?h)
+            (alive ?h)
+            (key-held-by-spirit)
+            (not (key-received ?h))
+        )
+        :effect (and
+            (has-key ?h)
+            (key-received ?h)
+            (not (key-held-by-spirit))
+        )
+    )
+
+    (:action request-guidance
+        :parameters (?h - hero ?spirit - forest-spirit ?loc - forest)
+        :precondition (and
+            (at ?h ?loc)
+            (considering-aid ?spirit)
+            (alive ?h)
+            (not (has-key ?h))
+        )
+        :effect (has-guidance ?h)
+    )
+
+    (:action search-alternate-entrance
+        :parameters (?h - hero ?loc - temple)
+        :precondition (and
+            (at ?h ?loc)
+            (alive ?h)
+            (not (has-key ?h))
+        )
+        :effect (entered-temple ?h)
+    )
+
+    (:action enter-temple-with-key
+        :parameters (?h - hero ?loc - temple)
+        :precondition (and
+            (at ?h ?loc)
+            (has-key ?h)
+            (alive ?h)
+            (not (entered-temple ?h))
+        )
+        :effect (entered-temple ?h)
+    )
+
+    (:action scout-temple
+        :parameters (?h - hero ?loc - temple)
+        :precondition (and
+            (at ?h ?loc)
+            (has-key ?h)
+            (alive ?h)
+            (not (scouted-temple ?h))
+        )
+        :effect (scouted-temple ?h)
+    )
+
+    (:action discover-weakness
+        :parameters (?h - hero)
+        :precondition (and
+            (scouted-temple ?h)
+            (alive ?h)
+            (not (found-weakness ?h))
+        )
+        :effect (found-weakness ?h)
+    )
+
+    (:action enter-temple-no-advantage
+        :parameters (?h - hero)
+        :precondition (and
+            (scouted-temple ?h)
+            (alive ?h)
+            (not (found-weakness ?h))
+        )
+        :effect (entered-temple ?h)
+    )
+
+    (:action find-hidden-passage
+        :parameters (?h - hero ?loc - temple)
+        :precondition (and
+            (at ?h ?loc)
+            (alive ?h)
+            (not (has-key ?h))
+            (not (entered-temple ?h))
+        )
+        :effect (and
+            (entered-temple ?h)
+            (sneaking ?h)
+        )
+    )
+
+    (:action abandon-and-return-for-key
+        :parameters (?h - hero ?from - temple ?to - forest)
+        :precondition (and
+            (at ?h ?from)
+            (alive ?h)
+            (not (has-key ?h))
+        )
+        :effect (and
+            (at ?h ?to)
+            (not (at ?h ?from))
+        )
+    )
+
+    (:action engage-combat
+        :parameters (?h - hero ?warden - dark-warden ?loc - temple)
+        :precondition (and
+            (at ?h ?loc)
+            (at ?warden ?loc)
+            (alive ?h)
+            (alive ?warden)
+            (entered-temple ?h)
+            (not (engaged-in-combat ?h))
+        )
+        :effect (engaged-in-combat ?h)
+    )
+
+    (:action negotiate
+        :parameters (?h - hero ?warden - dark-warden ?loc - temple)
+        :precondition (and
+            (at ?h ?loc)
+            (at ?warden ?loc)
+            (alive ?h)
+            (alive ?warden)
+            (entered-temple ?h)
+            (not (negotiating ?h))
+        )
+        :effect (negotiating ?h)
+    )
+
+    (:action convince-surrender
+        :parameters (?h - hero ?warden - dark-warden)
+        :precondition (and
+            (negotiating ?h)
+            (alive ?h)
+            (alive ?warden)
+            (or (has-key ?h) (knows-oath ?h))
+        )
+        :effect (and
+            (defeated ?warden)
+            (not (alive ?warden))
+        )
+    )
+
+    (:action warden-attacks
+        :parameters (?h - hero ?warden - dark-warden)
+        :precondition (and
+            (negotiating ?h)
+            (alive ?h)
+            (alive ?warden)
+            (not (or (has-key ?h) (knows-oath ?h)))
+        )
+        :effect (engaged-in-combat ?h)
+    )
+
+    (:action use-key-in-combat
+        :parameters (?h - hero ?warden - dark-warden)
+        :precondition (and
+            (engaged-in-combat ?h)
+            (has-key ?h)
+            (alive ?h)
+            (alive ?warden)
+        )
+        :effect (and
+            (defeated ?warden)
+            (not (alive ?warden))
+        )
+    )
+
+    (:action fight-without-key
+        :parameters (?h - hero ?warden - dark-warden)
+        :precondition (and
+            (engaged-in-combat ?h)
+            (not (has-key ?h))
+            (alive ?h)
+            (alive ?warden)
+        )
+        :effect (and
+            (not (defeated ?warden))
+            (not (defeated ?h))
+        )
+    )
+
+    (:action sneak-past-warden
+        :parameters (?h - hero ?warden - dark-warden ?loc - temple)
+        :precondition (and
+            (entered-temple ?h)
+            (sneaking ?h)
+            (at ?warden ?loc)
+            (alive ?h)
+            (alive ?warden)
+        )
+        :effect (and
+            (crystal-possessed ?h)
+            (escaped-with-crystal ?h)
+            (not (crystal-lost))
+        )
+    )
+
+    (:action confront-after-steal
+        :parameters (?h - hero ?warden - dark-warden)
+        :precondition (and
+            (crystal-possessed ?h)
+            (alive ?h)
+            (alive ?warden)
+        )
+        :effect (engaged-in-combat ?h)
+    )
+
+    (:action flee-to-dawnmere
+        :parameters (?h - hero ?from - temple ?to - village)
+        :precondition (and
+            (escaped-with-crystal ?h)
+            (at ?h ?from)
+            (alive ?h)
+        )
+        :effect (and
+            (at ?h ?to)
+            (not (at ?h ?from))
+            (not (crystal-lost))
+        )
+    )
+
+    (:action prepare-for-final-battle
+        :parameters (?h - hero)
+        :precondition (and
+            (escaped-with-crystal ?h)
+            (alive ?h)
+        )
+        :effect (engaged-in-combat ?h)
     )
 )
+

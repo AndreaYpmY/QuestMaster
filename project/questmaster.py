@@ -17,7 +17,6 @@ from langgraph.graph.message import add_messages
 from langgraph.prebuilt import ToolNode, tools_condition
 from langgraph.types import Command, interrupt
 from typing_extensions import TypedDict
-from langchain.agents import AgentExecutor
 
 
 
@@ -26,9 +25,10 @@ from langchain.agents import AgentExecutor
 
 # ----- VARIABILI -----
 MODEL="llama3.2" #gpt-4o-mini o llama3.2
-TEMPERATURE_STORY=0.7
+TEMPERATURE_STORY=0.6
 TEMPERATURE_PDDL_DOMAIN=0
 TEMPERATURE_PDDL_PROBLEM=0
+TEMPERATURE_PDDL_REFLECTION=0.1
 
 FASTDOWNWARD_PATH = "../downward"  
 LORE_DOCUMENT_PATH = "lore_document.txt"  
@@ -491,7 +491,6 @@ def GeneraPDDLdomain_node(state: QuestMasterState):
                     )
                 )
             )
-                
                 Return ONLY the PDDL domain code, which begins with "(define (domain...", no other text.""" ), 
                 MessagesPlaceholder(variable_name="examples"),
                 ("user", "Interactive Story: {story_text}\n\nGenerate the corresponding PDDL domain file with detailed comments.")])
@@ -594,7 +593,7 @@ def validate_with_downward(
         "python3", os.path.join(downward_path, "fast-downward.py"),
         domain_file,
         problem_file,
-        "--search astar(blind())"
+        "--search 'astar(blind())'"
     ]
     try:
         """result = subprocess.run(
@@ -641,124 +640,102 @@ def ValidatePDDL_node(state: QuestMasterState):
     
 
 
+
+# ---Reflection pattern ---
+def reflection_node(state: QuestMasterState):
+    llm= get_model(TEMPERATURE_PDDL_REFLECTION)
+
+    prompt = ChatPromptTemplate.from_messages([("system", f"""You are a PDDL expert and logical reasoning agent.
+            Analyze the PDDL files which you can found at the end, to validate and reflect on these files to detect issues, logical inconsistencies, narrative gaps and suggest improvements.
+                                                
+            Follow these steps carefully:
+
+                1. Syntax validation:
+                    Check whether the two files are SYNTACTICALLY CORRECT:
+                        - The domain.pddl file must correctly define:
+                            - (define (domain ...))
+                            - :predicates, :action, :parameters, :precondition, :effect, etc.
+                        - The problem.pddl file must include:
+                            - (define (problem ...))
+                            - (domain ...), :objects, :init, :goal, etc.
+                    - Report any errors such as:
+                    - Missing parentheses
+                    - Undeclared or mismatched names
+                    - Invalid PDDL constructs
+
+                2. Semantic validation:
+                    If syntax is valid, analyze whether the GOAL IS LOGICALLY ACHIEVABLE:
+                        - Is the goal state reachable based on the initial state and available actions?
+                        - Are the objects, predicates, and actions in the domain properly used to progress toward the goal?
+                        - Are there missing actions or predicates that prevent reaching the goal?
+
+                3. Structured output
+                    Provide a structured report with a bullet list of problems followed by the possible fixes, separated by type:
+                        Syntax Errors:
+                            - [ ] Briefly describe each syntax error (e.g., "Missing closing parenthesis in `:action move`").
+                            - [ ] Suggest a fix for each issue.
+                        Semantic / Logical Errors:
+                            - [ ] If the planner cannot reach the goal, explain why (e.g., There is no action that makes door-open true) and suggest changes to the domain or problem to make the goal achievable.
+
+            Example of expected output:
+                syntactic_errors:
+                    - missing_parenthesis: "Missing closing parenthesis on line 23"
+                    - undeclared_predicate: "Predicate 'at' is used but not declared in :predicates"
+
+                semantic_issues:
+                    - unreachable_goal: "No action makes the goal (at robot room2) achievable. Suggestion: "Add a 'move' action with precondition (at ?r ?from) and effect (not (at ?r ?from)) (at ?r ?to)"
+
+            recommendations:
+                - Declare all predicates that are used in the actions and goal.
+                - Ensure each action contributes to a state progression toward the goal.
+                                                
+        Use this output to correct all detected problems, including syntax errors and logical inconsistencies, so that:
+            - The PDDL syntax is fully valid.
+            - The problem is solvable: the goal is reachable from the initial state using the defined actions.
+        Modify the domain and problem files accordingly to fix these issues.
+        Focus on preserving the original structure and content as much as possible, making minimal necessary changes for correctness and solvability.
+        Return ONLY the corrected PDDL domain and problem, clearly SEPARATED FROM: "------", with no extra text or explanation at the begin or end."""),
+            ("user", "Please analyze the following PDDL domain and problem files and make sure they are syntactically and semantically correct and regenerate the domain and problem PDDL. Domain PDDL: {domain_pddl} \n Problem PDDL: {problem_pddl}")])
+    
+    formatted_prompt = prompt.invoke({"domain_pddl": state["domain_pddl"], "problem_pddl": state["problem_pddl"]})
+    
+    print("4# LLM per riflettere sui PDDL e correggerli \n")
+    response_llm = llm.invoke(formatted_prompt)
+    response = response_llm.content.strip()
+
+    print("4A# Risposta: ", response)
+
+    try:
+        # Splitta domain e problem PDDL
+        if "------" in response:
+            domain_pddl, problem_pddl = response.split("------", 1)
+            
+            print("4B# Problem: ", problem_pddl, "\n Domain: ", domain_pddl, "\n")
+
+            problem_file = open("problem.pddl", "w")
+            problem_file.write(problem_pddl)
+            problem_file.close()
+
+
+            domain_file = open("domain.pddl", "w")
+            domain_file.write(domain_pddl)
+            domain_file.close()
+        else:
+            # fallback
+            raise Exception("3# Splitting non avvenuto con successo. '------' non era presente")
+        return {"domain_pddl": domain_pddl.strip(), "problem_pddl": problem_pddl.strip()}
+    except Exception as e:
+        return f"3# Errore nella generazione dei PDDL: {e}"
+
+
 """
-# --- Tool: Reflection Agent ---
-class ReflectAgent(BaseTool):
-    name = "reflect"
-    description = "Suggerisce miglioramenti al PDDL"
-
-    def __init__(self):
-        super().__init__()
-        self.llm = ChatOllama(model="llama3.2", temperature=0.1, verbose=True)
-        self.prompt = PromptTemplate(
-            input_variables=["pddl_text"],
-            template="You are a PDDL expert and logical reasoning agent. Analyze the following PDDL domain and problem. Identify logical inconsistencies or narrative gaps.
-                        Suggest specific modifications to fix them.
-                        PDDL:{pddl_text} Suggestion:"
-        )
-        self.chain = LLMChain(llm=self.llm, prompt=self.prompt)
-
-    def _run(self, context):
-        domain = context.get("domain_pddl", "")
-        problem = context.get("problem_pddl", "")
-        pddl_text = domain + "\n" + problem
-        suggestion = self.chain.run(pddl_text=pddl_text)
-        return {"suggestion": suggestion.strip()}
-
-
 # --- Chat-based approval (simulato) ---
 def ask_author_fn(context):
     print("\nSuggerimento del sistema:", context["suggestion"])
     return {"status": "approved"}  # Stub: Simula l'approvazione automatica
 
 
-def Validate_node(state: QuestMasterState):
-    url = 'http://solver.planning.domains/solve'
-
-    with open("domain.pddl", "r") as domain_file, open("problem.pddl", "r") as problem_file:
-        payload = {
-            "domain": domain_file.read(),
-            "problem": problem_file.read()
-        }
-
-    headers = {"Content-Type": "application/json"}
-
-    try:
-        response = requests.post(url, json=payload, headers=headers)
-
-        # Debug in caso di fallimento
-        print("HTTP Status Code:", response.status_code)
-        print("Response content:", response.text[:500])  # stampiamo solo i primi 500 caratteri
-
-        response.raise_for_status()  # Lancia errore per HTTP 4xx o 5xx
-        result = response.json()  # Questo ora è sicuro
-
-        if result.get("status") == "ok":
-            print("Piano:", result["result"]["plan"])
-        else:
-            print("Errore nel planner:", result.get("result"))
-        return result
-
-    except requests.exceptions.RequestException as e:
-        print(f"Errore durante la richiesta al planner: {e}")
-        return {"status": "error", "message": str(e)}
-
-    except ValueError as e:
-        print(f"Errore nel parsing JSON: {e}")
-        return {"status": "error", "message": f"Risposta non in formato JSON: {response.text}"}
-
-
-def validate_with_fast_downward(domain_str, problem_str):
-    with tempfile.TemporaryDirectory() as tempdir:
-        domain_path = os.path.join(tempdir, "domain.pddl")
-        problem_path = os.path.join(tempdir, "problem.pddl")
-
-        # Salva i file temporanei
-        with open(domain_path, "w") as f:
-            f.write(domain_str)
-        with open(problem_path, "w") as f:
-            f.write(problem_str)
-
-        # Percorso a fast-downward.py
-        fd_script = os.path.abspath("downward/fast-downward.py")
-        
-        # Comando di pianificazione (configurabile)
-        command = [
-            "python3", fd_script,
-            domain_path,
-            problem_path,
-            "--search", "astar(blind())"
-        ]
-
-        try:
-            result = subprocess.run(
-                command,
-                stdout=subprocess.PIPE,
-                stderr=subprocess.PIPE,
-                universal_newlines=True,
-                timeout=10
-            )
-
-            if "Solution found!" in result.stdout:
-                return True, result.stdout
-            else:
-                return False, result.stdout + result.stderr
-        except subprocess.TimeoutExpired:
-            return False, "Timeout nella pianificazione"
-
-
-
-class ValidatePDDLTool(BaseTool):
-    name = "validate_pddl"
-    description = "Valida i file PDDL usando Fast Downward"
-
-    def _run(self, inputs):
-        domain = inputs["domain_pddl"]
-        problem = inputs["problem_pddl"]
-        is_valid, log = validate_with_fast_downward(domain, problem)
-        return {"is_valid": is_valid, "log": log}
-
-#Genera un file PDDL dal documento di lore
+    
 def GeneraPDDL_node(state: QuestMasterState):
     llm = ChatOllama(model=MODEL, temperature=0.1)
     prompt = ChatPromptTemplate.from_messages([("system", fYou are a skilled PDDL problem and domain generator.
@@ -829,30 +806,34 @@ builder.add_node("genera_problem_pddl", GeneraPDDLproblem_node)
 # 4. Validazione del PDDL
 builder.add_node("validate_pddl", ValidatePDDL_node)
 
-#builder.add_node("reflect", ReflectAgent())
+# 5. Pattern reflection per aggiustare il PDDL
+builder.add_node("reflect", reflection_node)
 #builder.add_node("ask_author", ask_author_fn)
 
 
 # --- Collegamento dei nodi ---
 builder.add_edge(START, "carica_lore")
 builder.add_edge("carica_lore", "genera_storia")
+
 #builder.add_edge("genera_storia", "genera_pddl")
 
 builder.add_edge("genera_storia", "genera_domain_pddl")
 builder.add_edge("genera_domain_pddl", "genera_problem_pddl")
-#builder.add_edge("genera_problem_pddl", "validate_pddl")
+builder.add_edge("genera_problem_pddl", "validate_pddl")
 
 
 #builder.add_edge("genera_pddl", "validate_pddl")
 
 
-"""builder.add_conditional_edges("validate_pddl", 
+builder.add_conditional_edges("validate_pddl", 
     lambda x: "valid" if x["is_valid"] else "invalid",
     {
         "valid": END,
         "invalid": "reflect"
     }
-)"""
+)
+
+builder.add_edge("reflect", "validate_pddl")
 
 #builder.add_edge("reflect", "ask_author")
 """builder.add_conditional_edges("ask_author", 
