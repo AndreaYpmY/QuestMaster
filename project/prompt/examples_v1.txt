@@ -1,0 +1,111 @@
+examples_problem = [
+    {
+        "input": "An example of problem.pddl file.",
+        "output": f"""(define (problem blocksworld-example)
+    (:domain blocksworld)
+
+    (:objects
+        red yellow blue orange - block
+    )
+
+    (:init
+        (ontable yellow)
+        (ontable orange)
+        (ontable red)
+        (on blue orange)
+        (clear blue)
+        (clear red)
+        (clear yellow)
+        (handempty)
+    )
+
+    (:goal
+        (and
+            (on orange blue)
+            (ontable blue)
+            (ontable yellow)
+            (ontable red)
+            (clear orange)
+            (clear yellow)
+            (clear red))
+    )
+)"""
+    }]
+
+examples_domain = [
+    {
+        "input": "An example of domain.pddl file.",
+        "output": f"""(define (domain blocksworld) 
+    (:requirements :strips :typing)
+
+    (:types
+        block
+    )
+
+    (:predicates
+        (on ?x - block ?y - block)
+        (ontable ?x - block)
+        (clear ?x - block)
+        (holding ?x - block)
+        (handempty)
+    )
+
+    (:action pick-up
+        :parameters (?x - block)
+        :precondition (and (clear ?x) (ontable ?x) (handempty))
+        :effect (and
+            (not (ontable ?x))
+            (not (clear ?x))
+            (not (handempty))
+            (holding ?x))
+    )
+
+    (:action put-down
+        :parameters (?x - block)
+        :precondition (holding ?x)
+        :effect (and
+            (ontable ?x)
+            (clear ?x)
+            (handempty)
+            (not (holding ?x)))
+    )
+
+    (:action unstack
+        :parameters (?x - block ?y - block)
+        :precondition (and (on ?x ?y) (clear ?x) (handempty))
+        :effect (and
+            (holding ?x)
+            (clear ?y)
+            (not (on ?x ?y))
+            (not (clear ?x))
+            (not (handempty)))
+    )
+
+    (:action stack
+        :parameters (?x - block ?y - block)
+        :precondition (and (holding ?x) (clear ?y))
+        :effect (and
+            (on ?x ?y)
+            (clear ?x)
+            (handempty)
+            (not (holding ?x))
+            (not (clear ?y)))
+    )
+)"""}]
+
+example_messages_problem = [
+    [
+        ("user", ex["input"]),
+        ("assistant", ex["output"])
+    ]
+    for ex in examples_problem
+]
+
+
+example_messages_domain = [
+    [
+        ("user", ex["input"]),
+        ("assistant", ex["output"])
+    ]
+    for ex in examples_domain
+]

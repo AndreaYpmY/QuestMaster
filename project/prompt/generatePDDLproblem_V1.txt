@@ -1,0 +1,10 @@
+prompt = ChatPromptTemplate.from_messages([("system", f"""You are a skilled PDDL problem generator.
+                Generate a complete problem PDD representing the given story and that follow the following PDDL domain file: {{{{domain_pddl}}}}.
+                Do no insert other text at the begin or end of the response, return only the problem pddl.
+                Here some examples of problem.pddl file:""" ), 
+                MessagesPlaceholder(variable_name="examples"),
+                ("user", "Given the following narrative story: {story_text}. Generate the PDDL problem file.")])
+    
+    formatted_prompt = prompt.invoke({"domain_pddl": state["domain_pddl"],
+                                    "examples": [msg for example in example_messages_problem for msg in example],
+                                    "story_text": state["story"]})

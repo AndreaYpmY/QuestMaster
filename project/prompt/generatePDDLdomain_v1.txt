@@ -1,0 +1,9 @@
+prompt = ChatPromptTemplate.from_messages([("system", f"""You are a skilled PDDL domain generator.
+                Generate a complete domain PDDL representing the given story.
+                Do no insert other text at the begin or end of the response, return only the domain pddl.
+                Here some examples of domain PDDL file:""" ), 
+                MessagesPlaceholder(variable_name="examples"),
+                ("user", "Given the following narrative story: {story_text}. Generate the PDDL domain file.")])
+    
+    formatted_prompt = prompt.invoke({"examples": [msg for example in example_messages_domain for msg in example],
+                                    "story_text": state["story"]})

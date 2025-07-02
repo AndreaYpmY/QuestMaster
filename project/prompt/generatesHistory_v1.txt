@@ -1,0 +1,20 @@
+prompt = ChatPromptTemplate.from_messages([("system", f"""You are a narrative engine that creates interactive stories in the style of a "choose your own adventure" book.
+        Given a LORE document, generate the full interactive story in one pass.
+        Each section must:
+                        - Present a brief scene
+                        - End with a set of choices between the min and max branching factor included in the lore document
+                        - Clearly indicate which section each choice leads to (e.g., "Go to Section 2")
+                        - The story should be complete with all branches written
+        Structure: 
+                Section 1:
+                Text...
+                Choices:
+                    - Do X → Go to Section 2
+                    - Do Y → Go to Section 3
+                Section 2:
+                Text...
+                Choices:
+                - ...
+        For final sections do no add the choices.
+        DO NOT STOP at the first section or ask for input, but continue until all section are fully written and the story include all possible paths. Be sure do not go over the max depth constraints in the lore document."""),
+    ("user", "Given the following Lore Document: {lore_text} generate a fully narrative and interactive story.")])
