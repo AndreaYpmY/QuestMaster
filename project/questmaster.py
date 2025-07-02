@@ -20,8 +20,22 @@ from typing_extensions import TypedDict
 from langchain.agents import AgentExecutor
 
 
+
+
+
+
 # ----- VARIABILI -----
-MODEL="llama3.2"
+MODEL="llama3.2" #gpt-4o-mini o llama3.2
+TEMPERATURE_STORY=0.7
+TEMPERATURE_PDDL_DOMAIN=0.1
+TEMPERATURE_PDDL_PROBLEM=0
+
+FASTDOWNWARD_PATH = "../downward"  
+LORE_DOCUMENT_PATH = "lore_document.txt"  
+DOMAIN_PDDL_PATH = "domain.pddl" 
+PROBLEM_PDDL_PATH = "problem.pddl" 
+
+OPENAI_API_KEY = os.getenv("OPENAI_API_KEY")
 # ---------------------
 
 
@@ -352,6 +366,21 @@ class QuestMasterState(TypedDict):
     domain_pddl: str
     problem_pddl: str
 
+def get_model(temp:float):
+    """
+    Restituisce il modello da utilizzare per la generazione della storia e del PDDL.
+    """
+    print(f"> Utilizzo il modello {MODEL} con temperatura {temp}\n")
+    if MODEL == "gpt-4o-mini":
+        return ChatOpenAI(model=MODEL, temperature=temp, openai_api_key=OPENAI_API_KEY)
+    else:
+        return ChatOllama(model=MODEL, temperature=temp)
+
+
+
+
+
+
 
 # 1. Carica il documento di lore
 def CaricaLore_node(state: QuestMasterState):
@@ -362,37 +391,55 @@ def CaricaLore_node(state: QuestMasterState):
 
 # 2. Genera la storia interattiva
 def GeneraStoria_node(state: QuestMasterState):
-    llm = ChatOpenAI(model="gpt-4o-mini",temperature=0.7)
-    #llm = ChatOllama(model=MODEL, temperature=0.7)
-    prompt = ChatPromptTemplate.from_messages([("system", f"""You are a narrative engine that creates interactive stories for QuestMaster system.
-        Given a LORE document, generate a complete interactive story that will be later converted to PDDL.
-        
-        IMPORTANT REQUIREMENTS:
-        - Each narrative section represents a DISTINCT GAME STATE
-        - Actions/choices must be CONCRETE and SPECIFIC (not vague)
-        - Each choice should change the world state in a meaningful way
-        - Consider objects, locations, character states, and inventory items
-        - Ensure logical consistency between sections
-        - Respect the branching factor constraints (min/max choices per section)
-        - Respect the depth constraints (min/max steps to goal)
-        
-        Structure each section as:
-        Section X: [Clear location/state description]
-        Narrative: [Brief scene description with current state]
+    
+    llm = get_model(TEMPERATURE_STORY)
+
+    prompt = ChatPromptTemplate.from_messages([("system", 
+    f"""You are a narrative engine that creates structured interactive stories for PDDL planning conversion.
+
+        CRITICAL REQUIREMENTS:
+        - Extract and respect ALL constraints from the Lore Document
+        - Generate a story structure that maps to planning states and actions
+        - Each story section must represent a distinct WORLD STATE
+        - Each choice must represent a specific ACTION that changes the world state
+        - Respect branching factor: each section must have between MIN and MAX choices
+        - Respect depth constraints: story must have between MIN and MAX steps to reach goal
+
+        STRUCTURE REQUIREMENTS:
+        1. Start with the exact INITIAL STATE from the lore
+        2. Each section describes a game state with:
+            - Current world conditions
+            - Available objects/characters
+            - Player location and status
+        3. Each choice must be an ACTION that:
+            - Has clear preconditions (what must be true to take this action)
+            - Has clear effects (what changes in the world state)
+            - Moves toward the GOAL STATE
+
+        OUTPUT FORMAT:
+        Section 1: [INITIAL STATE - describe exact starting conditions]
+        Current State: [List current world facts]
         Available Actions:
-            - [Specific action] → Go to Section Y
-            - [Specific action] → Go to Section Z
-        
-        For final sections (goal states), clearly mark them as GOAL ACHIEVED.
-        
-        Example of good vs bad actions:
-        BAD: "Explore the area" (too vague)
-        GOOD: "Pick up the rusty key from the table"
-        BAD: "Talk to someone" (unspecific)
-        GOOD: "Ask the guard about the locked door"
-        
-        DO NOT STOP at the first section. Generate ALL sections until the story is complete with all possible paths."""),
-    ("user", "Lore Document: {lore_text}\n\nGenerate a complete interactive narrative that can be converted to PDDL planning problem.")])
+        - [Action 1]: [Clear description] → Go to Section [X]
+        - [Action 2]: [Clear description] → Go to Section [Y]
+        [Continue for MIN-MAX choices as specified in lore]
+
+        Section 2: [State after Action 1]
+        Current State: [Updated world facts]
+        Available Actions:
+        - [Action A]: [Description] → Go to Section [Z]
+        [Continue...]
+
+        VALIDATION CHECKLIST:
+        ✓ Story starts with exact initial state from lore
+        ✓ Goal state is reachable within depth constraints
+        ✓ Each section has branching factor within min/max range
+        ✓ Actions have clear preconditions and effects
+        ✓ All obstacles from lore are incorporated
+        ✓ Story is complete with all paths written
+
+        Generate the COMPLETE story structure now."""),
+    ("user", "Lore Document: {lore_text}\nGenerate the complete structured interactive story respecting ALL constraints.")])
     
     print("2# LLM invocato per la creazione della storia \n")
     formatted_prompt = prompt.invoke({"lore_text": state["lore"]})
@@ -406,8 +453,9 @@ def GeneraStoria_node(state: QuestMasterState):
 
 # 3A. Genera il PDDL domain
 def GeneraPDDLdomain_node(state: QuestMasterState):
-    llm = ChatOpenAI(model="gpt-4o-mini",temperature=0)
-    #llm = ChatOllama(model=MODEL, temperature=0.1)
+    
+    llm = get_model(TEMPERATURE_PDDL_DOMAIN)
+
     prompt = ChatPromptTemplate.from_messages([("system", f"""You are an expert PDDL domain generator for the QuestMaster interactive story system.
                 
                 Generate a complete and valid PDDL domain file from the given interactive story.
@@ -457,7 +505,7 @@ def GeneraPDDLdomain_node(state: QuestMasterState):
 
     print("3# Risposta: ", domain_pddl)
 
-    domain_file = open("domain.pddl", "w")
+    domain_file = open(DOMAIN_PDDL_PATH, "w")
     domain_file.write(domain_pddl)
     domain_file.close()
 
@@ -466,8 +514,9 @@ def GeneraPDDLdomain_node(state: QuestMasterState):
 
 # 3B. Genera il PDDL problem
 def GeneraPDDLproblem_node(state: QuestMasterState):
-    llm = ChatOpenAI(model="gpt-4o-mini",temperature=0)
-    #llm = ChatOllama(model=MODEL, temperature=0.1)
+    
+    llm= get_model(TEMPERATURE_PDDL_PROBLEM)
+
     prompt = ChatPromptTemplate.from_messages([("system", f"""You are an expert PDDL problem generator for the QuestMaster system.
                 
                 Generate a complete PDDL problem file that corresponds to the given story and domain.
@@ -519,12 +568,78 @@ def GeneraPDDLproblem_node(state: QuestMasterState):
 
     print("3B# Risposta: ", problem_pddl)
 
-    problem_file = open("problem.pddl", "w")
+    problem_file = open(PROBLEM_PDDL_PATH, "w")
     problem_file.write(problem_pddl)
     problem_file.close()
 
     return {"problem_pddl": problem_pddl}
 
+
+def validate_with_downward(
+        domain_file:str = DOMAIN_PDDL_PATH,
+        problem_file:str = PROBLEM_PDDL_PATH,
+        downward_path:str = FASTDOWNWARD_PATH):
+    """
+       Valido i file PDDL utilizzando Fast Downward.
+       Args:
+            domain_file (str): Percorso al file PDDL del dominio.
+            problem_file (str): Percorso al file PDDL del problema.
+            downward_path (str): Percorso alla cartella di Fast Downward.
+       Returns:
+            bool: True se i file sono validi, False altrimenti.
+            str: Log della validazione.
+    """
+    print("4# Validazione PDDL con Fast Downward...")
+    command = [
+        "python3", os.path.join(downward_path, "fast-downward.py"),
+        domain_file,
+        problem_file,
+        "--search", 
+        "astar(blind())"
+    ]
+    try:
+        """result = subprocess.run(
+            command,
+            stdout=subprocess.PIPE,
+            stderr=subprocess.PIPE,
+            universal_newlines=True,
+            timeout=10
+        )"""
+        result = subprocess.run(
+            command,
+            stdout=subprocess.PIPE,
+            stderr=subprocess.PIPE,
+            universal_newlines=True,
+            timeout=30
+        )
+
+        log_output = result.stdout + "\n" + result.stderr
+
+        
+
+        if "Solution found!" in result.stdout or "Plan found" in result.stdout:
+            print("✅ Il problema è risolvibile.")
+            return True, log_output
+        elif "unsolvable" in result.stdout.lower():
+            print("❌ Il problema non è risolvibile.")
+            return False, log_output
+        else:
+            print("⚠️ Nessuna soluzione trovata, controlla i file PDDL.")
+            return False, log_output
+    except FileNotFoundError:
+        error_msg="❌ Fast Downward non trovato. Assicurati che il percorso sia corretto."
+        print(error_msg)
+        return False, error_msg
+    except Exception as e:
+        error_msg=f"❌ L'errore durante la validazione: {e}"
+        print(error_msg)
+        return False, error_msg
+    
+def ValidatePDDL_node(state: QuestMasterState):
+    is_valid, log = validate_with_downward()
+    print(f"4# Validazione PDDL completata: {is_valid}, log: {log}")
+    return {"is_valid": is_valid, "log": log}
+    
 
 
 """
@@ -713,7 +828,7 @@ builder.add_node("genera_problem_pddl", GeneraPDDLproblem_node)
 
 
 # 4. Validazione del PDDL
-#builder.add_node("validate_pddl", Validate_node)
+builder.add_node("validate_pddl", ValidatePDDL_node)
 
 #builder.add_node("reflect", ReflectAgent())
 #builder.add_node("ask_author", ask_author_fn)
@@ -725,6 +840,7 @@ builder.add_edge("carica_lore", "genera_storia")
 #builder.add_edge("genera_storia", "genera_pddl")
 builder.add_edge("genera_storia", "genera_domain_pddl")
 builder.add_edge("genera_domain_pddl", "genera_problem_pddl")
+builder.add_edge("genera_problem_pddl", "validate_pddl")
 
 
 #builder.add_edge("genera_pddl", "validate_pddl")
@@ -755,7 +871,25 @@ graph = builder.compile()
 print("Costruzione del grafo avvenuta con successo")
 
 
+def select_model():
+    print("=== Seleziona il Modello ===")
+    print("1 - llama3.2")
+    print("2 - gpt-4o-mini")
+    choice = input("> Inserisci il numero del modello da utilizzare (1 o 2): ")
+
+    if choice == "1":
+        return "llama3.2"
+    elif choice == "2":
+        return "gpt-4o-mini"
+    else:
+        print("Scelta non valida. Verrà utilizzato il modello di default: llama3.2")
+        return "llama3.2"
+
+
 # --- Avvia l'esecuzione ---
 if __name__ == "__main__":
-    result = graph.invoke({"file_path": "lore_document.txt"})
+    # Vedo l'utente che modello vuole utilizzare
+    MODEL = select_model()
+    # Eseguo il grafo
+    result = graph.invoke({"file_path": LORE_DOCUMENT_PATH})
 

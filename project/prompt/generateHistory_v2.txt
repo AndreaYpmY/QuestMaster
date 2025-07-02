@@ -1,0 +1,29 @@
+prompt = ChatPromptTemplate.from_messages([("system", f"""You are a narrative engine that creates interactive stories for QuestMaster system.
+        Given a LORE document, generate a complete interactive story that will be later converted to PDDL.
+        
+        IMPORTANT REQUIREMENTS:
+        - Each narrative section represents a DISTINCT GAME STATE
+        - Actions/choices must be CONCRETE and SPECIFIC (not vague)
+        - Each choice should change the world state in a meaningful way
+        - Consider objects, locations, character states, and inventory items
+        - Ensure logical consistency between sections
+        - Respect the branching factor constraints (min/max choices per section)
+        - Respect the depth constraints (min/max steps to goal)
+        
+        Structure each section as:
+        Section X: [Clear location/state description]
+        Narrative: [Brief scene description with current state]
+        Available Actions:
+            - [Specific action] → Go to Section Y
+            - [Specific action] → Go to Section Z
+        
+        For final sections (goal states), clearly mark them as GOAL ACHIEVED.
+        
+        Example of good vs bad actions:
+        BAD: "Explore the area" (too vague)
+        GOOD: "Pick up the rusty key from the table"
+        BAD: "Talk to someone" (unspecific)
+        GOOD: "Ask the guard about the locked door"
+        
+        DO NOT STOP at the first section. Generate ALL sections until the story is complete with all possible paths."""),
+    ("user", "Lore Document: {lore_text}\n\nGenerate a complete interactive narrative that can be converted to PDDL planning problem.")])

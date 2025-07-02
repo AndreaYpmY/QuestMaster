@@ -1,155 +1,158 @@
-(define (domain dungeon-exploration)
+(define (domain dungeon-quest)
     (:requirements :strips :typing)               ; PDDL requirements declaration
 
     (:types
         location character item - object           ; Basic object hierarchy
-        village square forest cliff temple - location ; Specific location types
-        hero elder monster spirit - character       ; Character types
-        feather herbs rope dagger key - item        ; Item types
-        gold - object                               ; Currency type
+        village forest temple - location            ; Specific location types
+        hero darkwarden - character                 ; Character types
+        crystal key artifact - item                 ; Item types
     )
 
     (:predicates
         (at ?obj - object ?loc - location)        ; Object/character is at a location
         (connected ?loc1 - location ?loc2 - location) ; Locations are connected
-        (has-item ?char - character ?item - item) ; Character has an item
-        (door-open ?from - location ?to - location) ; Door state between locations
-        (monster-defeated ?m - monster)           ; Monster defeat status
-        (quest-accepted)                          ; Quest has been accepted
-        (feather-retrieved)                       ; Feather has been retrieved
-        (treasure-found)                          ; Victory condition
-        (gold-amount ?char - character ?amount - gold) ; Amount of gold a character has
+        (has-item ?char - character ?item - item) ; Character possesses an item
+        (darkwarden-guarding ?loc - location)      ; Dark Warden is guarding a location
+        (key-held ?char - character)                ; Character holds the magical key
+        (crystal-lost)                             ; Crystal of Light is lost
+        (worthy ?char - character)                 ; Character is deemed worthy
+        (defeated ?char - character)               ; Character has been defeated
     )
 
-    (:action speak-to-elder
-        :parameters (?h - hero ?e - elder ?loc - location)
+    (:action visit-whispering-forest
+        :parameters (?h - hero ?v - village ?f - forest)
         :precondition (and 
-            (at ?h ?loc)                         ; Hero is at the elder's location
-            (at ?e ?loc)                         ; Elder is at the same location
+            (at ?h ?v)                             ; Hero is in the village
+            (not (crystal-lost))                   ; Crystal is lost
         )
         :effect (and 
-            (quest-accepted)                     ; Quest to prove worth is accepted
+            (at ?h ?f)                             ; Hero moves to the Whispering Forest
+            (not (at ?h ?v))                       ; Hero is no longer in the village
         )
     )
 
-    (:action gather-supplies
-        :parameters (?h - hero ?loc - location)
-        :precondition (at ?h ?loc)                ; Hero is at the market location
-        :effect (and 
-            ; Supplies can be gathered, but specific effects depend on choices made
-        )
-    )
-
-    (:action buy-item
-        :parameters (?h - hero ?item - item ?cost - gold ?loc - location)
+    (:action gather-information
+        :parameters (?h - hero ?v - village)
         :precondition (and 
-            (at ?h ?loc)                         ; Hero is at the market
-            (gold-amount ?h ?amount)             ; Hero has a certain amount of gold
-            (>= ?amount ?cost)                   ; Hero can afford the item
+            (at ?h ?v)                             ; Hero is in the village
+            (not (crystal-lost))                   ; Crystal is lost
         )
         :effect (and 
-            (has-item ?h ?item)                  ; Hero now has the item
-            (not (gold-amount ?h ?amount))       ; Update gold amount after purchase
+            (worthy ?h)                            ; Hero is now deemed worthy
+            (not (at ?h ?v))                       ; Hero is no longer in the village
         )
     )
 
-    (:action accept-quest
-        :parameters (?h - hero ?e - elder)
+    (:action seek-forest-spirit
+        :parameters (?h - hero ?f - forest)
         :precondition (and 
-            (quest-accepted)                     ; Quest has been accepted
+            (at ?h ?f)                             ; Hero is in the Whispering Forest
+            (worthy ?h)                            ; Hero is deemed worthy
         )
         :effect (and 
-            (feather-retrieved)                  ; Feather quest is now active
+            (not (crystal-lost))                   ; Crystal is now available
         )
     )
 
-    (:action retrieve-feather
-        :parameters (?h - hero ?loc - location)
+    (:action explore-forest
+        :parameters (?h - hero ?f - forest ?a - artifact)
         :precondition (and 
-            (at ?h ?loc)                         ; Hero is at the cliff location
-            (feather-retrieved)                  ; Quest to retrieve feather is active
+            (at ?h ?f)                             ; Hero is in the Whispering Forest
+            (not (crystal-lost))                   ; Crystal is lost
         )
         :effect (and 
-            (has-item ?h feather)                ; Hero retrieves the feather
+            (has-item ?h ?a)                       ; Hero finds an ancient artifact
         )
     )
 
-    (:action enter-forest
-        :parameters (?h - hero ?loc - location)
-        :precondition (at ?h ?loc)                ; Hero is at the forest entrance
-        :effect (and 
-            (at ?h forest)                       ; Hero enters the forest
-        )
-    )
-
-    (:action encounter-spirit
-        :parameters (?h - hero ?s - spirit)
+    (:action prepare-test-of-courage
+        :parameters (?h - hero ?v - village)
         :precondition (and 
-            (at ?h forest)                       ; Hero is in the forest
-            (at ?s forest)                       ; Spirit is present in the forest
+            (at ?h ?v)                             ; Hero is in the village
+            (worthy ?h)                            ; Hero is deemed worthy
         )
         :effect (and 
-            ; Spirit interaction can lead to various outcomes
+            (not (at ?h ?v))                       ; Hero is no longer in the village
         )
     )
 
-    (:action solve-riddle
-        :parameters (?h - hero ?s - spirit ?answer - string)
+    (:action prove-worthiness-courage
+        :parameters (?h - hero ?m - darkwarden ?f - forest)
         :precondition (and 
-            (at ?h forest)                       ; Hero is in the forest
-            (at ?s forest)                       ; Spirit is present
+            (at ?h ?f)                             ; Hero is in the forest
+            (not (crystal-lost))                   ; Crystal is lost
+            (darkwarden-guarding ?f)               ; Dark Warden is guarding the forest
         )
         :effect (and 
-            (if (equal ?answer "an echo")        ; Correct answer
-                (treasure-found)                ; Hero finds the key
-                (not (treasure-found))          ; Incorrect answer
-            )
+            (not (darkwarden-guarding ?f))         ; Dark Warden is defeated
+            (not (crystal-lost))                   ; Crystal is now available
         )
     )
 
-    (:action return-to-elder
-        :parameters (?h - hero ?e - elder)
+    (:action prove-worthiness-wisdom
+        :parameters (?h - hero ?f - forest)
         :precondition (and 
-            (has-item ?h feather)                ; Hero has the feather
-            (at ?h village)                      ; Hero is at the village
-            (at ?e village)                      ; Elder is at the village
+            (at ?h ?f)                             ; Hero is in the forest
+            (not (crystal-lost))                   ; Crystal is lost
         )
         :effect (and 
-            (treasure-found)                     ; Quest is completed
+            (not (crystal-lost))                   ; Crystal is now available
+        )
+    )
+
+    (:action use-ancient-artifact
+        :parameters (?h - hero ?a - artifact ?f - forest)
+        :precondition (and 
+            (at ?h ?f)                             ; Hero is in the forest
+            (has-item ?h ?a)                       ; Hero has the ancient artifact
+        )
+        :effect (and 
+            (not (crystal-lost))                   ; Crystal is now available
+        )
+    )
+
+    (:action accept-key
+        :parameters (?h - hero ?k - key)
+        :precondition (and 
+            (not (crystal-lost))                   ; Crystal is lost
+            (key-held ?h)                          ; Hero has the magical key
+        )
+        :effect (and 
+            (not (crystal-lost))                   ; Crystal is now available
         )
     )
 
     (:action enter-temple
-        :parameters (?h - hero ?loc - location ?k - key)
+        :parameters (?h - hero ?t - temple)
         :precondition (and 
-            (at ?h ?loc)                         ; Hero is at the temple
-            (has-item ?h ?k)                     ; Hero has the key
+            (at ?h ?t)                             ; Hero is at the temple
+            (not (crystal-lost))                   ; Crystal is lost
         )
         :effect (and 
-            (at ?h temple)                       ; Hero enters the temple
+            (not (crystal-lost))                   ; Crystal is now available
         )
     )
 
-    (:action fight-dark-warden
-        :parameters (?h - hero ?m - monster)
+    (:action engage-battle
+        :parameters (?h - hero ?m - darkwarden)
         :precondition (and 
-            (at ?h temple)                       ; Hero is in the temple
-            (at ?m temple)                       ; Dark Warden is present
+            (not (crystal-lost))                   ; Crystal is lost
+            (darkwarden-guarding ?m)               ; Dark Warden is present
         )
         :effect (and 
-            (monster-defeated ?m)                ; Dark Warden is defeated
-            (treasure-found)                     ; Hero finds the Crystal of Light
+            (defeated ?m)                          ; Dark Warden is defeated
+            (not (crystal-lost))                   ; Crystal is now available
         )
     )
 
-    (:action negotiate-with-dark-warden
-        :parameters (?h - hero ?m - monster)
+    (:action attempt-diplomacy
+        :parameters (?h - hero ?m - darkwarden)
         :precondition (and 
-            (at ?h temple)                       ; Hero is in the temple
-            (at ?m temple)                       ; Dark Warden is present
+            (not (crystal-lost))                   ; Crystal is lost
+            (darkwarden-guarding ?m)               ; Dark Warden is present
         )
         :effect (and 
-            ; Negotiation can lead to various outcomes
+            (not (crystal-lost))                   ; Crystal is now available
         )
     )
 )

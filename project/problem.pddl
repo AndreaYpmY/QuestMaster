@@ -1,55 +1,30 @@
-(define (problem dawnmere-quest)
-    (:domain dungeon-exploration)                ; References the dungeon-exploration domain
+(define (problem crystal-recovery)
+    (:domain dungeon-quest)                     ; References the dungeon-quest domain
 
     (:objects
         hero - character                          ; The main character (hero)
-        elder - character                         ; The village elder
-        goblin orc - monster                      ; Enemies in the quest
-        whispering-forest - location              ; The forest location
-        village-square - location                 ; The village square
-        cliffs - location                         ; Cliffs of Echoing Winds
-        temple - location                         ; Temple of Echoes
-        feather - item                           ; The feather to retrieve
-        healing-herbs rope dagger - item         ; Items available for purchase
-        crystal - item                           ; The Crystal of Light
-        golden-key - key                         ; The key to the temple
-        gold - object                             ; Currency for transactions
+        darkwarden - character                    ; The antagonist (Dark Warden)
+        village - location                        ; The village of Dawnmere
+        whispering-forest - location              ; The Whispering Forest
+        temple - location                         ; The Temple of Echoes
+        ancient-artifact - item                   ; An artifact found in the forest
+        magical-key - key                        ; The magical key needed to enter the temple
+        crystal-of-light - item                   ; The Crystal of Light to be recovered
     )
 
     (:init
-        ; Initial character positions
-        (at hero village-square)                  ; Hero starts in the village square
-        (at elder village-square)                 ; Elder is in the village square
-        (at goblin whispering-forest)             ; Goblin is in the forest
-        (at orc temple)                          ; Orc is guarding the temple
-        
-        ; Initial item locations
-        (at feather cliffs)                       ; Feather is at the cliffs
-        (at healing-herbs village-square)         ; Healing herbs available in the village
-        (at rope village-square)                  ; Rope available in the village
-        (at dagger village-square)                ; Dagger available in the village
-        (at golden-key whispering-forest)         ; Key is hidden in the forest
-        
-        ; Initial gold amount for the hero
-        (gold-amount hero 10)                    ; Hero starts with 10 gold
-        
-        ; Room connections
-        (connected village-square whispering-forest) ; Village connects to the forest
-        (connected whispering-forest cliffs)      ; Forest connects to the cliffs
-        (connected cliffs temple)                  ; Cliffs connect to the temple
-        
-        ; Initial quest state
-        (not (quest-accepted))                    ; Quest has not been accepted yet
-        (not (feather-retrieved))                 ; Feather has not been retrieved yet
-        (not (treasure-found))                     ; Treasure has not been found yet
+        ; Initial world state - where the story begins
+        (at hero village)                         ; Hero starts in the village of Dawnmere
+        (darkwarden-guarding temple)              ; Dark Warden guards the temple
+        (crystal-lost)                           ; The Crystal of Light is lost
+        (not (key-held hero))                    ; Hero does not have the magical key
     )
 
     (:goal
         (and 
-            (treasure-found)                      ; Main goal: find the Crystal of Light
-            (monster-defeated goblin)             ; Defeat the goblin
-            (monster-defeated orc)                ; Defeat the orc
-            (at hero temple)                       ; Hero reaches the temple
+            (not (crystal-lost))                   ; Goal: recover the Crystal of Light
+            (defeated darkwarden)                  ; Dark Warden must be defeated
+            (at hero temple)                        ; Hero must reach the temple
         )
     )
 )

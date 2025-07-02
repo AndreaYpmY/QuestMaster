@@ -4,4 +4,14 @@ venv/
 env/
 */.venv/
 */venv/
+
 */env/project/.env
+*/.env
+*/env
+*/.envrc
+.env
+
+# Downward
+.downward/
+downward/
+*/downward/
