@@ -27,7 +27,7 @@ from langchain.agents import AgentExecutor
 # ----- VARIABILI -----
 MODEL="llama3.2" #gpt-4o-mini o llama3.2
 TEMPERATURE_STORY=0.7
-TEMPERATURE_PDDL_DOMAIN=0.1
+TEMPERATURE_PDDL_DOMAIN=0
 TEMPERATURE_PDDL_PROBLEM=0
 
 FASTDOWNWARD_PATH = "../downward"  
@@ -371,7 +371,7 @@ def get_model(temp:float):
     Restituisce il modello da utilizzare per la generazione della storia e del PDDL.
     """
     print(f"> Utilizzo il modello {MODEL} con temperatura {temp}\n")
-    if MODEL == "gpt-4o-mini":
+    if MODEL == "gpt-4.1-mini":
         return ChatOpenAI(model=MODEL, temperature=temp, openai_api_key=OPENAI_API_KEY)
     else:
         return ChatOllama(model=MODEL, temperature=temp)
@@ -438,7 +438,7 @@ def GeneraStoria_node(state: QuestMasterState):
         ✓ All obstacles from lore are incorporated
         ✓ Story is complete with all paths written
 
-        Generate the COMPLETE story structure now."""),
+        Generate the COMPLETE story structure now and do not insert the validation checklist at the end."""),
     ("user", "Lore Document: {lore_text}\nGenerate the complete structured interactive story respecting ALL constraints.")])
     
     print("2# LLM invocato per la creazione della storia \n")
@@ -580,12 +580,12 @@ def validate_with_downward(
         problem_file:str = PROBLEM_PDDL_PATH,
         downward_path:str = FASTDOWNWARD_PATH):
     """
-       Valido i file PDDL utilizzando Fast Downward.
-       Args:
+        Valido i file PDDL utilizzando Fast Downward.
+        Args:
             domain_file (str): Percorso al file PDDL del dominio.
             problem_file (str): Percorso al file PDDL del problema.
             downward_path (str): Percorso alla cartella di Fast Downward.
-       Returns:
+        Returns:
             bool: True se i file sono validi, False altrimenti.
             str: Log della validazione.
     """
@@ -594,8 +594,7 @@ def validate_with_downward(
         "python3", os.path.join(downward_path, "fast-downward.py"),
         domain_file,
         problem_file,
-        "--search", 
-        "astar(blind())"
+        "--search astar(blind())"
     ]
     try:
         """result = subprocess.run(
@@ -838,9 +837,10 @@ builder.add_node("validate_pddl", ValidatePDDL_node)
 builder.add_edge(START, "carica_lore")
 builder.add_edge("carica_lore", "genera_storia")
 #builder.add_edge("genera_storia", "genera_pddl")
+
 builder.add_edge("genera_storia", "genera_domain_pddl")
 builder.add_edge("genera_domain_pddl", "genera_problem_pddl")
-builder.add_edge("genera_problem_pddl", "validate_pddl")
+#builder.add_edge("genera_problem_pddl", "validate_pddl")
 
 
 #builder.add_edge("genera_pddl", "validate_pddl")
@@ -874,13 +874,13 @@ print("Costruzione del grafo avvenuta con successo")
 def select_model():
     print("=== Seleziona il Modello ===")
     print("1 - llama3.2")
-    print("2 - gpt-4o-mini")
+    print("2 - gpt-4.1-mini")
     choice = input("> Inserisci il numero del modello da utilizzare (1 o 2): ")
 
     if choice == "1":
         return "llama3.2"
     elif choice == "2":
-        return "gpt-4o-mini"
+        return "gpt-4.1-mini"
     else:
         print("Scelta non valida. Verrà utilizzato il modello di default: llama3.2")
         return "llama3.2"
