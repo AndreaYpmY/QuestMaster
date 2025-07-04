@@ -1,0 +1,7 @@
+(journey-to-whispering-forest hero dawnmere whispering-forest)
+(approach-forest-spirit hero forest-spirit whispering-forest)
+(find-hidden-path-to-temple hero whispering-forest temple-entrance)
+(enter-temple-with-key hero temple-entrance temple-inner)
+(fight-dark-warden hero dark-warden temple-inner)
+(take-crystal-and-return hero temple-inner dawnmere)
+; cost = 6 (unit cost)

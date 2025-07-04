@@ -17,6 +17,7 @@ from langgraph.graph.message import add_messages
 from langgraph.prebuilt import ToolNode, tools_condition
 from langgraph.types import Command, interrupt
 from typing_extensions import TypedDict
+from langchain_core.tools import tool
 
 
 
@@ -28,7 +29,7 @@ MODEL="llama3.2" #gpt-4o-mini o llama3.2
 TEMPERATURE_STORY=0.6
 TEMPERATURE_PDDL_DOMAIN=0
 TEMPERATURE_PDDL_PROBLEM=0
-TEMPERATURE_PDDL_REFLECTION=0.1
+TEMPERATURE_PDDL_REFLECTION=0
 
 FASTDOWNWARD_PATH = "../downward"  
 LORE_DOCUMENT_PATH = "lore_document.txt"  
@@ -365,6 +366,10 @@ class QuestMasterState(TypedDict):
     story: str
     domain_pddl: str
     problem_pddl: str
+    is_valid: bool
+    log: str
+    suggestion: list
+    acepted_suggestion: list
 
 def get_model(temp:float):
     """
@@ -455,9 +460,10 @@ def GeneraStoria_node(state: QuestMasterState):
 def GeneraPDDLdomain_node(state: QuestMasterState):
     
     llm = get_model(TEMPERATURE_PDDL_DOMAIN)
+    
 
     prompt = ChatPromptTemplate.from_messages([("system", f"""You are an expert PDDL domain generator for the QuestMaster interactive story system.
-                
+                    
                 Generate a complete and valid PDDL domain file from the given interactive story.
                 
                 CRITICAL REQUIREMENTS:
@@ -467,7 +473,7 @@ def GeneraPDDLdomain_node(state: QuestMasterState):
                 4. Ensure actions have proper preconditions and effects
                 5. Include object types for characters, items, locations
                 6. Make sure the domain supports the narrative flow
-                
+                    
                 Standard PDDL structure to follow:
                 (define (domain quest-domain)
                     (:requirements :strips :typing :negative-preconditions)
@@ -494,9 +500,11 @@ def GeneraPDDLdomain_node(state: QuestMasterState):
                 Return ONLY the PDDL domain code, which begins with "(define (domain...", no other text.""" ), 
                 MessagesPlaceholder(variable_name="examples"),
                 ("user", "Interactive Story: {story_text}\n\nGenerate the corresponding PDDL domain file with detailed comments.")])
-    
+        
     formatted_prompt = prompt.invoke({"examples": [msg for example in example_messages_domain for msg in example],
                                     "story_text": state["story"]})
+    
+
     
     print("3A# LLM per generare il PDDL domain invocato \n")
     response_llm = llm.invoke(formatted_prompt)
@@ -516,51 +524,53 @@ def GeneraPDDLproblem_node(state: QuestMasterState):
     
     llm= get_model(TEMPERATURE_PDDL_PROBLEM)
 
+    
     prompt = ChatPromptTemplate.from_messages([("system", f"""You are an expert PDDL problem generator for the QuestMaster system.
                 
-                Generate a complete PDDL problem file that corresponds to the given story and domain.
+            Generate a complete PDDL problem file that corresponds to the given story and domain.
+            
+            CRITICAL REQUIREMENTS:
+            1. Each line must have a comment explaining what it does
+            2. Define ALL objects mentioned in the story (characters, items, locations)
+            3. Set up initial state that matches the story's beginning
+            4. Define goal state that matches the story's objective
+            5. Ensure consistency with the provided domain file
+            6. Use proper PDDL syntax and typing
                 
-                CRITICAL REQUIREMENTS:
-                1. Each line must have a comment explaining what it does
-                2. Define ALL objects mentioned in the story (characters, items, locations)
-                3. Set up initial state that matches the story's beginning
-                4. Define goal state that matches the story's objective
-                5. Ensure consistency with the provided domain file
-                6. Use proper PDDL syntax and typing
-                
-                Standard PDDL problem structure:
-                (define (problem quest-problem)
-                    (:domain quest-domain)
-                (:objects
-                    ; Define all story objects with their types
-                    player - character ; The main character
-                    location1 location2 - location ; Story locations
-                    key sword - item ; Story items
-                    )
-                (:init
-                    ; Initial world state - where story begins
-                    (at player location1) ; Player starts here
-                    (at key location2) ; Key is here
-                    ; ... more initial conditions
-                    )
-                (:goal
-                    ; Goal condition - what needs to be achieved
-                    (and
-                    (goal-achieved) ; Story objective completed
-                    ; ... other goal conditions
-                    )
+            Standard PDDL problem structure:
+            (define (problem quest-problem)
+                (:domain quest-domain)
+            (:objects
+                ; Define all story objects with their types
+                player - character ; The main character
+                location1 location2 - location ; Story locations
+                key sword - item ; Story items
+                )
+            (:init
+                ; Initial world state - where story begins
+                (at player location1) ; Player starts here
+                (at key location2) ; Key is here
+                ; ... more initial conditions
+                )
+            (:goal
+                ; Goal condition - what needs to be achieved
+                (and
+                (goal-achieved) ; Story objective completed
+                ; ... other goal conditions
                 )
             )
+        )
                 
-                The problem MUST be solvable by a classical planner given the domain.
-                Return ONLY the PDDL problem code, which begins with "(define (problem...", no other text.""" ), 
-                MessagesPlaceholder(variable_name="examples"),
-                ("user", "Story: {story_text}\n\nDomain PDDL: {domain_pddl}\n\nGenerate the corresponding PDDL problem file with detailed comments.")])
+            The problem MUST be solvable by a classical planner given the domain.
+            Return ONLY the PDDL problem code, which begins with "(define (problem...", no other text.""" ), 
+            MessagesPlaceholder(variable_name="examples"),
+            ("user", "Story: {story_text}\n\nDomain PDDL: {domain_pddl}\n\nGenerate the corresponding PDDL problem file with detailed comments.")])
     
     formatted_prompt = prompt.invoke({"domain_pddl": state["domain_pddl"],
-                                    "examples": [msg for example in example_messages_problem for msg in example],
-                                    "story_text": state["story"]})
+                                "examples": [msg for example in example_messages_problem for msg in example],
+                                "story_text": state["story"]})
     
+
     print("3B# LLM per generare il PDDL problem invocato \n")
     response_llm = llm.invoke(formatted_prompt)
     problem_pddl = response_llm.content.strip()
@@ -572,6 +582,7 @@ def GeneraPDDLproblem_node(state: QuestMasterState):
     problem_file.close()
 
     return {"problem_pddl": problem_pddl}
+
 
 
 def validate_with_downward(
@@ -588,12 +599,12 @@ def validate_with_downward(
             bool: True se i file sono validi, False altrimenti.
             str: Log della validazione.
     """
-    print("4# Validazione PDDL con Fast Downward...")
+    print("4# Validazione PDDL con Fast Downward... \n")
     command = [
         "python3", os.path.join(downward_path, "fast-downward.py"),
         domain_file,
         problem_file,
-        "--search 'astar(blind())'"
+        "--search", "astar(blind())"
     ]
     try:
         """result = subprocess.run(
@@ -635,7 +646,7 @@ def validate_with_downward(
     
 def ValidatePDDL_node(state: QuestMasterState):
     is_valid, log = validate_with_downward()
-    print(f"4# Validazione PDDL completata: {is_valid}, log: {log}")
+    print(f"4# Validazione PDDL completata: {is_valid}, log: {log} \n")
     return {"is_valid": is_valid, "log": log}
     
 
@@ -646,11 +657,10 @@ def reflection_node(state: QuestMasterState):
     llm= get_model(TEMPERATURE_PDDL_REFLECTION)
 
     prompt = ChatPromptTemplate.from_messages([("system", f"""You are a PDDL expert and logical reasoning agent.
-            Analyze the PDDL files which you can found at the end, to validate and reflect on these files to detect issues, logical inconsistencies, narrative gaps and suggest improvements.
+            Analyze the PDDL files which you can found at the end, and reflect on these files to detect issues, logical inconsistencies, narrative gaps and suggest improvements.
                                                 
             Follow these steps carefully:
-
-                1. Syntax validation:
+                1. Make syntax validation:
                     Check whether the two files are SYNTACTICALLY CORRECT:
                         - The domain.pddl file must correctly define:
                             - (define (domain ...))
@@ -658,44 +668,32 @@ def reflection_node(state: QuestMasterState):
                         - The problem.pddl file must include:
                             - (define (problem ...))
                             - (domain ...), :objects, :init, :goal, etc.
-                    - Report any errors such as:
-                    - Missing parentheses
-                    - Undeclared or mismatched names
-                    - Invalid PDDL constructs
+                        - Missing parentheses
+                        - Undeclared or mismatched names
+                        - Invalid PDDL constructs
 
-                2. Semantic validation:
+                2. Make semantic validation:
                     If syntax is valid, analyze whether the GOAL IS LOGICALLY ACHIEVABLE:
                         - Is the goal state reachable based on the initial state and available actions?
                         - Are the objects, predicates, and actions in the domain properly used to progress toward the goal?
                         - Are there missing actions or predicates that prevent reaching the goal?
 
-                3. Structured output
-                    Provide a structured report with a bullet list of problems followed by the possible fixes, separated by type:
-                        Syntax Errors:
-                            - [ ] Briefly describe each syntax error (e.g., "Missing closing parenthesis in `:action move`").
-                            - [ ] Suggest a fix for each issue.
-                        Semantic / Logical Errors:
+                3. Generate a structured output
+                    Provide a structured report with a bullet list of problems followed by the possible fixes, separated by type and separate each output with "---"
+                            - [ ] Briefly describe each syntax error (e.g., "Missing closing parenthesis in `:action move`") and suggest a fix for each issue.
                             - [ ] If the planner cannot reach the goal, explain why (e.g., There is no action that makes door-open true) and suggest changes to the domain or problem to make the goal achievable.
-
-            Example of expected output:
-                syntactic_errors:
-                    - missing_parenthesis: "Missing closing parenthesis on line 23"
-                    - undeclared_predicate: "Predicate 'at' is used but not declared in :predicates"
-
-                semantic_issues:
-                    - unreachable_goal: "No action makes the goal (at robot room2) achievable. Suggestion: "Add a 'move' action with precondition (at ?r ?from) and effect (not (at ?r ?from)) (at ?r ?to)"
-
-            recommendations:
-                - Declare all predicates that are used in the actions and goal.
-                - Ensure each action contributes to a state progression toward the goal.
+            
+            Return ONLY the bullet list of problems followed by the possible fixes and separate each output with "---", no other text.
+            Return at max the 10 most important problems.
                                                 
-        Use this output to correct all detected problems, including syntax errors and logical inconsistencies, so that:
-            - The PDDL syntax is fully valid.
-            - The problem is solvable: the goal is reachable from the initial state using the defined actions.
-        Modify the domain and problem files accordingly to fix these issues.
-        Focus on preserving the original structure and content as much as possible, making minimal necessary changes for correctness and solvability.
-        Return ONLY the corrected PDDL domain and problem, clearly SEPARATED FROM: "------", with no extra text or explanation at the begin or end."""),
-            ("user", "Please analyze the following PDDL domain and problem files and make sure they are syntactically and semantically correct and regenerate the domain and problem PDDL. Domain PDDL: {domain_pddl} \n Problem PDDL: {problem_pddl}")])
+            Example of expected output:
+                    - PROBLEM: "Missing closing parenthesis on line 23"; SUGGESTION: "close the parenthesis on line 23"; ---
+                    - PROBLEM: "Predicate 'at' is used but not declared in :predicates"; SUGGESTION: "Declare the predicate 'at' in :predicates"; ---
+                    - PROBLEM: "No action makes the goal (at robot room2) achievable; SUGGESTION: "Add a 'move' action with precondition (at ?r ?from) and effect (not (at ?r ?from)) (at ?r ?to)"; ---
+            """),
+            
+            
+            ("user", "Please analyze the following PDDL domain and problem files and suggest changes to fix the syntax and logical errors, so that the PDDL is solvable by a classical planner. Domain PDDL: {domain_pddl} \n Problem PDDL: {problem_pddl}")])
     
     formatted_prompt = prompt.invoke({"domain_pddl": state["domain_pddl"], "problem_pddl": state["problem_pddl"]})
     
@@ -703,14 +701,59 @@ def reflection_node(state: QuestMasterState):
     response_llm = llm.invoke(formatted_prompt)
     response = response_llm.content.strip()
 
-    print("4A# Risposta: ", response)
+    try:
+        suggestion = response.split("---")
+        del suggestion[-1]
+        return {"suggestion": suggestion}
+    except Exception as e:
+        return f"4# Errore nella ricezione dei suggerimenti. Separatore non corretti: {e}"
+
+
+
+def human_in_the_loop_node(state: QuestMasterState):
+    print("5# Proposte di modifica: \n")
+    
+    suggestion = state["suggestion"]
+    accepted_suggestion = []
+    for s in suggestion:
+        print("> " + s + "\n")
+        u_input = input("Vuoi accettare questa modifica? (y/n): ")
+        if u_input == "y":
+            accepted_suggestion.append(s)
+            
+    return {"acepted_suggestion": accepted_suggestion}
+
+
+
+def fix_pddl_node(state: QuestMasterState):
+    print("6# Correzione PDDL tramite i suggerimenti \n")
+
+    llm= get_model(TEMPERATURE_PDDL_REFLECTION)
+
+    prompt = ChatPromptTemplate.from_messages([("system", f"""You are a PDDL expert generator agent.
+                Modify the domain and problem PDDLs accordingly to fix these issues, focus on preserving the original structure and content as much as possible, making minimal necessary changes for correctness and solvability.
+                Use the suggestions to correct all detected problems, including syntax errors and logical inconsistencies, so that:
+                    - The PDDL syntax is fully valid.
+                    - The problem is solvable: the goal is reachable from the initial state using the defined actions.                        
+                        
+                Return ONLY the PDDL domain and problem, no other text at begin or end of the PDDL for each one.
+                Return first the PDDL domain and then the PDDL problem.
+                Separate the PDDLs by "---OTHER---"."""),
+            ("user", "Applay the following suggestion: {suggestion} to the PDDL domain and problem files, in ordert to correct the issue and make the PDDLs solvable by a classical planner. Separate the PDDLs by \"---OTHER---\" \n Domain PDDL: {domain_pddl} \n Problem PDDL: {problem_pddl}")])
+    
+    formatted_prompt = prompt.invoke({"domain_pddl": state["domain_pddl"], "problem_pddl": state["problem_pddl"], "suggestion": state["acepted_suggestion"]})
+    
+    print("6A# Generazione nuovi PDDL \n")
+    response_llm = llm.invoke(formatted_prompt)
+    response = response_llm.content.strip()
+
+    print("Nuovi PDDL: " + response + "\n")
 
     try:
-        # Splitta domain e problem PDDL
-        if "------" in response:
-            domain_pddl, problem_pddl = response.split("------", 1)
-            
-            print("4B# Problem: ", problem_pddl, "\n Domain: ", domain_pddl, "\n")
+        if "---OTHER---" in response:
+            domain_pddl, problem_pddl = response.split("---OTHER---", 1)
+                
+            print("6B# Problem: ", problem_pddl, "\n 6C# Domain: ", domain_pddl, "\n")
 
             problem_file = open("problem.pddl", "w")
             problem_file.write(problem_pddl)
@@ -720,22 +763,31 @@ def reflection_node(state: QuestMasterState):
             domain_file = open("domain.pddl", "w")
             domain_file.write(domain_pddl)
             domain_file.close()
+
+            return {"domain_pddl": domain_pddl.strip(), "problem_pddl": problem_pddl.strip()}
         else:
-            # fallback
             raise Exception("3# Splitting non avvenuto con successo. '------' non era presente")
-        return {"domain_pddl": domain_pddl.strip(), "problem_pddl": problem_pddl.strip()}
     except Exception as e:
         return f"3# Errore nella generazione dei PDDL: {e}"
 
 
-"""
-# --- Chat-based approval (simulato) ---
-def ask_author_fn(context):
-    print("\nSuggerimento del sistema:", context["suggestion"])
-    return {"status": "approved"}  # Stub: Simula l'approvazione automatica
+def carica_pddl_node(state: QuestMasterState):
+    domain_pddl =""
+    problem_pddl =""
 
+    with open("domain.pddl", 'r') as f:
+            print("1# Domain PDDL aperto con successo \n")
+            domain_pddl = f.read()
+            f.close()
 
-    
+    with open("problem.pddl", 'r') as f:
+            print("1# Problem PDDL aperto con successo \n")
+            problem_pddl = f.read()
+            f.close()
+
+    return {"domain_pddl": domain_pddl.strip(), "problem_pddl": problem_pddl.strip()}
+
+""" 
 def GeneraPDDL_node(state: QuestMasterState):
     llm = ChatOllama(model=MODEL, temperature=0.1)
     prompt = ChatPromptTemplate.from_messages([("system", fYou are a skilled PDDL problem and domain generator.
@@ -784,7 +836,6 @@ def GeneraPDDL_node(state: QuestMasterState):
 
 
 
-
 # --- Costruzione del Grafo ---
 builder = StateGraph(QuestMasterState)
 
@@ -808,22 +859,28 @@ builder.add_node("validate_pddl", ValidatePDDL_node)
 
 # 5. Pattern reflection per aggiustare il PDDL
 builder.add_node("reflect", reflection_node)
-#builder.add_node("ask_author", ask_author_fn)
+builder.add_node("human", human_in_the_loop_node)
+builder.add_node("fix", fix_pddl_node)
+
+
+#Prova per partire con il programma dalla reflection
+builder.add_node("prova_dopo", carica_pddl_node)
+
 
 
 # --- Collegamento dei nodi ---
-builder.add_edge(START, "carica_lore")
-builder.add_edge("carica_lore", "genera_storia")
-
-#builder.add_edge("genera_storia", "genera_pddl")
-
-builder.add_edge("genera_storia", "genera_domain_pddl")
-builder.add_edge("genera_domain_pddl", "genera_problem_pddl")
-builder.add_edge("genera_problem_pddl", "validate_pddl")
+#builder.add_edge(START, "carica_lore")
+#builder.add_edge("carica_lore", "genera_storia")
 
 
-#builder.add_edge("genera_pddl", "validate_pddl")
+#builder.add_edge("genera_storia", "genera_domain_pddl")
+#builder.add_edge("genera_domain_pddl", "genera_problem_pddl")
+#builder.add_edge("genera_problem_pddl", "validate_pddl")
 
+
+
+builder.add_edge(START, "prova_dopo")
+builder.add_edge("prova_dopo", "validate_pddl")
 
 builder.add_conditional_edges("validate_pddl", 
     lambda x: "valid" if x["is_valid"] else "invalid",
@@ -833,18 +890,12 @@ builder.add_conditional_edges("validate_pddl",
     }
 )
 
-builder.add_edge("reflect", "validate_pddl")
+builder.add_edge("reflect", "human")
+builder.add_edge("human", "fix")
+builder.add_edge("fix", "validate_pddl")
 
-#builder.add_edge("reflect", "ask_author")
-"""builder.add_conditional_edges("ask_author", 
-    lambda x: x["status"],
-    {
-        "approved": "generate_pddl",
-        "modified": "update_lore"
-    }
-)"""
 
-#builder.add_edge("update_lore", "generate_pddl")
+
 
 
 # --- Compila il grafo ---
@@ -860,6 +911,7 @@ def select_model():
 
     if choice == "1":
         return "llama3.2"
+        #return "deepseek-r1:14b"
     elif choice == "2":
         return "gpt-4.1-mini"
     else:
