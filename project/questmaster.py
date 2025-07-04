@@ -30,11 +30,14 @@ TEMPERATURE_STORY=0.6
 TEMPERATURE_PDDL_DOMAIN=0
 TEMPERATURE_PDDL_PROBLEM=0
 TEMPERATURE_PDDL_REFLECTION=0
+TEMPERATURE_HTML=0
 
 FASTDOWNWARD_PATH = "../downward"  
 LORE_DOCUMENT_PATH = "lore_document.txt"  
 DOMAIN_PDDL_PATH = "domain.pddl" 
 PROBLEM_PDDL_PATH = "problem.pddl" 
+STORY_PATH = "storia.txt"
+PLAN_PATH = "sas_plan"
 
 OPENAI_API_KEY = os.getenv("OPENAI_API_KEY")
 # ---------------------
@@ -364,6 +367,7 @@ class QuestMasterState(TypedDict):
     file_path: str
     lore: str
     story: str
+    is_valid_story: bool
     domain_pddl: str
     problem_pddl: str
     is_valid: bool
@@ -442,8 +446,9 @@ def GeneraStoria_node(state: QuestMasterState):
         ✓ Actions have clear preconditions and effects
         ✓ All obstacles from lore are incorporated
         ✓ Story is complete with all paths written
+        If is impossible to create the story with the given lore document and respect the constraints, returns ONLY the word "IMPOSSIBLE".
 
-        Generate the COMPLETE story structure now and do not insert the validation checklist at the end."""),
+        Generate the COMPLETE story structure now and do not insert the validation checklist or summary at the end."""),
     ("user", "Lore Document: {lore_text}\nGenerate the complete structured interactive story respecting ALL constraints.")])
     
     print("2# LLM invocato per la creazione della storia \n")
@@ -452,9 +457,115 @@ def GeneraStoria_node(state: QuestMasterState):
     response = response_llm.content
 
     print("--- 2# ---\n "+response)
-    return{"story": response}
 
+    if response == "IMPOSSIBLE" or "IMPOSSIBLE" in response:
+        return {"is_valid_story": False}
+    else:
+        storia_file = open(STORY_PATH, "w")
+        storia_file.write(response)
+        storia_file.close()
+        return{"story": response, "is_valid_story": True}
+
+
+def modifica_lore_node(state: QuestMasterState):
+    llm= get_model(TEMPERATURE_PDDL_REFLECTION)
+
+    prompt = ChatPromptTemplate.from_messages([("system", f"""You are an expert narrative engine that creates structured interactive storie and logical reasoning agent.
+            Analyze the lore document which you can found at the end, and reflect on these file to detect problems.
+            Suggest improvements that can help to reach the following goals:
+                ✓ Story starts with exact initial state from lore
+                ✓ Goal state is reachable within depth constraints
+                ✓ Each section has branching factor within min/max range
+                ✓ Actions have clear preconditions and effects
+                ✓ All obstacles from lore are incorporated
+                ✓ Story is complete with all paths written
+                                                
+            Provide a structured report with a bullet list of problems followed by the possible fixes and separate each output with "---"
+            Return ONLY the bullet list of problems followed by the possible fixes and separate each output with "---", no other text.
+            Return at max the 3 most important problems.
+                                                
+            Example of expected output:
+                    - PROBLEM: "Impossible to respect the depth constraints"; SUGGESTION: "Change the min depth constraint to x and the max depth constraint to y"; ---
+                    - PROBLEM: "Impossible to respect the branching factor"; SUGGESTION: "Change the min branching factor to x and the max branching factor to y"; ---
+                    - PROBLEM: "Goal state is not reachable within depth constraints"; SUGGESTION: "Add 1 to the max depth constraint"; ---"""),
+            
+            
+            ("user", "Please analyze the following lore document and suggest changes to fix the problems and permit to create a narrative story. \n Lore document: {lore}")])
     
+    formatted_prompt = prompt.invoke({"lore": state["lore"]})
+    
+    print("# LLM per riflettere sul lore e correggerlo \n")
+    response_llm = llm.invoke(formatted_prompt)
+    response = response_llm.content.strip()
+
+    try:
+        suggestion = response.split("---")
+        del suggestion[-1]
+    except Exception as e:
+        return f"4# Errore nella ricezione dei suggerimenti. Separatore non corretti: {e}"
+    
+    accepted_suggestion = []
+    for s in suggestion:
+        print("> " + s + "\n")
+        u_input = input("Vuoi accettare questa modifica? (y/n): ")
+        if u_input == "y":
+            accepted_suggestion.append(s)
+    
+    prompt2 = ChatPromptTemplate.from_messages([("system", f"""You are an expert in create lore document to creare narrative stories.
+            Analyze the lore document which you can found at the end and modify it by the suggestions.
+            Making minimal necessary changes for correctness and solvability, USING ONLY the suggestions given
+            Focus on preserving the original structure and content as much as possible.
+            Return ONLY the lore document text, NO OTHER TEXT."""), 
+            
+            ("user", "Please modify the following lore document to permit to create a narrative story, using the following succestions: {s}. \n Lore document: {lore}")])
+    
+    formatted_prompt2 = prompt2.invoke({"lore": state["lore"], "s": accepted_suggestion})
+    print("# LLM per correggere lore \n")
+    response_llm = llm.invoke(formatted_prompt2)
+    response = response_llm.content.strip()
+
+    print(response + "\n")
+
+    lore_file = open(LORE_DOCUMENT_PATH, "w")
+    lore_file.write(response)
+    lore_file.close()
+
+    return {"lore": response}
+
+"""
+Example of structure of the expected output:
+                # Quest Description
+                Commander Elara Quinn leads a mission aboard the Starship Echo to investigate a silent research station orbiting Virella-7. Once inside, she finds the power down, doors sealed, and signs of something unknown lurking within. Her goal: reactivate the station, retrieve alien research data, and make it out alive.
+
+                Initial State:
+                -The Echo is docked to the station.
+                -All doors are sealed.
+                -Power is critically low.
+                -Reactor is offline.
+                -Alien artifact is contained in Lab 3.
+                -Only Elara is inside the station at the start.
+
+                Goal:
+                -The main reactor is reactivated.
+                -The alien artifact is analyzed.
+                -The research data is extracted.
+                -Elara returns safely to the ship.
+
+                Obstacles:
+                -Sealed or damaged doors requiring power reroutes or manual override.
+                -Rogue maintenance drones behaving erratically.
+                -Sections of the station depressurized.
+                -Psychological effects from prolonged exposure to the alien artifact.
+                -Sabotaged subsystems from the original crew
+
+                Branching Factor:
+                - Min: 2
+                - Max: 3
+
+                Depth Constraints:
+                - Min: 2
+                - Max: 6    
+"""
 
 # 3A. Genera il PDDL domain
 def GeneraPDDLdomain_node(state: QuestMasterState):
@@ -589,16 +700,7 @@ def validate_with_downward(
         domain_file:str = DOMAIN_PDDL_PATH,
         problem_file:str = PROBLEM_PDDL_PATH,
         downward_path:str = FASTDOWNWARD_PATH):
-    """
-        Valido i file PDDL utilizzando Fast Downward.
-        Args:
-            domain_file (str): Percorso al file PDDL del dominio.
-            problem_file (str): Percorso al file PDDL del problema.
-            downward_path (str): Percorso alla cartella di Fast Downward.
-        Returns:
-            bool: True se i file sono validi, False altrimenti.
-            str: Log della validazione.
-    """
+
     print("4# Validazione PDDL con Fast Downward... \n")
     command = [
         "python3", os.path.join(downward_path, "fast-downward.py"),
@@ -607,24 +709,14 @@ def validate_with_downward(
         "--search", "astar(blind())"
     ]
     try:
-        """result = subprocess.run(
-            command,
-            stdout=subprocess.PIPE,
-            stderr=subprocess.PIPE,
-            universal_newlines=True,
-            timeout=10
-        )"""
         result = subprocess.run(
             command,
             stdout=subprocess.PIPE,
             stderr=subprocess.PIPE,
             universal_newlines=True,
-            timeout=30
+            timeout=100
         )
-
         log_output = result.stdout + "\n" + result.stderr
-
-        
 
         if "Solution found!" in result.stdout or "Plan found" in result.stdout:
             print("✅ Il problema è risolvibile.")
@@ -659,7 +751,7 @@ def reflection_node(state: QuestMasterState):
     prompt = ChatPromptTemplate.from_messages([("system", f"""You are a PDDL expert and logical reasoning agent.
             Analyze the PDDL files which you can found at the end, and reflect on these files to detect issues, logical inconsistencies, narrative gaps and suggest improvements.
                                                 
-            Follow these steps carefully:
+            Follow these steps carefully: 
                 1. Make syntax validation:
                     Check whether the two files are SYNTACTICALLY CORRECT:
                         - The domain.pddl file must correctly define:
@@ -833,6 +925,57 @@ def GeneraPDDL_node(state: QuestMasterState):
 
 
 
+def generate_HTML_node(state: QuestMasterState):
+    lore = problem_pddl = domain_pddl = story = plan = ""
+
+    with open(LORE_DOCUMENT_PATH, 'r') as f:
+        print("# Lore document aperto con successo \n")
+        lore = f.read()
+    with open(DOMAIN_PDDL_PATH, 'r') as f:
+        print("# Domain PDDL aperto con successo \n")
+        domain_pddl = f.read()
+    with open(PROBLEM_PDDL_PATH, 'r') as f:
+        print("# PROBLEM PDDL aperto con successo \n")
+        problem_pddl = f.read()
+    with open(STORY_PATH, 'r') as f:
+        print("# Storia aperto con successo \n")
+        story = f.read()
+    with open(PLAN_PATH, 'r') as f:
+        print("# Plan aperto con successo \n")
+        plan = f.read()
+
+
+    print("7# Generazione HTML \n")
+
+    llm= get_model(TEMPERATURE_HTML)
+
+    prompt = ChatPromptTemplate.from_messages([("system", f"""You are a narrative game engine and HTML, CSS and Javascript expert generator agent that generates fully playable interactive HTML adventure games.
+            Your output must be a complete, valid, and self-contained HTML file playable in any modern web browser.
+            The story is a sci-fi interactive quest based on a lore document, story text, PDDL domain and problem files, and a sequence of plan steps.
+            You must produce:
+                - Clear narrative with dialogues scenes for each step that describe the state using the story
+                - Interactive buttons to progress through the story. If there are multiple choise, add a button for each choise and cosider the followed path
+                - A starting page with lore and a "Start Game" button
+                - A final scene with a "Play Again" button to restart
+            Use only HTML, CSS, and JavaScript; no external libraries or dependencies.
+            The style should be minimalist with a dark theme and readable fonts.
+            Return ONLY the complete HTML document; no explanations or extra text."""),
+            ("user", "Here is the Lore document describing the story world and quest:{lore} \n Here is the story describing the narrative: {story} \n Here is the PDDL Domain file: {domain} \n Here is the PDDL Problem file: {problem} \n Here is the ordered list of plan steps generated by the classical planner: {plan}." +
+            "Please generate the FULL interactive HTML game, playable entirely in the frontend, with CSS and Javascript.")])
+    
+    formatted_prompt = prompt.invoke({"lore": lore, "story": story, "domain": domain_pddl, "problem": problem_pddl, "plan": plan})
+    
+
+    response_llm = llm.invoke(formatted_prompt)
+    response = response_llm.content.strip()
+
+    print("HTML generato: " + response + "\n")
+
+    template = open("gioco.html", "w")
+    template.write(response)
+    template.close()
+
+    return {"HTML": response}
 
 
 
@@ -846,6 +989,7 @@ builder.add_node("carica_lore", CaricaLore_node)
 
 # 2. Genera la storia
 builder.add_node("genera_storia", GeneraStoria_node)
+builder.add_node("invalid_story", modifica_lore_node)
 
 
 # 3. Genera i file PDDL
@@ -864,37 +1008,52 @@ builder.add_node("fix", fix_pddl_node)
 
 
 #Prova per partire con il programma dalla reflection
-builder.add_node("prova_dopo", carica_pddl_node)
+#builder.add_node("prova_dopo", carica_pddl_node)
+
+
+#6. Generazione HTML
+builder.add_node("genera_HTML", generate_HTML_node)
+
 
 
 
 # --- Collegamento dei nodi ---
-#builder.add_edge(START, "carica_lore")
+builder.add_edge(START, "carica_lore")
 #builder.add_edge("carica_lore", "genera_storia")
 
-
-#builder.add_edge("genera_storia", "genera_domain_pddl")
+"""
+builder.add_conditional_edges("genera_storia",
+    lambda x: "valid" if x["is_valid_story"] else "invalid",
+    {
+        "valid": "genera_domain_pddl",
+        "invalid": "invalid_story"
+    })
+"""
+    
+#builder.add_edge("invalid_story", "genera_storia")
 #builder.add_edge("genera_domain_pddl", "genera_problem_pddl")
 #builder.add_edge("genera_problem_pddl", "validate_pddl")
 
 
 
-builder.add_edge(START, "prova_dopo")
-builder.add_edge("prova_dopo", "validate_pddl")
+#builder.add_edge(START, "prova_dopo")
+#builder.add_edge("prova_dopo", "validate_pddl")
 
+"""
 builder.add_conditional_edges("validate_pddl", 
     lambda x: "valid" if x["is_valid"] else "invalid",
     {
         "valid": END,
         "invalid": "reflect"
-    }
-)
+    })
+"""
 
-builder.add_edge("reflect", "human")
-builder.add_edge("human", "fix")
-builder.add_edge("fix", "validate_pddl")
+#builder.add_edge("reflect", "human")
+#builder.add_edge("human", "fix")
+#builder.add_edge("fix", "validate_pddl")
 
-
+builder.add_edge("carica_lore", "genera_HTML")
+builder.add_edge("genera_HTML", END)
 
 
 

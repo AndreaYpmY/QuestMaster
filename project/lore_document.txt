@@ -15,9 +15,9 @@ Obstacles:
 - The key is held by a forest spirit who only helps the worthy
 
 Branching Factor:
-- Min: 2
+- Min: 1
 - Max: 3
 
 Depth Constraints:
 - Min: 2
-- Max: 4
+- Max: 6

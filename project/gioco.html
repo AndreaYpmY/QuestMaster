@@ -1,0 +1,399 @@
+```html
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Crystal of Light - Eldoria Quest</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Roboto+Mono&display=swap');
+  html, body {
+    margin: 0; padding: 0; height: 100%;
+    background-color: #121212;
+    color: #e0e0e0;
+    font-family: 'Roboto Mono', monospace, monospace;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+  }
+  #game-container {
+    max-width: 720px;
+    width: 90vw;
+    background: #1e1e1e;
+    border-radius: 8px;
+    box-shadow: 0 0 15px #0af;
+    padding: 24px 32px 32px 32px;
+    display: flex;
+    flex-direction: column;
+    min-height: 480px;
+  }
+  h1, h2 {
+    margin-top: 0;
+    color: #0af;
+    user-select: none;
+  }
+  p {
+    line-height: 1.5;
+    margin-bottom: 1.2em;
+  }
+  #text {
+    flex-grow: 1;
+    overflow-y: auto;
+    margin-bottom: 24px;
+    white-space: pre-wrap;
+  }
+  #choices {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 12px;
+  }
+  button {
+    background-color: #0a4d8c;
+    border: none;
+    border-radius: 4px;
+    color: #cce6ff;
+    padding: 12px 20px;
+    font-size: 1rem;
+    cursor: pointer;
+    flex-grow: 1;
+    min-width: 140px;
+    transition: background-color 0.3s ease;
+    user-select: none;
+  }
+  button:hover, button:focus {
+    background-color: #0af;
+    outline: none;
+  }
+  button:active {
+    background-color: #0780d4;
+  }
+  #footer {
+    font-size: 0.8rem;
+    color: #555;
+    text-align: center;
+    margin-top: 12px;
+    user-select: none;
+  }
+  ::-webkit-scrollbar {
+    width: 8px;
+  }
+  ::-webkit-scrollbar-track {
+    background: #1e1e1e;
+  }
+  ::-webkit-scrollbar-thumb {
+    background-color: #0af;
+    border-radius: 4px;
+  }
+</style>
+</head>
+<body>
+<div id="game-container" role="main" aria-live="polite" aria-atomic="true">
+  <h1>Crystal of Light - Eldoria Quest</h1>
+  <div id="text" tabindex="0"></div>
+  <div id="choices"></div>
+  <div id="footer">A minimalist sci-fi fantasy interactive quest</div>
+</div>
+<script>
+(() => {
+  "use strict";
+
+  // Sections keyed by their number
+  const sections = {
+    1: {
+      title: "Village of Dawnmere",
+      narrative: `You stand in the quiet village of Dawnmere. The air is heavy with unease; the Crystal of Light has been stolen, and darkness creeps ever closer. You have no magical key, and the path ahead is uncertain.
+
+Your quest is clear: recover the Crystal of Light and defeat the Dark Warden who guards the Temple of Echoes.
+
+You may begin your journey by leaving the village.`,
+      state: {
+        hero_location: "Dawnmere",
+        crystal_possessed: false,
+        dark_warden_defeated: false,
+        magical_key_possessed: false,
+        temple_accessible: false,
+        forest_spirit_helped: false,
+      },
+      choices: [
+        {
+          text: "Travel to the Whispering Forest",
+          next: 2,
+          description: "You leave Dawnmere and enter the mysterious Whispering Forest seeking the magical key.",
+        },
+      ],
+    },
+    2: {
+      title: "Whispering Forest",
+      narrative: `The Whispering Forest surrounds you with ancient trees whose leaves murmur secrets. Somewhere here dwells a forest spirit who holds the magical key you need to enter the temple.
+
+You can try to find and prove your worth to the spirit, or search the forest for other clues.`,
+      state: {
+        hero_location: "Whispering Forest",
+        crystal_possessed: false,
+        dark_warden_defeated: false,
+        magical_key_possessed: false,
+        temple_accessible: false,
+        forest_spirit_helped: false,
+      },
+      choices: [
+        {
+          text: "Seek out the forest spirit and prove worthiness",
+          next: 3,
+          description: "You attempt to convince the forest spirit to grant you the magical key.",
+        },
+        {
+          text: "Search the forest for other clues",
+          next: 4,
+          description: "You look around for other ways to find the key or help.",
+        },
+      ],
+    },
+    3: {
+      title: "Forest Spirit Encounter",
+      narrative: `You find the ethereal forest spirit shimmering between the ancient oaks. You speak with honesty and courage, proving your worthiness.
+
+The spirit smiles and grants you the magical key, a glowing shard pulsating with power.
+
+With the key in hand, the path to the Temple of Echoes is now open.`,
+      state: {
+        hero_location: "Whispering Forest",
+        crystal_possessed: false,
+        dark_warden_defeated: false,
+        magical_key_possessed: true,
+        temple_accessible: false,
+        forest_spirit_helped: true,
+      },
+      choices: [
+        {
+          text: "Travel to the Temple of Echoes",
+          next: 5,
+          description: "You use the magical key to approach the temple.",
+        },
+      ],
+    },
+    4: {
+      title: "Searching the Forest",
+      narrative: `You scour the forest floor and peer into shadowed groves, but find no sign of the magical key. Time passes, and the forest's whispers grow faint.
+
+Perhaps you should reconsider your approach.`,
+      state: {
+        hero_location: "Whispering Forest",
+        crystal_possessed: false,
+        dark_warden_defeated: false,
+        magical_key_possessed: false,
+        temple_accessible: false,
+        forest_spirit_helped: false,
+      },
+      choices: [
+        {
+          text: "Return to the village to reconsider approach",
+          next: 1,
+          description: "You go back to Dawnmere to plan your next move.",
+        },
+        {
+          text: "Attempt to find the forest spirit again",
+          next: 3,
+          description: "You try once more to find and convince the forest spirit.",
+        },
+      ],
+    },
+    5: {
+      title: "Temple of Echoes - Outside",
+      narrative: `You arrive at the towering gates of the Temple of Echoes. The magical key pulses in your hand, ready to unlock the ancient door.
+
+The temple awaits within, guarded by the Dark Warden.`,
+      state: {
+        hero_location: "Temple of Echoes (outside)",
+        crystal_possessed: false,
+        dark_warden_defeated: false,
+        magical_key_possessed: true,
+        temple_accessible: true,
+        forest_spirit_helped: true,
+      },
+      choices: [
+        {
+          text: "Use the magical key to enter the temple",
+          next: 6,
+          description: "You unlock the temple door and step inside.",
+        },
+      ],
+    },
+    6: {
+      title: "Temple of Echoes - Inside",
+      narrative: `Inside the temple, shadows twist and echo with ancient power. The Dark Warden emerges, a towering figure cloaked in darkness, guarding the Crystal of Light.
+
+Prepare yourself for the final confrontation.`,
+      state: {
+        hero_location: "Temple of Echoes (inside)",
+        crystal_possessed: false,
+        dark_warden_defeated: false,
+        magical_key_possessed: true,
+        temple_accessible: true,
+        forest_spirit_helped: true,
+      },
+      choices: [
+        {
+          text: "Confront and defeat the Dark Warden",
+          next: 7,
+          description: "You battle the Dark Warden to reclaim the Crystal.",
+        },
+      ],
+    },
+    7: {
+      title: "Victory in the Temple",
+      narrative: `With a final strike, you defeat the Dark Warden. The darkness dissipates, and the Crystal of Light is yours once more, glowing with radiant energy.
+
+The quest nears its end; the journey back to Dawnmere awaits.`,
+      state: {
+        hero_location: "Temple of Echoes (inside)",
+        crystal_possessed: true,
+        dark_warden_defeated: true,
+        magical_key_possessed: true,
+        temple_accessible: true,
+        forest_spirit_helped: true,
+      },
+      choices: [
+        {
+          text: "Return to Dawnmere with the Crystal",
+          next: 8,
+          description: "You leave the temple victorious, carrying the Crystal of Light.",
+        },
+      ],
+    },
+    8: {
+      title: "Return to Dawnmere",
+      narrative: `You arrive back in Dawnmere, the Crystal of Light shining brightly in your hands. The villagers cheer as hope is restored to Eldoria.
+
+The Dark Warden is defeated, and peace returns to the land.
+
+Your quest is complete.`,
+      state: {
+        hero_location: "Dawnmere",
+        crystal_possessed: true,
+        dark_warden_defeated: true,
+        magical_key_possessed: true,
+        temple_accessible: true,
+        forest_spirit_helped: true,
+      },
+      choices: [
+        {
+          text: "End Quest",
+          next: "end",
+          description: "Celebrate your victory and the restoration of Eldoria.",
+        },
+      ],
+    },
+  };
+
+  // Starting page content (lore + start button)
+  const startPage = {
+    title: "The Kingdom of Eldoria - Quest Lore",
+    narrative: `The Kingdom of Eldoria is on the brink of collapse after the Crystal of Light was stolen. Darkness spreads, and hope fades.
+
+You are the hero destined to recover the Crystal by journeying through the Whispering Forest, finding the hidden Temple of Echoes, and defeating the Dark Warden.
+
+Obstacles stand in your way: a magical key held by a forest spirit who only helps the worthy, and the Dark Warden guarding the temple.
+
+Will you restore light to Eldoria?`,
+    choices: [
+      {
+        text: "Start Game",
+        next: 1,
+      },
+    ],
+  };
+
+  // Final page content (play again)
+  const endPage = {
+    title: "Quest Complete",
+    narrative: `You have restored hope to Eldoria and completed your quest.
+
+Thank you for playing!`,
+    choices: [
+      {
+        text: "Play Again",
+        next: "start",
+      },
+    ],
+  };
+
+  // DOM references
+  const textEl = document.getElementById("text");
+  const choicesEl = document.getElementById("choices");
+  const gameContainer = document.getElementById("game-container");
+
+  // Current section id or special string "start" or "end"
+  let currentSection = "start";
+
+  // Render function
+  function renderSection(sectionId) {
+    currentSection = sectionId;
+    let section;
+    if (sectionId === "start") {
+      section = startPage;
+    } else if (sectionId === "end") {
+      section = endPage;
+    } else {
+      section = sections[sectionId];
+      if (!section) {
+        // fallback to start if unknown
+        renderSection("start");
+        return;
+      }
+    }
+
+    // Compose text content with title and narrative
+    let content = "";
+    if (section.title) {
+      content += section.title + "\n\n";
+    }
+    if (section.narrative) {
+      content += section.narrative;
+    }
+
+    textEl.textContent = content;
+    textEl.focus();
+
+    // Clear previous choices
+    choicesEl.innerHTML = "";
+
+    // Add buttons for choices
+    if (section.choices && section.choices.length > 0) {
+      section.choices.forEach((choice, idx) => {
+        const btn = document.createElement("button");
+        btn.type = "button";
+        btn.textContent = choice.text;
+        btn.title = choice.description || "";
+        btn.setAttribute("aria-label", choice.text + (choice.description ? ": " + choice.description : ""));
+        btn.addEventListener("click", () => {
+          if (choice.next === "start") {
+            renderSection("start");
+          } else if (choice.next === "end") {
+            renderSection("end");
+          } else {
+            renderSection(choice.next);
+          }
+        });
+        choicesEl.appendChild(btn);
+      });
+    }
+  }
+
+  // Initialize game on load
+  window.addEventListener("load", () => {
+    renderSection("start");
+  });
+
+  // Keyboard navigation: focus first button on text focus
+  textEl.addEventListener("keydown", e => {
+    if (e.key === "ArrowDown" || e.key === "Enter" || e.key === " ") {
+      e.preventDefault();
+      const firstBtn = choicesEl.querySelector("button");
+      if (firstBtn) firstBtn.focus();
+    }
+  });
+})();
+</script>
+</body>
+</html>
+```
