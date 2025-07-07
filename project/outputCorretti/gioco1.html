@@ -1,0 +1,1235 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Quest for the Crystal of Light</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Inter&display=swap');
+  html, body {
+    margin: 0; padding: 0; height: 100%;
+    background: #f9fafb;
+    font-family: 'Inter', sans-serif;
+    color: #222;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+  }
+  #game-container {
+    max-width: 600px;
+    background: #fff;
+    border: 1px solid #ddd;
+    border-radius: 8px;
+    box-shadow: 0 4px 12px rgb(0 0 0 / 0.1);
+    padding: 24px 32px;
+    box-sizing: border-box;
+  }
+  h1, h2 {
+    margin-top: 0;
+    color: #1f2937;
+  }
+  p {
+    line-height: 1.5;
+    margin-bottom: 1.25em;
+  }
+  .button-container {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 12px;
+    margin-top: 1.5em;
+  }
+  button {
+    background: #3b82f6;
+    border: none;
+    color: white;
+    padding: 12px 20px;
+    border-radius: 6px;
+    font-size: 1rem;
+    cursor: pointer;
+    flex: 1 1 45%;
+    min-width: 140px;
+    transition: background-color 0.2s ease;
+  }
+  button:hover, button:focus {
+    background: #2563eb;
+    outline: none;
+  }
+  button:disabled {
+    background: #a5b4fc;
+    cursor: default;
+  }
+  footer {
+    margin-top: 2em;
+    font-size: 0.875rem;
+    color: #6b7280;
+    text-align: center;
+  }
+</style>
+</head>
+<body>
+<div id="game-container" role="main" aria-live="polite" aria-atomic="true">
+  <!-- Content dynamically inserted here -->
+</div>
+<script>
+(() => {
+  const container = document.getElementById('game-container');
+
+  // Game state variables
+  let state = {
+    hero_location: 'Dawnmere',
+    crystal_possessed: false,
+    dark_warden_defeated: false,
+    temple_accessible: false,
+    magical_key_possessed: false,
+    forest_spirit_helped: false,
+    elder_advice_received: false,
+    supplies_prepared: false,
+    rested: false,
+    trained: false,
+    gift_offered: false,
+    at_forest_spirit: false,
+    in_combat_with_spirit: false,
+    temple_entrance_found: false,
+    traps_set: false,
+    merchant_info_received: false,
+    map_found: false,
+    amulet_possessed: false,
+    amulet_used: false,
+    prepared_for_battle: false,
+    in_battle_with_dark_warden: false,
+    negotiation_attempted: false,
+    gift_accepted: false,
+    alternate_entrance_found: false,
+    amulet_used_in_battle: false,
+  };
+
+  // Sections content and logic
+  // Each section is a function that renders the narrative and buttons, and updates state accordingly.
+  // The plan steps guide the main path, but player can explore other options.
+
+  // Helper to clear container and add new content
+  function clearAndRender(html) {
+    container.innerHTML = html;
+  }
+
+  // Helper to create buttons from array of {text, action}
+  function createButtons(actions) {
+    const div = document.createElement('div');
+    div.className = 'button-container';
+    actions.forEach(({text, handler, disabled}) => {
+      const btn = document.createElement('button');
+      btn.textContent = text;
+      if (disabled) btn.disabled = true;
+      btn.addEventListener('click', handler);
+      div.appendChild(btn);
+    });
+    return div;
+  }
+
+  // Starting page with story summary and start button
+  function startPage() {
+    clearAndRender(`
+      <h1>Quest for the Crystal of Light</h1>
+      <p>The Kingdom of Eldoria is on the brink of collapse after the Crystal of Light was stolen. You are the hero tasked with recovering it by journeying through the Whispering Forest, finding the hidden Temple of Echoes, and defeating the Dark Warden who guards it.</p>
+      <p>Prepare yourself well, seek wisdom, and choose your path carefully. Will you prove worthy to reclaim the Crystal and save Eldoria?</p>
+    `);
+    const btn = createButtons([
+      {text: 'Start Game', handler: () => {
+        // Reset state to initial
+        state = {
+          hero_location: 'Dawnmere',
+          crystal_possessed: false,
+          dark_warden_defeated: false,
+          temple_accessible: false,
+          magical_key_possessed: false,
+          forest_spirit_helped: false,
+          elder_advice_received: false,
+          supplies_prepared: false,
+          rested: false,
+          trained: false,
+          gift_offered: false,
+          at_forest_spirit: false,
+          in_combat_with_spirit: false,
+          temple_entrance_found: false,
+          traps_set: false,
+          merchant_info_received: false,
+          map_found: false,
+          amulet_possessed: false,
+          amulet_used: false,
+          prepared_for_battle: false,
+          in_battle_with_dark_warden: false,
+          negotiation_attempted: false,
+          gift_accepted: false,
+          alternate_entrance_found: false,
+          amulet_used_in_battle: false,
+        };
+        section1();
+      }}
+    ]);
+    container.appendChild(btn);
+  }
+
+  // Section 1: Initial state - Hero in Dawnmere
+  function section1() {
+    state.hero_location = 'Dawnmere';
+    state.at_forest_spirit = false;
+    state.in_combat_with_spirit = false;
+    state.in_battle_with_dark_warden = false;
+    state.negotiation_attempted = false;
+    state.temple_entrance_found = false;
+    state.alternate_entrance_found = false;
+    state.prepared_for_battle = false;
+    state.amulet_used = false;
+    state.amulet_used_in_battle = false;
+
+    clearAndRender(`
+      <h2>Village of Dawnmere</h2>
+      <p>You stand in the peaceful village of Dawnmere, the starting point of your quest. The Crystal of Light has been stolen, and the fate of Eldoria rests on your shoulders.</p>
+      <p>What will you do?</p>
+    `);
+    const actions = [
+      {text: 'Travel to Whispering Forest', handler: () => {
+        state.hero_location = 'Whispering Forest';
+        section2();
+      }},
+      {text: 'Visit village elder for advice', handler: () => {
+        state.elder_advice_received = true;
+        section3();
+      }},
+      {text: 'Prepare supplies in Dawnmere', handler: () => {
+        state.supplies_prepared = true;
+        section4();
+      }},
+      {text: 'Rest in Dawnmere', handler: () => {
+        state.rested = true;
+        section5();
+      }},
+    ];
+    container.appendChild(createButtons(actions));
+  }
+
+  // Section 2: Hero in Whispering Forest searching for forest spirit
+  function section2() {
+    state.hero_location = 'Whispering Forest';
+    state.at_forest_spirit = false;
+    state.in_combat_with_spirit = false;
+
+    clearAndRender(`
+      <h2>Whispering Forest</h2>
+      <p>The dense trees whisper secrets as you enter the forest. Somewhere here dwells the forest spirit who holds the magical key you need to enter the Temple of Echoes.</p>
+      <p>What will you do?</p>
+    `);
+    const actions = [
+      {text: 'Search for the forest spirit', handler: () => {
+        state.at_forest_spirit = true;
+        section6();
+      }},
+      {text: 'Explore deeper into the forest', handler: () => {
+        section7();
+      }},
+      {text: 'Set up camp to rest', handler: () => {
+        state.rested = true;
+        section8();
+      }},
+      {text: 'Return to Dawnmere', handler: () => {
+        section1();
+      }},
+    ];
+    container.appendChild(createButtons(actions));
+  }
+
+  // Section 3: Hero consults village elder for wisdom
+  function section3() {
+    state.hero_location = 'Dawnmere';
+    clearAndRender(`
+      <h2>Village Elder's Hut</h2>
+      <p>The wise village elder greets you warmly. "The path ahead is perilous," they say. "Seek the forest spirit in the Whispering Forest. Only the worthy shall receive the key."</p>
+      <p>What will you do?</p>
+    `);
+    const actions = [
+      {text: 'Travel to Whispering Forest', handler: () => {
+        state.hero_location = 'Whispering Forest';
+        section2();
+      }},
+      {text: 'Prepare supplies in Dawnmere', handler: () => {
+        state.supplies_prepared = true;
+        section4();
+      }},
+      {text: 'Rest in Dawnmere', handler: () => {
+        state.rested = true;
+        section5();
+      }},
+      {text: 'Ask elder about the temple', handler: () => {
+        section9();
+      }},
+    ];
+    container.appendChild(createButtons(actions));
+  }
+
+  // Section 4: Hero prepares supplies in Dawnmere
+  function section4() {
+    state.hero_location = 'Dawnmere';
+    clearAndRender(`
+      <h2>Preparing Supplies</h2>
+      <p>You gather essential provisions and equipment for your journey. Feeling more confident, you prepare to face the challenges ahead.</p>
+      <p>What will you do next?</p>
+    `);
+    const actions = [
+      {text: 'Travel to Whispering Forest', handler: () => {
+        state.hero_location = 'Whispering Forest';
+        section2();
+      }},
+      {text: 'Visit village elder for advice', handler: () => {
+        state.elder_advice_received = true;
+        section3();
+      }},
+      {text: 'Rest in Dawnmere', handler: () => {
+        state.rested = true;
+        section5();
+      }},
+      {text: 'Train with local warriors', handler: () => {
+        state.trained = true;
+        section10();
+      }},
+    ];
+    container.appendChild(createButtons(actions));
+  }
+
+  // Section 5: Hero rests in Dawnmere
+  function section5() {
+    state.hero_location = 'Dawnmere';
+    clearAndRender(`
+      <h2>Resting in Dawnmere</h2>
+      <p>You take time to rest and regain your strength. The journey ahead will require all your energy.</p>
+      <p>What will you do next?</p>
+    `);
+    const actions = [
+      {text: 'Travel to Whispering Forest', handler: () => {
+        state.hero_location = 'Whispering Forest';
+        section2();
+      }},
+      {text: 'Visit village elder for advice', handler: () => {
+        state.elder_advice_received = true;
+        section3();
+      }},
+      {text: 'Prepare supplies in Dawnmere', handler: () => {
+        state.supplies_prepared = true;
+        section4();
+      }},
+      {text: 'Explore village surroundings', handler: () => {
+        section11();
+      }},
+    ];
+    container.appendChild(createButtons(actions));
+  }
+
+  // Section 6: Hero finds forest spirit and must prove worthiness
+  function section6() {
+    state.hero_location = 'Whispering Forest';
+    state.at_forest_spirit = true;
+    clearAndRender(`
+      <h2>Forest Spirit Encounter</h2>
+      <p>You find the ethereal forest spirit. It regards you with ancient eyes. To gain the magical key, you must prove your worth.</p>
+      <p>How will you proceed?</p>
+    `);
+    const actions = [
+      {text: 'Answer the spirit’s riddle', handler: () => {
+        section12();
+      }},
+      {text: 'Offer a gift to the spirit', handler: () => {
+        state.gift_offered = true;
+        section13();
+      }},
+      {text: 'Fight the spirit', handler: () => {
+        state.in_combat_with_spirit = true;
+        section14();
+      }},
+      {text: 'Leave and explore forest', handler: () => {
+        state.at_forest_spirit = false;
+        section7();
+      }},
+    ];
+    container.appendChild(createButtons(actions));
+  }
+
+  // Section 7: Hero explores deeper into the forest searching for clues
+  function section7() {
+    state.hero_location = 'Whispering Forest (deep)';
+    state.at_forest_spirit = false;
+    state.in_combat_with_spirit = false;
+    clearAndRender(`
+      <h2>Deeper in the Whispering Forest</h2>
+      <p>You delve deeper into the forest, searching for clues about the hidden temple and the forest spirit’s trail.</p>
+      <p>What will you do?</p>
+    `);
+    const actions = [
+      {text: 'Search for hidden temple entrance', handler: () => {
+        state.temple_entrance_found = true;
+        section15();
+      }},
+      {text: 'Look for signs of the forest spirit', handler: () => {
+        section6();
+      }},
+      {text: 'Set traps for forest creatures', handler: () => {
+        state.traps_set = true;
+        section16();
+      }},
+      {text: 'Return to forest edge', handler: () => {
+        state.hero_location = 'Whispering Forest';
+        section2();
+      }},
+    ];
+    container.appendChild(createButtons(actions));
+  }
+
+  // Section 8: Hero sets up camp in forest to rest
+  function section8() {
+    state.hero_location = 'Whispering Forest (camp)';
+    clearAndRender(`
+      <h2>Forest Camp</h2>
+      <p>You set up a small camp to rest and regain your energy amidst the forest’s quiet.</p>
+      <p>What will you do next?</p>
+    `);
+    const actions = [
+      {text: 'Continue search for forest spirit', handler: () => {
+        state.at_forest_spirit = true;
+        section6();
+      }},
+      {text: 'Explore surrounding area', handler: () => {
+        section7();
+      }},
+      {text: 'Prepare food and fire', handler: () => {
+        state.rested = true;
+        section16();
+      }},
+      {text: 'Move camp to safer location', handler: () => {
+        section7();
+      }},
+    ];
+    container.appendChild(createButtons(actions));
+  }
+
+  // Section 9: Hero learns about Temple of Echoes from elder
+  function section9() {
+    state.hero_location = 'Dawnmere';
+    clearAndRender(`
+      <h2>Temple of Echoes - Elder's Wisdom</h2>
+      <p>The elder shares ancient knowledge about the Temple of Echoes. "The temple is hidden and guarded. Only with the magical key can you enter safely."</p>
+      <p>What will you do?</p>
+    `);
+    const actions = [
+      {text: 'Travel to Whispering Forest', handler: () => {
+        state.hero_location = 'Whispering Forest';
+        section2();
+      }},
+      {text: 'Prepare supplies in Dawnmere', handler: () => {
+        state.supplies_prepared = true;
+        section4();
+      }},
+      {text: 'Rest in Dawnmere', handler: () => {
+        state.rested = true;
+        section5();
+      }},
+      {text: 'Train with local warriors', handler: () => {
+        state.trained = true;
+        section10();
+      }},
+    ];
+    container.appendChild(createButtons(actions));
+  }
+
+  // Section 10: Hero trains with local warriors
+  function section10() {
+    state.hero_location = 'Dawnmere';
+    clearAndRender(`
+      <h2>Training with Warriors</h2>
+      <p>You spend time training with the local warriors, honing your combat skills for the challenges ahead.</p>
+      <p>What will you do next?</p>
+    `);
+    const actions = [
+      {text: 'Travel to Whispering Forest', handler: () => {
+        state.hero_location = 'Whispering Forest';
+        section2();
+      }},
+      {text: 'Visit village elder for advice', handler: () => {
+        state.elder_advice_received = true;
+        section3();
+      }},
+      {text: 'Prepare supplies in Dawnmere', handler: () => {
+        state.supplies_prepared = true;
+        section4();
+      }},
+      {text: 'Rest in Dawnmere', handler: () => {
+        state.rested = true;
+        section5();
+      }},
+    ];
+    container.appendChild(createButtons(actions));
+  }
+
+  // Section 11: Hero explores village surroundings
+  function section11() {
+    state.hero_location = 'Dawnmere outskirts';
+    clearAndRender(`
+      <h2>Village Outskirts</h2>
+      <p>You explore the surroundings of Dawnmere, looking for useful information or items that might aid your quest.</p>
+      <p>What will you do?</p>
+    `);
+    const actions = [
+      {text: 'Talk to traveling merchant', handler: () => {
+        state.merchant_info_received = true;
+        section17();
+      }},
+      {text: 'Search for old maps', handler: () => {
+        state.map_found = true;
+        section18();
+      }},
+      {text: 'Return to village center', handler: () => {
+        section4();
+      }},
+      {text: 'Rest at village inn', handler: () => {
+        state.rested = true;
+        section5();
+      }},
+    ];
+    container.appendChild(createButtons(actions));
+  }
+
+  // Section 12: Hero answers the forest spirit’s riddle successfully
+  function section12() {
+    state.magical_key_possessed = true;
+    state.forest_spirit_helped = true;
+    state.at_forest_spirit = false;
+    clearAndRender(`
+      <h2>Riddle Solved</h2>
+      <p>You answer the forest spirit’s riddle with wisdom and grace. Impressed, the spirit grants you the magical key to the Temple of Echoes.</p>
+      <p>What will you do next?</p>
+    `);
+    const actions = [
+      {text: 'Travel to Temple of Echoes', handler: () => {
+        state.hero_location = 'Temple of Echoes';
+        section19();
+      }},
+      {text: 'Explore forest further', handler: () => {
+        section7();
+      }},
+      {text: 'Rest at forest camp', handler: () => {
+        state.rested = true;
+        section8();
+      }},
+      {text: 'Return to Dawnmere', handler: () => {
+        state.hero_location = 'Dawnmere';
+        section1();
+      }},
+    ];
+    container.appendChild(createButtons(actions));
+  }
+
+  // Section 13: Hero offers a gift to the forest spirit
+  function section13() {
+    clearAndRender(`
+      <h2>Offering a Gift</h2>
+      <p>You offer a gift to the forest spirit, hoping to gain its favor. Now you must wait and see if it accepts.</p>
+      <p>What will you do?</p>
+    `);
+    const actions = [
+      {text: 'Wait for spirit’s decision', handler: () => {
+        section20();
+      }},
+      {text: 'Try to answer riddle instead', handler: () => {
+        section12();
+      }},
+      {text: 'Leave spirit and explore forest', handler: () => {
+        state.at_forest_spirit = false;
+        section7();
+      }},
+      {text: 'Attempt to sneak key', handler: () => {
+        state.in_combat_with_spirit = true;
+        section14();
+      }},
+    ];
+    container.appendChild(createButtons(actions));
+  }
+
+  // Section 14: Hero fights the forest spirit
+  function section14() {
+    clearAndRender(`
+      <h2>Combat with Forest Spirit</h2>
+      <p>You engage in a fierce battle with the forest spirit. The outcome will determine if you obtain the magical key.</p>
+      <p>What will you do?</p>
+    `);
+    const actions = [
+      {text: 'Defeat forest spirit', handler: () => {
+        state.magical_key_possessed = true;
+        state.in_combat_with_spirit = false;
+        section21();
+      }},
+      {text: 'Retreat from fight', handler: () => {
+        state.in_combat_with_spirit = false;
+        state.at_forest_spirit = false;
+        section7();
+      }},
+      {text: 'Attempt to parley', handler: () => {
+        state.in_combat_with_spirit = false;
+        section13();
+      }},
+      {text: 'Use magic to escape', handler: () => {
+        state.in_combat_with_spirit = false;
+        state.rested = true;
+        section8();
+      }},
+    ];
+    container.appendChild(createButtons(actions));
+  }
+
+  // Section 15: Hero searches for hidden temple entrance
+  function section15() {
+    state.hero_location = 'Whispering Forest (near temple)';
+    clearAndRender(`
+      <h2>Hidden Temple Entrance</h2>
+      <p>You find signs of a hidden entrance to the Temple of Echoes. The path is secret and guarded.</p>
+      <p>What will you do?</p>
+    `);
+    const actions = [
+      {text: 'Try to enter temple without key', handler: () => {
+        section22();
+      }},
+      {text: 'Return to find forest spirit', handler: () => {
+        section6();
+      }},
+      {text: 'Set up camp near temple', handler: () => {
+        state.rested = true;
+        section8();
+      }},
+      {text: 'Explore temple surroundings', handler: () => {
+        section23();
+      }},
+    ];
+    container.appendChild(createButtons(actions));
+  }
+
+  // Section 16: Hero sets traps and explores forest resources
+  function section16() {
+    clearAndRender(`
+      <h2>Forest Traps and Resources</h2>
+      <p>You set traps to protect yourself from forest creatures and explore for useful resources.</p>
+      <p>What will you do?</p>
+    `);
+    const actions = [
+      {text: 'Continue search for forest spirit', handler: () => {
+        section6();
+      }},
+      {text: 'Explore deeper forest', handler: () => {
+        section7();
+      }},
+      {text: 'Rest at camp', handler: () => {
+        state.rested = true;
+        section8();
+      }},
+      {text: 'Return to Dawnmere', handler: () => {
+        section1();
+      }},
+    ];
+    container.appendChild(createButtons(actions));
+  }
+
+  // Section 17: Hero talks to traveling merchant
+  function section17() {
+    state.hero_location = 'Dawnmere outskirts';
+    clearAndRender(`
+      <h2>Traveling Merchant</h2>
+      <p>The merchant offers you a magical amulet that may aid your quest. You can also ask about the temple location.</p>
+      <p>What will you do?</p>
+    `);
+    const actions = [
+      {text: 'Buy magical amulet', handler: () => {
+        state.amulet_possessed = true;
+        section24();
+      }},
+      {text: 'Ask about temple location', handler: () => {
+        section18();
+      }},
+      {text: 'Return to village center', handler: () => {
+        section4();
+      }},
+      {text: 'Rest at village inn', handler: () => {
+        state.rested = true;
+        section5();
+      }},
+    ];
+    container.appendChild(createButtons(actions));
+  }
+
+  // Section 18: Hero searches for old maps
+  function section18() {
+    state.hero_location = 'Dawnmere library';
+    clearAndRender(`
+      <h2>Old Maps</h2>
+      <p>You find an old map that may reveal the temple’s location and secret paths.</p>
+      <p>What will you do?</p>
+    `);
+    const actions = [
+      {text: 'Study map to find temple', handler: () => {
+        section2();
+      }},
+      {text: 'Share map with elder', handler: () => {
+        state.elder_advice_received = true;
+        section3();
+      }},
+      {text: 'Prepare supplies using map info', handler: () => {
+        state.supplies_prepared = true;
+        section4();
+      }},
+      {text: 'Rest after research', handler: () => {
+        state.rested = true;
+        section5();
+      }},
+    ];
+    container.appendChild(createButtons(actions));
+  }
+
+  // Section 19: Hero uses magical key to enter Temple of Echoes
+  function section19() {
+    state.hero_location = 'Temple of Echoes';
+    state.temple_accessible = true;
+    clearAndRender(`
+      <h2>Temple of Echoes</h2>
+      <p>You use the magical key to enter the ancient Temple of Echoes. The air is thick with magic and danger.</p>
+      <p>What will you do?</p>
+    `);
+    const actions = [
+      {text: 'Search temple for Crystal of Light', handler: () => {
+        section25();
+      }},
+      {text: 'Prepare for battle with Dark Warden', handler: () => {
+        state.prepared_for_battle = true;
+        section26();
+      }},
+      {text: 'Explore temple corridors cautiously', handler: () => {
+        section27();
+      }},
+      {text: 'Rest in temple sanctuary', handler: () => {
+        state.rested = true;
+        section8();
+      }},
+    ];
+    container.appendChild(createButtons(actions));
+  }
+
+  // Section 20: Spirit considers hero’s gift
+  function section20() {
+    clearAndRender(`
+      <h2>Spirit's Decision</h2>
+      <p>The forest spirit contemplates your gift carefully...</p>
+    `);
+    // Randomly decide if gift accepted or rejected for interactivity
+    setTimeout(() => {
+      const accepted = Math.random() < 0.5;
+      if (accepted) {
+        state.gift_accepted = true;
+        state.magical_key_possessed = true;
+        state.forest_spirit_helped = true;
+        state.at_forest_spirit = false;
+        clearAndRender(`
+          <h2>Gift Accepted</h2>
+          <p>The spirit smiles warmly and grants you the magical key. Your worthiness is proven.</p>
+          <p>What will you do next?</p>
+        `);
+        const actions = [
+          {text: 'Travel to Temple of Echoes', handler: () => {
+            state.hero_location = 'Temple of Echoes';
+            section19();
+          }},
+          {text: 'Explore forest further', handler: () => {
+            section7();
+          }},
+          {text: 'Rest at forest camp', handler: () => {
+            state.rested = true;
+            section8();
+          }},
+          {text: 'Return to Dawnmere', handler: () => {
+            state.hero_location = 'Dawnmere';
+            section1();
+          }},
+        ];
+        container.appendChild(createButtons(actions));
+      } else {
+        state.gift_accepted = false;
+        clearAndRender(`
+          <h2>Gift Rejected</h2>
+          <p>The spirit frowns and refuses your gift. You must try another way to prove your worth.</p>
+          <p>What will you do?</p>
+        `);
+        const actions = [
+          {text: 'Try to answer riddle', handler: () => {
+            section12();
+          }},
+          {text: 'Fight the spirit', handler: () => {
+            state.in_combat_with_spirit = true;
+            section14();
+          }},
+          {text: 'Leave and explore forest', handler: () => {
+            state.at_forest_spirit = false;
+            section7();
+          }},
+          {text: 'Ask spirit for another chance', handler: () => {
+            section12();
+          }},
+        ];
+        container.appendChild(createButtons(actions));
+      }
+    }, 1500);
+  }
+
+  // Section 21: Hero defeats the forest spirit in combat
+  function section21() {
+    clearAndRender(`
+      <h2>Victory Over Forest Spirit</h2>
+      <p>You have defeated the forest spirit in combat and claimed the magical key. Though you did not gain its favor, you now hold the means to enter the temple.</p>
+      <p>What will you do next?</p>
+    `);
+    const actions = [
+      {text: 'Travel to Temple of Echoes', handler: () => {
+        state.hero_location = 'Temple of Echoes';
+        section19();
+      }},
+      {text: 'Rest in forest camp', handler: () => {
+        state.rested = true;
+        section8();
+      }},
+      {text: 'Explore forest for other secrets', handler: () => {
+        section7();
+      }},
+      {text: 'Return to Dawnmere', handler: () => {
+        state.hero_location = 'Dawnmere';
+        section1();
+      }},
+    ];
+    container.appendChild(createButtons(actions));
+  }
+
+  // Section 22: Hero attempts to enter temple without key
+  function section22() {
+    state.hero_location = 'Temple of Echoes entrance';
+    clearAndRender(`
+      <h2>Temple Entrance - Locked</h2>
+      <p>You try to enter the temple without the magical key, but the heavy doors remain firmly shut.</p>
+      <p>What will you do?</p>
+    `);
+    const actions = [
+      {text: 'Search for secret entrance', handler: () => {
+        section23();
+      }},
+      {text: 'Return to forest spirit', handler: () => {
+        section6();
+      }},
+      {text: 'Wait and observe temple', handler: () => {
+        section27();
+      }},
+      {text: 'Retreat to forest', handler: () => {
+        section7();
+      }},
+    ];
+    container.appendChild(createButtons(actions));
+  }
+
+  // Section 23: Hero explores temple surroundings for alternate entrances
+  function section23() {
+    state.hero_location = 'Temple surroundings';
+    clearAndRender(`
+      <h2>Temple Surroundings</h2>
+      <p>You search the temple’s surroundings for hidden passages or alternate entrances.</p>
+      <p>What will you do?</p>
+    `);
+    const actions = [
+      {text: 'Find hidden passage', handler: () => {
+        state.alternate_entrance_found = true;
+        section28();
+      }},
+      {text: 'Return to main entrance', handler: () => {
+        section22();
+      }},
+      {text: 'Rest near temple', handler: () => {
+        state.rested = true;
+        section8();
+      }},
+      {text: 'Explore further forest', handler: () => {
+        section6();
+      }},
+    ];
+    container.appendChild(createButtons(actions));
+  }
+
+  // Section 24: Hero buys magical amulet from merchant
+  function section24() {
+    state.hero_location = 'Dawnmere outskirts';
+    clearAndRender(`
+      <h2>Magical Amulet Acquired</h2>
+      <p>You purchase a magical amulet from the merchant. It may aid you in your quest.</p>
+      <p>What will you do next?</p>
+    `);
+    const actions = [
+      {text: 'Travel to Whispering Forest', handler: () => {
+        state.hero_location = 'Whispering Forest';
+        section2();
+      }},
+      {text: 'Visit village elder for advice', handler: () => {
+        state.elder_advice_received = true;
+        section3();
+      }},
+      {text: 'Prepare supplies in Dawnmere', handler: () => {
+        state.supplies_prepared = true;
+        section4();
+      }},
+      {text: 'Rest in Dawnmere', handler: () => {
+        state.rested = true;
+        section5();
+      }},
+    ];
+    container.appendChild(createButtons(actions));
+  }
+
+  // Section 25: Hero searches temple for Crystal of Light
+  function section25() {
+    state.hero_location = 'Temple of Echoes interior';
+    clearAndRender(`
+      <h2>Inside the Temple</h2>
+      <p>You search the temple chambers carefully, seeking the Crystal of Light.</p>
+      <p>What will you do?</p>
+    `);
+    const actions = [
+      {text: 'Confront Dark Warden', handler: () => {
+        state.in_battle_with_dark_warden = true;
+        section29();
+      }},
+      {text: 'Search temple chambers', handler: () => {
+        section27();
+      }},
+      {text: 'Rest in temple sanctuary', handler: () => {
+        state.rested = true;
+        section8();
+      }},
+      {text: 'Use amulet to detect magic', handler: () => {
+        if (state.amulet_possessed) {
+          state.amulet_used = true;
+          section30();
+        } else {
+          alert('You do not possess the magical amulet.');
+        }
+      }},
+    ];
+    container.appendChild(createButtons(actions));
+  }
+
+  // Section 26: Hero prepares for battle with Dark Warden
+  function section26() {
+    state.hero_location = 'Temple of Echoes';
+    state.prepared_for_battle = true;
+    clearAndRender(`
+      <h2>Preparing for Battle</h2>
+      <p>You ready yourself for the confrontation with the Dark Warden.</p>
+      <p>What will you do?</p>
+    `);
+    const actions = [
+      {text: 'Confront Dark Warden', handler: () => {
+        state.in_battle_with_dark_warden = true;
+        section29();
+      }},
+      {text: 'Explore temple for advantages', handler: () => {
+        section27();
+      }},
+      {text: 'Rest before battle', handler: () => {
+        state.rested = true;
+        section8();
+      }},
+      {text: 'Use amulet to boost power', handler: () => {
+        if (state.amulet_possessed) {
+          state.amulet_used = true;
+          section30();
+        } else {
+          alert('You do not possess the magical amulet.');
+        }
+      }},
+    ];
+    container.appendChild(createButtons(actions));
+  }
+
+  // Section 27: Hero explores temple corridors cautiously
+  function section27() {
+    state.hero_location = 'Temple corridors';
+    clearAndRender(`
+      <h2>Temple Corridors</h2>
+      <p>You move cautiously through the temple corridors, alert for traps and secrets.</p>
+      <p>What will you do?</p>
+    `);
+    const actions = [
+      {text: 'Search for Crystal of Light', handler: () => {
+        section25();
+      }},
+      {text: 'Prepare for Dark Warden battle', handler: () => {
+        section26();
+      }},
+      {text: 'Rest at temple sanctuary', handler: () => {
+        state.rested = true;
+        section8();
+      }},
+      {text: 'Use amulet to reveal secrets', handler: () => {
+        if (state.amulet_possessed) {
+          state.amulet_used = true;
+          section30();
+        } else {
+          alert('You do not possess the magical amulet.');
+        }
+      }},
+    ];
+    container.appendChild(createButtons(actions));
+  }
+
+  // Section 28: Hero finds hidden passage into temple
+  function section28() {
+    state.hero_location = 'Hidden temple passage';
+    state.temple_accessible = true;
+    clearAndRender(`
+      <h2>Hidden Passage</h2>
+      <p>You discover a hidden passage that bypasses the locked temple doors.</p>
+      <p>What will you do?</p>
+    `);
+    const actions = [
+      {text: 'Enter temple through passage', handler: () => {
+        section25();
+      }},
+      {text: 'Search passage for traps', handler: () => {
+        section27();
+      }},
+      {text: 'Rest before entering', handler: () => {
+        state.rested = true;
+        section8();
+      }},
+      {text: 'Return to forest', handler: () => {
+        section6();
+      }},
+    ];
+    container.appendChild(createButtons(actions));
+  }
+
+  // Section 29: Hero confronts Dark Warden in battle
+  function section29() {
+    state.hero_location = 'Temple throne room';
+    clearAndRender(`
+      <h2>Confrontation with Dark Warden</h2>
+      <p>The Dark Warden stands before you, a shadowy figure guarding the Crystal of Light. The final battle begins.</p>
+      <p>What will you do?</p>
+    `);
+    const actions = [
+      {text: 'Defeat Dark Warden', handler: () => {
+        state.dark_warden_defeated = true;
+        state.in_battle_with_dark_warden = false;
+        section31();
+      }},
+      {text: 'Use magic amulet in battle', handler: () => {
+        if (state.amulet_possessed) {
+          state.amulet_used_in_battle = true;
+          section32();
+        } else {
+          alert('You do not possess the magical amulet.');
+        }
+      }},
+      {text: 'Retreat to temple corridors', handler: () => {
+        state.in_battle_with_dark_warden = false;
+        section27();
+      }},
+      {text: 'Negotiate with Dark Warden', handler: () => {
+        state.negotiation_attempted = true;
+        section33();
+      }},
+    ];
+    container.appendChild(createButtons(actions));
+  }
+
+  // Section 30: Hero uses amulet to detect magic or secrets
+  function section30() {
+    clearAndRender(`
+      <h2>Using Magical Amulet</h2>
+      <p>You focus the power of the amulet, revealing hidden traps, the Crystal’s location, and the Dark Warden’s presence.</p>
+      <p>What will you do next?</p>
+    `);
+    const actions = [
+      {text: 'Reveal hidden traps', handler: () => {
+        section27();
+      }},
+      {text: 'Locate Crystal of Light', handler: () => {
+        section25();
+      }},
+      {text: 'Detect Dark Warden’s presence', handler: () => {
+        section29();
+      }},
+      {text: 'Rest after using amulet', handler: () => {
+        state.rested = true;
+        section8();
+      }},
+    ];
+    container.appendChild(createButtons(actions));
+  }
+
+  // Section 31: Hero defeats Dark Warden and claims Crystal
+  function section31() {
+    state.crystal_possessed = true;
+    clearAndRender(`
+      <h2>Victory!</h2>
+      <p>You have defeated the Dark Warden and claimed the Crystal of Light. The kingdom of Eldoria can now be saved.</p>
+      <p>What will you do?</p>
+    `);
+    const actions = [
+      {text: 'Exit temple and return to Dawnmere', handler: () => {
+        state.hero_location = 'Dawnmere';
+        section34();
+      }},
+      {text: 'Explore temple for treasures', handler: () => {
+        section27();
+      }},
+      {text: 'Rest in temple sanctuary', handler: () => {
+        state.rested = true;
+        section8();
+      }},
+      {text: 'Use amulet to secure exit', handler: () => {
+        if (state.amulet_possessed) {
+          section34();
+        } else {
+          alert('You do not possess the magical amulet.');
+        }
+      }},
+    ];
+    container.appendChild(createButtons(actions));
+  }
+
+  // Section 32: Hero uses amulet in battle, gaining advantage
+  function section32() {
+    clearAndRender(`
+      <h2>Amulet Power</h2>
+      <p>The amulet glows brightly, empowering you in battle. You gain the upper hand against the Dark Warden.</p>
+      <p>What will you do?</p>
+    `);
+    const actions = [
+      {text: 'Defeat Dark Warden', handler: () => {
+        state.dark_warden_defeated = true;
+        state.in_battle_with_dark_warden = false;
+        section31();
+      }},
+      {text: 'Continue battle', handler: () => {
+        section29();
+      }},
+      {text: 'Retreat to temple corridors', handler: () => {
+        state.in_battle_with_dark_warden = false;
+        section27();
+      }},
+      {text: 'Negotiate with Dark Warden', handler: () => {
+        state.negotiation_attempted = true;
+        section33();
+      }},
+    ];
+    container.appendChild(createButtons(actions));
+  }
+
+  // Section 33: Hero attempts to negotiate with Dark Warden
+  function section33() {
+    clearAndRender(`
+      <h2>Negotiation Attempt</h2>
+      <p>You try to negotiate peace with the Dark Warden. The outcome is uncertain.</p>
+    `);
+    // Random outcome for negotiation
+    setTimeout(() => {
+      const accepted = Math.random() < 0.5;
+      if (accepted) {
+        state.dark_warden_defeated = true;
+        clearAndRender(`
+          <h2>Peace Achieved</h2>
+          <p>The Dark Warden accepts your terms and peacefully relinquishes the Crystal of Light.</p>
+          <p>What will you do?</p>
+        `);
+        const actions = [
+          {text: 'Claim the Crystal', handler: () => {
+            state.crystal_possessed = true;
+            section31();
+          }},
+          {text: 'Rest in temple sanctuary', handler: () => {
+            state.rested = true;
+            section8();
+          }},
+          {text: 'Explore temple corridors', handler: () => {
+            section27();
+          }},
+        ];
+        container.appendChild(createButtons(actions));
+      } else {
+        clearAndRender(`
+          <h2>Negotiation Failed</h2>
+          <p>The Dark Warden refuses your offer. Battle is inevitable.</p>
+          <p>What will you do?</p>
+        `);
+        const actions = [
+          {text: 'Fight Dark Warden', handler: () => {
+            state.in_battle_with_dark_warden = true;
+            section29();
+          }},
+          {text: 'Retreat from throne room', handler: () => {
+            section27();
+          }},
+          {text: 'Use amulet to intimidate', handler: () => {
+            if (state.amulet_possessed) {
+              state.amulet_used_in_battle = true;
+              section32();
+            } else {
+              alert('You do not possess the magical amulet.');
+            }
+          }},
+        ];
+        container.appendChild(createButtons(actions));
+      }
+    }, 1500);
+  }
+
+  // Section 34: Hero returns to Dawnmere with Crystal of Light, quest complete
+  function section34() {
+    state.hero_location = 'Dawnmere';
+    clearAndRender(`
+      <h2>Return to Dawnmere</h2>
+      <p>You return to the village of Dawnmere, the Crystal of Light safely in your possession. The kingdom is saved, and your heroic deeds will be remembered.</p>
+      <p>What will you do?</p>
+    `);
+    const actions = [
+      {text: 'Celebrate victory in village', handler: () => {
+        endGame('You celebrate your victory with the villagers. Peace returns to Eldoria.');
+      }},
+      {text: 'Share story with elder', handler: () => {
+        endGame('You share your tale with the elder, gaining recognition and honor.');
+      }},
+      {text: 'Prepare for new adventure', handler: () => {
+        endGame('Though your quest is complete, new adventures await beyond the horizon.');
+      }},
+      {text: 'Rest in Dawnmere', handler: () => {
+        endGame('You rest fully, ready for whatever comes next.');
+      }},
+    ];
+    container.appendChild(createButtons(actions));
+  }
+
+  // End game screen with play again button
+  function endGame(message) {
+    clearAndRender(`
+      <h2>Quest Complete</h2>
+      <p>${message}</p>
+    `);
+    const btn = createButtons([
+      {text: 'Play Again', handler: () => {
+        startPage();
+      }}
+    ]);
+    container.appendChild(btn);
+  }
+
+  // Initialize game on load
+  startPage();
+})();
+</script>
+</body>
+</html>

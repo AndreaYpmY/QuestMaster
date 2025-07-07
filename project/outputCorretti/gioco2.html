@@ -1,0 +1,389 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>The Rise of Dusty Bill - Interactive Adventure</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Roboto+Slab&display=swap');
+  body {
+    margin: 0; padding: 0; background: #f9f9f9; color: #222;
+    font-family: 'Roboto Slab', serif;
+    display: flex; justify-content: center; align-items: center;
+    min-height: 100vh;
+  }
+  #game-container {
+    max-width: 700px;
+    background: #fff;
+    border: 1px solid #ccc;
+    border-radius: 8px;
+    box-shadow: 0 0 15px rgba(0,0,0,0.1);
+    padding: 24px 32px 32px 32px;
+  }
+  h1 {
+    margin-top: 0;
+    font-weight: 700;
+    color: #b35c00;
+    text-align: center;
+    text-shadow: 1px 1px 0 #f0c27b;
+  }
+  #narrative {
+    font-size: 1.1rem;
+    line-height: 1.5;
+    margin-bottom: 24px;
+    white-space: pre-wrap;
+  }
+  .dialogue {
+    margin: 12px 0 12px 20px;
+    font-style: italic;
+    color: #555;
+  }
+  button {
+    background: #b35c00;
+    border: none;
+    color: white;
+    font-weight: 600;
+    font-size: 1rem;
+    padding: 12px 20px;
+    margin: 6px 6px 6px 0;
+    border-radius: 4px;
+    cursor: pointer;
+    transition: background-color 0.3s ease;
+  }
+  button:hover, button:focus {
+    background: #d17f00;
+    outline: none;
+  }
+  #choices {
+    display: flex;
+    flex-wrap: wrap;
+  }
+  footer {
+    margin-top: 32px;
+    font-size: 0.9rem;
+    color: #999;
+    text-align: center;
+  }
+</style>
+</head>
+<body>
+<div id="game-container" role="main" aria-live="polite" aria-atomic="true">
+  <h1>The Rise of Dusty Bill</h1>
+  <div id="narrative"></div>
+  <div id="choices"></div>
+  <footer>© 2024 Redstone Gulch Interactive</footer>
+</div>
+<script>
+(() => {
+  const narrativeEl = document.getElementById('narrative');
+  const choicesEl = document.getElementById('choices');
+
+  // Game state tracking trust and documents
+  const state = {
+    trust: {
+      miners: false,
+      settlers: false,
+      reformists: false,
+    },
+    documentsRetrieved: false,
+    confrontedSheriff: false,
+    lieutenantDefeated: false,
+    finalDuelReady: false,
+    leaderRecognized: false,
+  };
+
+  // Sections content and logic based on the plan and lore
+  // Each section has:
+  // - text: narrative text with dialogues
+  // - choices: array of {text, next} for buttons
+  // - onEnter: optional function to update state or narrative dynamically
+
+  const sections = {
+    start: {
+      text: `Welcome to Redstone Gulch, a dusty town ruled by the corrupt Sheriff Frank Mallory. Outlaws roam freely, the saloon is controlled by a local gang, and the bank is under siege. You are Dusty Bill, a former bounty hunter with a mysterious past, returned to restore justice and become the town's leader — on your own terms.
+
+Your goal is to gain the trust of the town's factions, retrieve compromising documents, and confront Sheriff Mallory to claim your rightful place as leader.
+
+Are you ready to begin your quest?`,
+      choices: [
+        { text: 'Start Game', next: 'section1' }
+      ]
+    },
+
+    section1: {
+      text: `Dusty Bill arrives in Redstone Gulch. The town is tense and wary. Sheriff Frank Mallory holds tight control, the saloon gang watches every corner, and the bank is under siege by outlaws. The townspeople trust no one.
+
+You stand at the crossroads of your quest. What will you do first?`,
+      choices: [
+        { text: 'Investigate the saloon gang to gather information', next: 'section2' },
+        { text: 'Attempt to negotiate with the Miners faction', next: 'section3' },
+        { text: 'Intervene to help the bank under siege', next: 'section4' }
+      ]
+    },
+
+    section2: {
+      onEnter() {
+        // Dusty Bill learns saloon gang allied with sheriff, gains info
+        state.documentsRetrieved = true; // has-info compromising-document
+      },
+      text: `You slip into the smoky saloon, eyes sharp. After careful observation and a few whispered conversations, you learn the saloon gang is loosely allied with Sheriff Mallory. You also uncover some compromising documents hidden away — evidence that could weaken the sheriff's grip on the town.
+
+Sheriff Mallory remains in power, and the bank is still under siege. The townspeople remain distrustful.`,
+      choices: [
+        { text: 'Use the gathered information to confront Sheriff Mallory publicly', next: 'section5' },
+        { text: 'Try to gain trust of Settlers faction by helping with local issues', next: 'section6' },
+        { text: 'Attempt to sabotage the saloon gang’s operations', next: 'section7' }
+      ]
+    },
+
+    section3: {
+      onEnter() {
+        // Miners cautiously open, require proof
+        state.trust.miners = false;
+      },
+      text: `You approach the Miners faction cautiously. They listen but remain skeptical, demanding proof of your good intentions before they can trust you.
+
+Sheriff Mallory still holds power, the saloon gang controls their turf, and the bank remains under siege. The townspeople's distrust lingers.`,
+      choices: [
+        { text: 'Help Miners secure the gold mines from outlaws', next: 'section8' },
+        { text: 'Retrieve compromising documents from town hall', next: 'section9' },
+        { text: 'Visit the Reformist Outlaws to seek alliance', next: 'section10' }
+      ]
+    },
+
+    section4: {
+      onEnter() {
+        // Dusty Bill drives off outlaws, gains some notice
+        state.documentsRetrieved = false;
+      },
+      text: `With quick reflexes and steady aim, you drive off the outlaws besieging the bank. The townspeople begin to notice your courage, whispering your name with a hint of hope.
+
+Sheriff Mallory’s control is challenged but still intact. The saloon gang remains a threat. No factions fully trust you yet.`,
+      choices: [
+        { text: 'Speak to Settlers faction about protection and law', next: 'section6' },
+        { text: 'Use bank influence to gain Settlers’ trust', next: 'section11' },
+        { text: 'Search town hall for compromising documents', next: 'section9' }
+      ]
+    },
+
+    section5: {
+      onEnter() {
+        state.confrontedSheriff = true;
+      },
+      text: `You boldly confront Sheriff Mallory in the town square, exposing some of his weaknesses and the saloon gang’s alliance with him. The sheriff is angered and tightens his grip on the town. The saloon gang increases patrols, and the townspeople are divided — some respect your boldness, others fear the consequences.
+
+The bank remains under siege, and the sheriff’s power is still strong.`,
+      choices: [
+        { text: 'Challenge Sheriff Mallory’s lieutenant to a duel to weaken his forces', next: 'section12' },
+        { text: 'Seek to gain trust of Reformist Outlaws by offering partnership', next: 'section10' },
+        { text: 'Gather more evidence from town hall to fully discredit Mallory', next: 'section9' }
+      ]
+    },
+
+    section6: {
+      onEnter() {
+        state.trust.settlers = true;
+      },
+      text: `You assist the Settlers faction with local issues, helping to protect their homes and interests. Slowly, they begin to trust you.
+
+Sheriff Mallory grows suspicious of your growing influence. The saloon gang still controls the saloon, but the bank situation has stabilized.`,
+      choices: [
+        { text: 'Attempt to gain Miners’ trust by assisting with mine security', next: 'section8' },
+        { text: 'Retrieve compromising documents from town hall', next: 'section9' },
+        { text: 'Confront saloon gang to reduce their power', next: 'section7' }
+      ]
+    },
+
+    section7: {
+      onEnter() {
+        // Saloon gang weakened
+      },
+      text: `You sabotage the saloon gang’s operations, disrupting their control and influence. The sheriff’s hold on the town weakens indirectly. The townspeople start trusting you slightly more, though no faction fully trusts you yet.`,
+      choices: [
+        { text: 'Negotiate with Reformist Outlaws for alliance', next: 'section10' },
+        { text: 'Try to gain Miners’ trust by helping secure mines', next: 'section8' },
+        { text: 'Retrieve compromising documents from town hall', next: 'section9' }
+      ]
+    },
+
+    section8: {
+      onEnter() {
+        state.trust.miners = true;
+      },
+      text: `You help the Miners secure the gold mines from outlaws, proving your worth and loyalty. The Miners now fully trust you. Depending on your previous actions, you may also have the Settlers’ trust.
+
+Sheriff Mallory’s power is waning, though the saloon gang’s influence varies.`,
+      choices: [
+        { text: 'Attempt to gain Reformist Outlaws’ trust by negotiation', next: 'section10' },
+        { text: 'Retrieve compromising documents from town hall', next: 'section9' },
+        { text: 'Prepare for final confrontation by challenging Mallory’s lieutenant', next: 'section12' }
+      ]
+    },
+
+    section9: {
+      onEnter() {
+        state.documentsRetrieved = true;
+      },
+      text: `You retrieve the compromising documents from the town hall, holding evidence that could bring down Sheriff Mallory. The sheriff grows desperate and more dangerous. The townspeople begin to trust you more.
+
+Your trust level with factions depends on your earlier choices.`,
+      choices: [
+        { text: 'Use documents to confront Sheriff Mallory and demand resignation', next: 'section13' },
+        { text: 'Share documents with factions to gain their trust', next: 'section14' },
+        { text: 'Challenge Sheriff Mallory’s lieutenant to a duel to weaken his forces', next: 'section12' }
+      ]
+    },
+
+    section10: {
+      onEnter() {
+        state.trust.reformists = true;
+      },
+      text: `You negotiate with the Reformist Outlaws, offering partnership and a chance for change. They now trust you.
+
+Depending on your prior actions, you may have trust from one or two factions. Sheriff Mallory’s position weakens, and the saloon gang’s influence varies.`,
+      choices() {
+        const trustsCount = [state.trust.miners, state.trust.settlers, state.trust.reformists].filter(Boolean).length;
+        const choices = [];
+        if (trustsCount >= 2 && state.documentsRetrieved) {
+          choices.push({ text: 'Prepare for final duel', next: 'section15' });
+        }
+        if (!state.documentsRetrieved) {
+          choices.push({ text: 'Retrieve compromising documents from town hall', next: 'section9' });
+        }
+        choices.push({ text: 'Challenge Sheriff Mallory’s lieutenant to weaken his forces', next: 'section12' });
+        return choices;
+      }
+    },
+
+    section11: {
+      onEnter() {
+        state.trust.settlers = true;
+      },
+      text: `Using your influence from the bank, you gain the full trust of the Settlers faction. Sheriff Mallory watches your growing power warily. The bank is stable, but the trust of other factions depends on your previous actions.`,
+      choices: [
+        { text: 'Attempt to gain Miners’ trust', next: 'section8' },
+        { text: 'Negotiate with Reformist Outlaws', next: 'section10' },
+        { text: 'Retrieve compromising documents from town hall', next: 'section9' }
+      ]
+    },
+
+    section12: {
+      onEnter() {
+        state.lieutenantDefeated = true;
+      },
+      text: `You challenge Sheriff Mallory’s lieutenant to a duel. After a tense and skillful fight, you defeat him, significantly weakening Mallory’s forces. The townspeople grow more supportive of you.
+
+Your trust with factions depends on your prior actions.`,
+      choices() {
+        const trustsCount = [state.trust.miners, state.trust.settlers, state.trust.reformists].filter(Boolean).length;
+        const choices = [];
+        if (trustsCount >= 2 && state.documentsRetrieved) {
+          choices.push({ text: 'Challenge Sheriff Mallory in the final duel', next: 'section15' });
+        }
+        if (!state.documentsRetrieved) {
+          choices.push({ text: 'Retrieve compromising documents from town hall', next: 'section9' });
+        }
+        if (trustsCount < 2) {
+          if (!state.trust.miners) choices.push({ text: 'Gain Miners’ trust', next: 'section8' });
+          if (!state.trust.reformists) choices.push({ text: 'Negotiate with Reformist Outlaws', next: 'section10' });
+        }
+        return choices;
+      }
+    },
+
+    section13: {
+      onEnter() {
+        state.leaderRecognized = false;
+      },
+      text: `You confront Sheriff Mallory with the damning documents. Cornered and desperate, he is forced to resign and flee Redstone Gulch. Your reputation improves greatly, and the townspeople begin to trust you.
+
+You still need to secure support from the factions to solidify your leadership.`,
+      choices() {
+        const choices = [];
+        if (!state.trust.miners) choices.push({ text: 'Secure support from Miners', next: 'section8' });
+        if (!state.trust.reformists) choices.push({ text: 'Secure support from Reformist Outlaws', next: 'section10' });
+        if (!state.trust.settlers) choices.push({ text: 'Secure support from Settlers', next: 'section6' });
+        choices.push({ text: 'Organize final public assembly to be recognized as leader', next: 'section16' });
+        return choices;
+      }
+    },
+
+    section14: {
+      onEnter() {
+        // Sharing documents gains trust of at least two factions
+        state.trust.miners = true;
+        state.trust.reformists = true;
+        state.trust.settlers = true;
+      },
+      text: `You share the compromising documents with the factions, gaining their trust and support. Sheriff Mallory’s support crumbles, and the townspeople increasingly look to you as a beacon of hope.`,
+      choices: [
+        { text: 'Prepare for final duel with Sheriff Mallory or his replacement', next: 'section15' },
+        { text: 'Organize public assembly to be recognized as leader', next: 'section16' }
+      ]
+    },
+
+    section15: {
+      onEnter() {
+        state.finalDuelReady = true;
+      },
+      text: `The final duel is upon you. You face Sheriff Mallory or his lieutenant in a tense showdown. With skill and determination, you defeat your opponent, removing the last obstacle to your leadership.
+
+The factions and townspeople recognize your strength and resolve.`,
+      choices: [
+        { text: 'Organize public assembly to solidify leadership', next: 'section16' }
+      ]
+    },
+
+    section16: {
+      onEnter() {
+        state.leaderRecognized = true;
+      },
+      text: `In a grand public assembly, the citizens and factions of Redstone Gulch officially recognize Dusty Bill as their legitimate leader. Sheriff Mallory is ousted, and the town begins its restoration under your just and firm guidance.
+
+Congratulations, Dusty Bill. You have completed your quest and brought hope back to Redstone Gulch.`,
+      choices: [
+        { text: 'Play Again', next: 'start' }
+      ]
+    }
+  };
+
+  // Helper to render text and choices
+  function renderSection(id) {
+    const section = sections[id];
+    if (!section) return;
+
+    // Run onEnter if exists
+    if (section.onEnter) {
+      section.onEnter();
+    }
+
+    // Compose narrative text
+    let text = section.text;
+    // If choices is a function, call it to get dynamic choices
+    let choices = typeof section.choices === 'function' ? section.choices() : section.choices;
+
+    // Clear previous content
+    narrativeEl.textContent = '';
+    choicesEl.innerHTML = '';
+
+    // Show narrative text
+    narrativeEl.textContent = text;
+
+    // Create buttons for choices
+    choices.forEach(choice => {
+      const btn = document.createElement('button');
+      btn.textContent = choice.text;
+      btn.type = 'button';
+      btn.addEventListener('click', () => {
+        renderSection(choice.next);
+      });
+      choicesEl.appendChild(btn);
+    });
+  }
+
+  // Start game
+  renderSection('start');
+})();
+</script>
+</body>
+</html>
