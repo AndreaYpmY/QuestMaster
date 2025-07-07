@@ -1,0 +1,61 @@
+You are a narrative engine and expert in PDDL planning, tasked with creating an interactive story structure for the quest "Martian Grand Slam" that maps to a PDDL planning problem. The story is based on the following Lore Document:  
+[Lore Document: Insert the full Martian Grand Slam Lore Document provided above]
+
+**Objective**: Generate a complete, interactive story structure that:
+- Starts with the exact initial state from the Lore Document.
+- Leads to at least **3 distinct goal states** (e.g., Nova wins the Intergalactic Tennis Championship, Nova exposes Vega’s cheating but doesn’t win, Nova gains sponsors but retires).
+- Respects the branching factor: each narrative state must have 2 to 4 available actions.
+- Respects the depth constraints: the story must be completable in 8 to 16 actions.
+- Incorporates all obstacles from the Lore Document (e.g., qualifying for matches, acquiring equipment, uncovering Vega’s cheating).
+- Features rich, immersive narrative descriptions that evoke the futuristic setting of Olympus Station, Nova’s emotions, and the stakes of the story.
+
+**Critical Requirements**:
+1. **Narrative Structure**:
+   - Each section represents a distinct **world state** with:
+     - A vivid narrative description (100-150 words) of the current situation, including the setting, Nova’s emotions, and key characters/objects.
+     - A list of current world facts (e.g., Nova’s ranking, equipment status, sponsorships).
+     - Player location and status (e.g., Nova is at Olympus Station’s training arena, exhausted but determined).
+   - Each action represents a narrative choice that:
+     - Has clear **preconditions** (what must be true to take this action, e.g., Nova must have a sponsor to enter a tournament).
+     - Has clear **effects** (what changes in the world, e.g., Nova gains a ranking point).
+     - Advances the story toward one of the goal states.
+   - Avoid simplistic binary choices (e.g., “win or lose”) within a single state; instead, actions should reflect meaningful narrative decisions (e.g., train harder, investigate Vega, seek a sponsor).
+2. **Multiple Endings**:
+   - Define at least 3 distinct goal states, each with a narrative resolution (e.g., championship victory, moral victory by exposing Vega, or retirement with sponsors).
+   - Ensure each goal state is reachable via a unique path of actions.
+3. **PDDL Compatibility**:
+   - The story structure must map to a valid PDDL domain and problem file, with states and actions translatable into predicates and actions.
+   - Each action must have a narrative description and corresponding PDDL-like preconditions/effects.
+4. **Validation**:
+   - Ensure the story starts with the exact initial state from the Lore Document.
+   - Ensure all paths respect the branching factor (2-4 actions) and depth constraints (8-16 actions).
+   - Ensure all obstacles from the Lore Document are addressed.
+   - If the constraints cannot be met, return ONLY the word "IMPOSSIBLE" and stop.
+
+**Output Format**:
+Section 1: [INITIAL STATE]
+Narrative Description: [Vivid 100-150 word description of the starting situation, setting, and Nova’s emotions]
+Current State: [List of world facts, e.g., “Nova has no sponsor, Nova’s equipment is outdated”]
+Player Location and Status: [e.g., “Nova is at Olympus Station’s arrival dock, feeling overwhelmed”]
+Available Actions:
+- [Action 1]: [Narrative description, preconditions, effects] → Go to Section [X]
+- [Action 2]: [Narrative description, preconditions, effects] → Go to Section [Y]
+[Continue for 2-4 actions]
+
+Section 2: [State after Action 1]
+Narrative Description: [Vivid 100-150 word description of the new situation]
+Current State: [Updated world facts]
+Player Location and Status: [e.g., “Nova is at the training arena, feeling confident”]
+Available Actions:
+- [Action A]: [Description, preconditions, effects] → Go to Section [Z]
+[Continue for 2-4 actions]
+
+[Continue until all paths reach one of the 3+ goal states]
+
+**Constraints**:
+- Avoid repetitive or generic actions; each action must feel unique and tied to the narrative.
+- Ensure narrative descriptions are immersive, with vivid details about the Martian setting, zero-gravity tennis, and Nova’s journey.
+- Ensure actions and states are translatable to PDDL predicates and actions for later conversion.
+- If the story cannot respect all constraints, return ONLY "IMPOSSIBLE".
+
+Generate the COMPLETE story structure now.

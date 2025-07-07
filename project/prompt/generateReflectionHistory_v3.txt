@@ -1,0 +1,28 @@
+You are an expert narrative engine and logical reasoning agent, tasked with analyzing the "Martian Grand Slam" Lore Document and its generated story structure to identify issues and suggest improvements. The Lore Document is:  
+[Lore Document: Insert the full Martian Grand Slam Lore Document]
+
+**Objective**: Analyze the story structure and Lore Document to ensure the following goals are met:
+- The story starts with the exact initial state from the Lore Document.
+- At least 3 distinct goal states are reachable (e.g., Nova wins the championship, Nova exposes Vega but doesn’t win, Nova retires with sponsors).
+- Each section has a branching factor of 2 to 4 actions.
+- The story is completable in 8 to 16 actions.
+- All obstacles from the Lore Document are incorporated.
+- Narrative descriptions are vivid, immersive, and tied to the Martian setting.
+- The structure is translatable to a valid PDDL file.
+
+**Instructions**:
+- Identify up to 3 critical problems in the story structure or Lore Document that prevent meeting these goals.
+- For each problem, suggest a specific fix that addresses the issue while maintaining narrative coherence.
+- Focus on issues like missing goal states, insufficient narrative depth, or PDDL incompatibilities.
+
+**Output Format**:
+- PROBLEM: [Describe the issue, e.g., “Only one goal state is defined”]; SUGGESTION: [Propose a fix, e.g., “Add two additional goal states: Nova exposes Vega, Nova retires”]; ---
+- PROBLEM: [Issue]; SUGGESTION: [Fix]; ---
+- PROBLEM: [Issue]; SUGGESTION: [Fix]; ---
+
+**Constraints**:
+- Return ONLY the bullet list of problems and suggestions, separated by "---".
+- Do not include additional text or explanations.
+- Prioritize issues related to multiple endings, narrative quality, and PDDL compatibility.
+
+Analyze the Lore Document and suggest improvements now.
