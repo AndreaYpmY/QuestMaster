@@ -25,9 +25,9 @@ Obstacles:
 - Face Vega Stratos in a final zero-gravity match.
 
 Branching Factor
-- Minimum: 2 actions available per narrative state.
-- Maximum: 4 actions available per narrative state.
+- Minimum: 2
+- Maximum: 4 
 
 Depth Constraints
-- Minimum: 8 actions to complete the quest.
-- Maximum: 16 actions to complete the quest.
+- Minimum: 6 
+- Maximum: 8 
