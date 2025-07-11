@@ -22,11 +22,14 @@ from typing_extensions import TypedDict
 
 # ----- VARIABILI -----
 MODEL="llama3.2" #gpt-4o-mini o llama3.2
-TEMPERATURE_STORY=0.6
-TEMPERATURE_PDDL_DOMAIN=0
-TEMPERATURE_PDDL_PROBLEM=0
-TEMPERATURE_PDDL_REFLECTION=0
-TEMPERATURE_HTML=0
+TEMPERATURE_STORY=0.7
+TEMPERATURE_PDDL=0.1
+TEMPERATURE_PDDL_DOMAIN=0.1
+TEMPERATURE_PDDL_PROBLEM=0.1
+TEMPERATURE_PDDL_REFLECTION=0.1
+TEMPERATURE_HTML=0.1
+
+TOP_P = 1.0
 
 FASTDOWNWARD_PATH = "../downward"  
 LORE_DOCUMENT_PATH = "lore_document.txt"  
@@ -42,10 +45,9 @@ OPENAI_API_KEY = os.getenv("OPENAI_API_KEY")
 
 # ESEMPI DI PDDL
 
-examples_domain = [
-    {
-        "input": "An example of a narrative quest domain.pddl file for interactive storytelling.",
-        "output": f"""(define (domain quest-adventure)
+esempi = [
+    {"description": "An example of a narrative quest PDDLs for interactive storytelling.",
+     "PDDL": {"domain": f"""(define (domain quest-adventure)
     (:requirements :strips :typing :negative-preconditions) ; Standard PDDL requirements
 
     (:types
@@ -157,74 +159,8 @@ examples_domain = [
             (quest-completed)                    ; Quest is marked as completed
         )
     )
-)"""
-    },
-    {
-        "input": "An example of a simple dungeon exploration domain.pddl file.",
-        "output": f"""(define (domain dungeon-quest)
-    (:requirements :strips :typing)               ; PDDL requirements declaration
-
-    (:types
-        location character item - object           ; Basic object hierarchy
-        room corridor - location                  ; Specific location types
-        hero monster - character                  ; Character types
-        sword potion key - item                   ; Item types
-    )
-
-    (:predicates
-        (at ?obj - object ?loc - location)        ; Object location predicate
-        (connected ?loc1 - location ?loc2 - location) ; Location connectivity
-        (has-item ?char - character ?item - item) ; Character inventory
-        (door-open ?from - location ?to - location) ; Door state between locations
-        (monster-defeated ?m - monster)           ; Monster defeat status
-        (treasure-found)                          ; Victory condition
-    )
-
-    (:action move-to-room
-        :parameters (?h - hero ?from - location ?to - location)
-        :precondition (and 
-            (at ?h ?from)                         ; Hero at starting location
-            (connected ?from ?to)                 ; Rooms are connected
-            (door-open ?from ?to)                 ; Door between rooms is open
-        )
-        :effect (and 
-            (at ?h ?to)                          ; Hero moves to new room
-            (not (at ?h ?from))                  ; Hero leaves old room
-        )
-    )
-
-    (:action pick-up-item
-        :parameters (?h - hero ?item - item ?loc - location)
-        :precondition (and 
-            (at ?h ?loc)                         ; Hero at item location
-            (at ?item ?loc)                      ; Item at same location
-        )
-        :effect (and 
-            (has-item ?h ?item)                  ; Hero acquires item
-            (not (at ?item ?loc))                ; Item removed from location
-        )
-    )
-
-    (:action fight-monster
-        :parameters (?h - hero ?m - monster ?s - sword ?loc - location)
-        :precondition (and 
-            (at ?h ?loc)                         ; Hero at monster location
-            (at ?m ?loc)                         ; Monster at same location
-            (has-item ?h ?s)                     ; Hero has sword
-        )
-        :effect (and 
-            (monster-defeated ?m)                ; Monster is defeated
-            (not (at ?m ?loc))                   ; Monster removed from location
-        )
-    )
-)"""
-    }
-]
-
-examples_problem = [
-    {
-        "input": "An example of a narrative quest problem.pddl file for interactive storytelling.",
-        "output": f"""(define (problem treasure-quest)
+)
+""", "problem": f"""(define (problem treasure-quest)
     (:domain quest-adventure)                    ; References the quest-adventure domain
 
     (:objects
@@ -286,11 +222,67 @@ examples_problem = [
             (has hero dragon-treasure)          ; Hero possesses the treasure
         )
     )
-)"""
+)"""},
     },
-    {
-        "input": "An example of a simple dungeon problem.pddl file.",
-        "output": f"""(define (problem dungeon-adventure)
+    {"description": "An example of a simple dungeon exploration PDDLs.",
+     "PDDL": {"domain": f"""(define (domain dungeon-quest)
+    (:requirements :strips :typing)               ; PDDL requirements declaration
+
+    (:types
+        location character item - object           ; Basic object hierarchy
+        room corridor - location                  ; Specific location types
+        hero monster - character                  ; Character types
+        sword potion key - item                   ; Item types
+    )
+
+    (:predicates
+        (at ?obj - object ?loc - location)        ; Object location predicate
+        (connected ?loc1 - location ?loc2 - location) ; Location connectivity
+        (has-item ?char - character ?item - item) ; Character inventory
+        (door-open ?from - location ?to - location) ; Door state between locations
+        (monster-defeated ?m - monster)           ; Monster defeat status
+        (treasure-found)                          ; Victory condition
+    )
+
+    (:action move-to-room
+        :parameters (?h - hero ?from - location ?to - location)
+        :precondition (and 
+            (at ?h ?from)                         ; Hero at starting location
+            (connected ?from ?to)                 ; Rooms are connected
+            (door-open ?from ?to)                 ; Door between rooms is open
+        )
+        :effect (and 
+            (at ?h ?to)                          ; Hero moves to new room
+            (not (at ?h ?from))                  ; Hero leaves old room
+        )
+    )
+
+    (:action pick-up-item
+        :parameters (?h - hero ?item - item ?loc - location)
+        :precondition (and 
+            (at ?h ?loc)                         ; Hero at item location
+            (at ?item ?loc)                      ; Item at same location
+        )
+        :effect (and 
+            (has-item ?h ?item)                  ; Hero acquires item
+            (not (at ?item ?loc))                ; Item removed from location
+        )
+    )
+
+    (:action fight-monster
+        :parameters (?h - hero ?m - monster ?s - sword ?loc - location)
+        :precondition (and 
+            (at ?h ?loc)                         ; Hero at monster location
+            (at ?m ?loc)                         ; Monster at same location
+            (has-item ?h ?s)                     ; Hero has sword
+        )
+        :effect (and 
+            (monster-defeated ?m)                ; Monster is defeated
+            (not (at ?m ?loc))                   ; Monster removed from location
+        )
+    )
+)""",
+    "problem": f"""(define (problem dungeon-adventure)
     (:domain dungeon-quest)                     ; Uses dungeon-quest domain
 
     (:objects
@@ -335,25 +327,18 @@ examples_problem = [
             (at player treasure-room)           ; Player reaches treasure room
         )
     )
-)"""
-    }
+)"""}
+    },
 ]
+
 
 # Conversione nel formato richiesto per langchain
-example_messages_domain = [
+messaggi_esempi = [
     [
-        ("user", ex["input"]),
-        ("assistant", ex["output"])
+        ("user", ex["description"]),
+        ("assistant", str(ex["PDDL"]))
     ]
-    for ex in examples_domain
-]
-
-example_messages_problem = [
-    [
-        ("user", ex["input"]),
-        ("assistant", ex["output"])
-    ]
-    for ex in examples_problem
+    for ex in esempi
 ]
 
 
@@ -371,18 +356,18 @@ class QuestMasterState(TypedDict):
     suggestion: list
     acepted_suggestion: list
 
-def get_model(temp:float):
-    """
-    Restituisce il modello da utilizzare per la generazione della storia e del PDDL.
-    """
-    print(f"> Utilizzo il modello {MODEL} con temperatura {temp}\n")
+
+
+def get_model(temp: float, top_p: float | None = None):
+    print(f"> Utilizzo il modello {MODEL} con temperatura {temp} e top_p {top_p}\n")
+
     if MODEL == "gpt-4.1-mini":
-        return ChatOpenAI(model=MODEL, temperature=temp, openai_api_key=OPENAI_API_KEY)
+        kwargs = {"model": MODEL, "temperature": temp, "openai_api_key": OPENAI_API_KEY}
+        if top_p is not None:
+            kwargs["top_p"] = top_p
+        return ChatOpenAI(**kwargs)
     else:
         return ChatOllama(model=MODEL, temperature=temp)
-
-
-
 
 
 
@@ -409,10 +394,12 @@ def GeneraStoria_node(state: QuestMasterState):
         - Each choice must represent a specific ACTION that changes the world state
         - Respect branching factor: each section must have between MIN and MAX choices
         - Respect depth constraints: story must have between MIN and MAX steps to reach goal
+        - May be more than one distinct goal states 
 
         STRUCTURE REQUIREMENTS:
         1. Start with the exact INITIAL STATE from the lore
         2. Each section describes a game state with:
+            - Clear narrative description with dialogues scenes for each section that describe the story state 200-400 word of description, remaining compliant with the lore and the story
             - Current world conditions
             - Available objects/characters
             - Player location and status
@@ -420,9 +407,11 @@ def GeneraStoria_node(state: QuestMasterState):
             - Has clear preconditions (what must be true to take this action)
             - Has clear effects (what changes in the world state)
             - Moves toward the GOAL STATE
+            - Avoid simplistic choices (e.g., “win or lose”); instead, actions should reflect meaningful narrative decision that permit to moves toward the states
 
         OUTPUT FORMAT:
         Section 1: [INITIAL STATE - describe exact starting conditions]
+        Narrative: [Narrative description with dialogues scenes for each section that describe the story state]
         Current State: [List current world facts]
         Available Actions:
         - [Action 1]: [Clear description] → Go to Section [X]
@@ -445,7 +434,7 @@ def GeneraStoria_node(state: QuestMasterState):
         If is impossible to create the story with the given lore document and respect the constraints, returns ONLY the word "IMPOSSIBLE".
 
         Generate the COMPLETE story structure now and do not insert the validation checklist or summary at the end."""),
-    ("user", "Lore Document: {lore_text}\nGenerate the complete structured interactive story respecting ALL constraints.")])
+    ("user", "Lore Document: {lore_text}\n Generate a complete structured interactive story respecting ALL constraints.")])
     
     print("2# LLM invocato per la creazione della storia \n")
     formatted_prompt = prompt.invoke({"lore_text": state["lore"]})
@@ -658,7 +647,7 @@ def GeneraPDDLproblem_node(state: QuestMasterState):
 
 
 def GeneraPDDL_node(state: QuestMasterState):
-    llm= get_model(TEMPERATURE_PDDL_PROBLEM)
+    llm= get_model(TEMPERATURE_PDDL, TOP_P)
 
     prompt = ChatPromptTemplate.from_messages([("system", f"""You are an expert PDDL domain and problem generator for the QuestMaster interactive story system.
                     
@@ -728,16 +717,16 @@ def GeneraPDDL_node(state: QuestMasterState):
                     )
                 )
                 
-                Check the output carefylly for syntax errors and because the PDDLs MUST be solvable by a classical planner.
+                DO NOT invent predicates, objects or goals that are not justified by the story.
+                DO A DOUBLE CHECK of the output for syntax errors and for be sure the PDDLs MUST be solvable by a classical planner as Fast Downward.
+                Generate first the domain PDDL and after that the problem PDDL, based on the domain.
                 Return ONLY the domain and problem PDDLs, the domain PDDL have to begins with "(define (domain..." whereas the problem PDDL have to begins with "(define (problem...", no other text at begin or end of the PDDL for each one.
                 Return first the PDDL domain and then the PDDL problem.
                 Separate the PDDLs by "---OTHER---". """), 
-                MessagesPlaceholder(variable_name="Domain PDDL examples"),
-                MessagesPlaceholder(variable_name="Problem PDDL examples"),
+                MessagesPlaceholder(variable_name="Domain and problem PDDLs examples"),
                 ("user", "Given the following narrative story: {story_text}. Generate the domain and problem PDDLs files, with detailed comments, and separate the PDDLs by \"---OTHER---\".")])
     
-    formatted_prompt = prompt.invoke({"Domain PDDL examples": [msg for example in example_messages_domain for msg in example],
-                                      "Problem PDDL examples": [msg for example in example_messages_problem for msg in example],
+    formatted_prompt = prompt.invoke({"Domain and problem PDDLs examples": [msg for esempi in messaggi_esempi for msg in esempi],
                                     "story_text": state["story"]})
     
     print("3# LLM per generare il PDDL invocato \n")
@@ -845,7 +834,7 @@ def reflection_node(state: QuestMasterState):
     else:
         error = " ".join(errors)
 
-    llm= get_model(TEMPERATURE_PDDL_REFLECTION)
+    llm= get_model(TEMPERATURE_PDDL_REFLECTION, TOP_P)
 
     prompt = ChatPromptTemplate.from_messages([("system", f"""You are a PDDL expert and logical reasoning agent.
             Analyze the PDDLs files which you can found at the end, and reflect on these files to detect issues, logical inconsistencies, narrative gaps and suggest improvements, based on the error message given from the planner.
@@ -853,34 +842,36 @@ def reflection_node(state: QuestMasterState):
             Follow these steps carefully: 
                 1. Make syntax validation:
                     Check whether the two files are SYNTACTICALLY CORRECT:
-                        - The domain.pddl file must correctly define:
+                        a. The domain.pddl file must correctly define:
                             - (define (domain ...))
                             - :predicates, :action, :parameters, :precondition, :effect, etc.
-                        - The problem.pddl file must include:
+                        b. The problem.pddl file must include:
                             - (define (problem ...))
                             - (domain ...), :objects, :init, :goal, etc.
-                        - Missing parentheses
-                        - Undeclared or mismatched names
-                        - Invalid PDDL constructs
+                        c. Missing parentheses
+                        d. Undeclared or mismatched names
+                        e. Invalid PDDL constructs
 
                 2. Make semantic validation:
                     If syntax is valid, analyze whether the GOAL IS LOGICALLY ACHIEVABLE:
-                        - Is the goal state reachable based on the initial state and available actions?
-                        - Are the objects, predicates, and actions in the domain properly used to progress toward the goal?
-                        - Are there missing actions or predicates that prevent reaching the goal?
+                        a. Is the goal state reachable based on the initial state and available actions?
+                        b. Are the objects, predicates, and actions in the domain properly used to progress toward the goal?
+                        c. Are there missing actions or predicates that prevent reaching the goal?
+                                                
+                3. If the planner error says "no plans found", first list all possible actions from the initial state. Then simulate whether these actions can progress the state toward the goal. If not, explain what's missing.
 
-                3. Generate a structured output
+                4. Generate a structured output
                     Provide a structured report with a bullet list of problems followed by the possible fixes, separated by type and separate each output with "---"
                             - [ ] Briefly describe each syntax error (e.g., "Missing closing parenthesis in `:action move`") and suggest a fix for each issue.
                             - [ ] If the planner cannot reach the goal, explain why (e.g., There is no action that makes door-open true) and suggest changes to the domain or problem to make the goal achievable.
             
             Return ONLY the bullet list of problems followed by the possible fixes and separate each output with "---", no other text.
-            Return the 10 most important problems and suggestions to resolve the error given from the planner.
+            Return the 10 most important problems and fixes to resolve the error given from the planner.
                                                 
             Example of expected output:
-                    - PROBLEM: "Missing closing parenthesis on line 23"; SUGGESTION: "close the parenthesis on line 23"; ---
-                    - PROBLEM: "Predicate 'at' is used but not declared in :predicates"; SUGGESTION: "Declare the predicate 'at' in :predicates"; ---
-                    - PROBLEM: "No action makes the goal (at robot room2) achievable; SUGGESTION: "Add a 'move' action with precondition (at ?r ?from) and effect (not (at ?r ?from)) (at ?r ?to)"; ---
+                    - PROBLEM: "Missing closing parenthesis on line 23"; FIX: "close the parenthesis on line 23"; ---
+                    - PROBLEM: "Predicate 'at' is used but not declared in :predicates"; FIX: "Declare the predicate 'at' in :predicates"; ---
+                    - PROBLEM: "No action makes the goal (at robot room2) achievable; FIX: "Add a 'move' action with precondition (at ?r ?from) and effect (not (at ?r ?from)) (at ?r ?to)"; ---
             """),
             
             
@@ -906,11 +897,13 @@ def human_in_the_loop_node(state: QuestMasterState):
     
     suggestion = state["suggestion"]
     accepted_suggestion = []
+    i=0
     for s in suggestion:
-        print("> " + s + "\n")
+        print(f"{i}: > " + s + "\n")
         u_input = input("Vuoi accettare questa modifica? (y/n): ")
         if u_input == "y":
             accepted_suggestion.append(s)
+        i = i+1
             
     return {"acepted_suggestion": accepted_suggestion}
 
@@ -919,9 +912,9 @@ def human_in_the_loop_node(state: QuestMasterState):
 def fix_pddl_node(state: QuestMasterState):
     print("6# Correzione PDDL tramite i suggerimenti \n")
 
-    llm= get_model(TEMPERATURE_PDDL_REFLECTION)
+    llm= get_model(TEMPERATURE_PDDL_REFLECTION, TOP_P)
 
-    prompt = ChatPromptTemplate.from_messages([("system", f"""You are a PDDL expert generator agent.
+    prompt = ChatPromptTemplate.from_messages([("system", f"""You are a PDDL expert generator agent and repair assistant.
                 Modify the domain and problem PDDLs accordingly to fix these issues, focus on preserving the original structure and content as much as possible, making minimal necessary changes for correctness and solvability.
                 Use the suggestions to correct all detected problems, including syntax errors and logical inconsistencies, so that:
                     - The PDDL syntax is fully valid.
@@ -930,7 +923,7 @@ def fix_pddl_node(state: QuestMasterState):
                 Return ONLY the PDDL domain and problem, no other text at begin or end of the PDDL for each one.
                 Return first the PDDL domain and then the PDDL problem.
                 Separate the PDDLs by "---OTHER---"."""),
-            ("user", "Applay the following suggestion: {suggestion} to the PDDL domain and problem files, in ordert to correct the issue and make the PDDLs solvable by a classical planner. Separate the PDDLs by \"---OTHER---\" \n Domain PDDL: {domain_pddl} \n Problem PDDL: {problem_pddl}")])
+            ("user", "Apply the following FIXES one by one to the given PDDL domain and problem, in ordert to correct the issue and make the PDDLs solvable by a classical planner. \n FIXES: {suggestion}. \n Domain PDDL: {domain_pddl}. \n Problem PDDL: {problem_pddl}. \n Separate the PDDLs by \"---OTHER---\". ")])
     
     formatted_prompt = prompt.invoke({"domain_pddl": state["domain_pddl"], "problem_pddl": state["problem_pddl"], "suggestion": state["acepted_suggestion"]})
     
@@ -999,12 +992,11 @@ def generate_HTML_node(state: QuestMasterState):
             Your output must be a complete, valid, and self-contained HTML file playable in any modern web browser.
             The story is a sci-fi interactive quest based on a lore document, story text, PDDL domain and problem files, and a sequence of plan steps.
             You must produce:
-                - Clear narrative description with dialogues scenes for each section that describe the story state 200-400 word of description, remaining compliant with the lore and the story
                 - Interactive buttons to progress through the story. If there are multiple choise, add a button for each choise and cosider the followed path
                 - A starting page with a story summary and a "Start Game" button
                 - A final scene with a "Play Again" button to restart
             Use only HTML, CSS, and JavaScript; no external libraries or dependencies.
-            The style should be minimalist with a light theme, readable fonts and appropriate colors.
+            The style should be minimalist with a light theme, readable fonts and appropriate colors and for the text use the narrative in the story.
             
             Do NOT use any Markdown formatting such as triple backticks (```) or language tags like ```html.
             Ensure all HTML tags are valid, closed properly, and no text is outside of HTML tags.
@@ -1082,12 +1074,14 @@ builder.add_conditional_edges("genera_storia",
     })
 """
 
+
 builder.add_conditional_edges("genera_storia",
     lambda x: "valid" if x["is_valid_story"] else "invalid",
     {
         "valid": "genera_pddl",
         "invalid": "invalid_story"
     })
+
 
 builder.add_edge("invalid_story", "genera_storia")
 
@@ -1156,4 +1150,3 @@ if __name__ == "__main__":
     MODEL = select_model()
     # Eseguo il grafo
     result = graph.invoke({"file_path": LORE_DOCUMENT_PATH}, {"recursion_limit": 100})
-

@@ -1,33 +1,23 @@
-Quest Description
-
-#Title: Martian Grand Slam
-
-#Setting: The story is set in the futuristic colony of Olympus Station on Mars, home to the most advanced zero-gravity sports arenas in the solar system. Tennis has evolved into a high-tech spectacle, played not only on Mars but across various planetary stations. Olympus Station is the birthplace of the Intergalactic Tennis League (ITL), where champions rise — and fall — in gravity-defying matches.
-
-#Protagonist: Nova Racket, a young Earth-born tennis prodigy, has recently moved to Mars. Determined to become the **Intergalactic Tennis Champion**, Nova must overcome local rivals, adapt to Martian physics, and win the grueling planetary tournaments that lead up to the final championship on Jupiter's moon, Europa.
-
-#Goal State: Nova Racket is crowned Intergalactic Tennis Champion after defeating the reigning champion in the Grand Arena of Europa.
+# Quest Description
+The Kingdom of Eldoria is on the brink of collapse after the Crystal of Light was stolen. The hero must recover it by journeying through the Whispering Forest, finding the hidden Temple of Echoes, and defeating the Dark Warden.
 
 Initial State:
-- Nova has just arrived at Olympus Station.
-- Nova has no sponsor and no ranking.
-- The current Martian champion is Vega Stratos.
-- Rival players form cliques that block Nova’s entry to tournaments.
-- Nova’s equipment is outdated.
-- Rumors say Vega is using illegal tech to enhance performance.
+- The hero is in the village of Dawnmere
+- The Crystal is lost
+- The Dark Warden guards the temple
+
+Goal:
+- The hero possesses the Crystal of Light
+- The Dark Warden is defeated
 
 Obstacles:
-- Qualify for official Martian league matches.
-- Acquire a high-tech racket and suit adapted to low gravity.
-- Win the Olympus Trials tournament.
-- Uncover proof of Vega’s cheating.
-- Earn support from at least two planetary sponsors.
-- Face Vega Stratos in a final zero-gravity match.
+- The hero needs a magical key to enter the temple
+- The key is held by a forest spirit who only helps the worthy
 
-Branching Factor
-- Minimum: 2 
-- Maximum: 4 
+Branching Factor:
+- Min: 3
+- Max: 4
 
-Depth Constraints
-- Minimum: 8 
-- Maximum: 16 
+Depth Constraints:
+- Min: 6
+- Max: 12
