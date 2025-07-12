@@ -1,0 +1,23 @@
+# Quest Description
+The Kingdom of Eldoria is on the brink of collapse after the Crystal of Light was stolen. The hero must recover it by journeying through the Whispering Forest, finding the hidden Temple of Echoes, and defeating the Dark Warden.
+
+Initial State:
+- The hero is in the village of Dawnmere
+- The Crystal is lost
+- The Dark Warden guards the temple
+
+Goal:
+- The hero possesses the Crystal of Light
+- The Dark Warden is defeated
+
+Obstacles:
+- The hero needs a magical key to enter the temple
+- The key is held by a forest spirit who only helps the worthy
+
+Branching Factor:
+- Min: 2
+- Max: 4
+
+Depth Constraints:
+- Min: 6
+- Max: 8

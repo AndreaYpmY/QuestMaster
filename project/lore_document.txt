@@ -1,23 +1,33 @@
-# Quest Description
-The Kingdom of Eldoria is on the brink of collapse after the Crystal of Light was stolen. The hero must recover it by journeying through the Whispering Forest, finding the hidden Temple of Echoes, and defeating the Dark Warden.
+Quest Description:
 
-Initial State:
-- The hero is in the village of Dawnmere
-- The Crystal is lost
-- The Dark Warden guards the temple
+#Title: The Rise of Dusty Bill
 
-Goal:
-- The hero possesses the Crystal of Light
-- The Dark Warden is defeated
+#Setting: The story takes place in the dusty town of Redstone Gulch, a remote settlement in the Wild West. Ruled with an iron fist by the corrupt sheriff Frank Mallory, the town teeters on the brink of chaos. Outlaws roam freely, the townsfolk are weary, and the nearby gold mines attract greedy eyes.
+
+#Protagonist: Dusty Bill, a former bounty hunter with a mysterious past, returns to Redstone Gulch with a single goal: to become the leader of the town and restore justice — on his own terms.
+
+#Goal State:
+Dusty Bill is recognized as the legitimate leader of the town by its citizens and local factions.
+
+#Initial State:
+- Dusty Bill has just arrived in town.
+- Frank Mallory is the sheriff.
+- The saloon is controlled by a local gang.
+- The bank is under siege by outlaws.
+- The townspeople trust no one.
+- There are 3 main factions: Miners, Settlers, and Reformist Outlaws.
 
 Obstacles:
-- The hero needs a magical key to enter the temple
-- The key is held by a forest spirit who only helps the worthy
+- Remove the corrupt sheriff from power.
+- Gain the trust of at least 2 out of the 3 factions.
+- Retrieve compromising documents from the town hall.
+- Face a final duel against Frank or one of his lieutenants.
+- Avoid becoming a tyrant himself.
 
-Branching Factor:
-- Min: 3
-- Max: 4
+Branching Factor
+- Minimum: 2
+- Maximum: 3 
 
-Depth Constraints:
-- Min: 6
-- Max: 12
+Depth Constraints
+- Minimum: 4
+- Maximum: 8

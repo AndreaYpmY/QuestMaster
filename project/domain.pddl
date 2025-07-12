@@ -1,350 +1,385 @@
-(define (domain eldoria-quest)
-    (:requirements :strips :typing :negative-preconditions) ; Use STRIPS, typing, and negation
-
+(define (domain redstone-gulch)
+    (:requirements :strips :typing :negative-preconditions)
+    
     (:types
-        location character item - object          ; Basic object types
-        hero npc - character                       ; Characters: hero and NPCs
-        village forest temple - location           ; Locations: village, forest, temple
-        key crystal - item                         ; Items: magical key and crystal
+        location character faction item state-level reputation-level - object
     )
-
+    
+    (:constants
+        miners settlers gang - faction
+    )
+    
     (:predicates
         ; Location predicates
-        (at ?obj - object ?loc - location)        ; Object or character is at a location
-
-        ; Item possession predicates
-        (has ?char - character ?item - item)      ; Character has an item
-
-        ; Knowledge and status predicates
-        (knows-forest-spirit-test ?char - character) ; Hero knows about forest spirit's test
-        (has-guidance-from-hunter ?char - character) ; Hero has hunter's guidance
-        (has-rumors-about-temple ?char - character)  ; Hero has rumors about temple
-
-        ; Item state predicates
-        (magical-key-obtained ?char - character)  ; Hero obtained magical key
-        (crystal-lost)                             ; Crystal is lost
-        (crystal-visible)                          ; Crystal visible in temple
-        (crystal-possessed ?char - character)     ; Hero possesses the Crystal of Light
-
-        ; Location states
-        (dark-warden-guards-temple)                ; Dark Warden guards temple
-        (dark-warden-weakened)                      ; Dark Warden is weakened
-        (dark-warden-defeated)                      ; Dark Warden is defeated
-
-        ; Hero states
-        (hero-rested)                               ; Hero has rested
-        (hero-in-battle)                            ; Hero is in battle
-
-        ; Environmental states
-        (secret-entrance-found)                      ; Secret entrance to temple found
-        (at-forest-spirit-glade ?char - character) ; Hero at forest spirit's glade
-        (at-temple-entrance ?char - character)      ; Hero at temple entrance
-        (inside-temple ?char - character)            ; Hero inside temple
-        (injured ?char - character)                    ; Hero injured (minor)
-        (distracted)                                 ; Dummy predicate for distract-warden action
+        (at ?char - character ?loc - location) ; Character is at a location
+        
+        ; Trust predicates
+        (trusts ?f - faction ?char - character) ; Faction trusts character
+        
+        ; Control predicates
+        (controls ?char - character ?loc - location) ; Character controls location
+        (controls-gang ?loc - location) ; Gang controls location (saloon)
+        (siege ?loc - location) ; Location is under siege (bank)
+        
+        ; Reputation predicates
+        (reputation-unknown ?char - character) ; Character's reputation is unknown
+        (reputation ?char - character ?level - reputation-level) ; Character's reputation level (e.g. increased)
+        
+        ; State predicates
+        (sheriff ?char - character) ; Character is sheriff
+        (gang-suspicious) ; Gang is suspicious of Dusty Bill
+        (gang-hostile) ; Gang is hostile to Dusty Bill
+        (gang-partial-trust) ; Gang partially trusts Dusty Bill
+        
+        (deputy-patrol) ; Deputies patrol town hall
+        (documents-available) ; Compromising documents are available
+        (documents-possession ?char - character) ; Character possesses compromising documents
+        
+        (ally ?char - character ?f - faction) ; Character allied with faction
+        (ally-gang ?char - character) ; Character allied with gang
+        
+        (mallory-corrupt) ; Mallory is corrupt
+        (mallory-power-weakened) ; Mallory's power weakened
+        (mallory-defeated) ; Mallory defeated
+        (mallory-resigned) ; Mallory resigned
+        
+        (cole-identified) ; Cole identified as lieutenant
+        (cole-ally ?char - character) ; Cole allied with character
+        (cole-loyal) ; Cole loyal to Dusty Bill
+        (cole-unsteady) ; Cole unsteady in loyalty
+        
+        (final-duel-pending) ; Final duel pending
+        
+        (townhall-controlled ?char - character) ; Character controls town hall
+        
+        (miners-skeptical) ; Miners skeptical
+        (miners-trust-increased) ; Miners trust increased
+        (miners-agree-support) ; Miners agree to support Dusty Bill
+        
+        (settlers-cautious) ; Settlers cautiously optimistic
+        (settlers-trust-increased) ; Settlers trust increased
+        (settlers-agree-support) ; Settlers agree to support Dusty Bill
+        (settlers-full-trust) ; Settlers fully trust Dusty Bill
+        
+        (outlaws-allied) ; Reformist outlaws allied with Dusty Bill
+        
+        (bank-liberated) ; Bank siege lifted
+        
+        (dusty-leader) ; Dusty Bill is leader of Redstone Gulch
+        (player ?char - character) ; Main player character
+        (dusty-leads-council) ; Dusty leads faction council
+        
+        (risk-violent-retaliation) ; Risk of violent retaliation increased
+        (risk-tyranny) ; Risk of Dusty becoming tyrant increased
+        
+        (challenge-duel ?opponent - character) ; Duel challenge pending with opponent
+        
+        (gang-intimidated) ; Gang intimidated by Dusty Bill
     )
-
-    (:action gather-info-elder
-        :parameters (?h - hero ?elder - npc ?village - village)
-        :precondition (and
-            (at ?h ?village)                         ; Hero is in village
-            (at ?elder ?village)                     ; Elder is in village
-        )
+    
+    (:action arrive-in-town
+        :parameters (?d - character ?loc - location)
+        :precondition (not (at ?d ?loc))
         :effect (and
-            (knows-forest-spirit-test ?h)           ; Hero gains knowledge of forest spirit's test
-        )
-    )
-
-    (:action prepare-and-set-out
-        :parameters (?h - hero ?from - location ?to - location)
-        :precondition (and
-            (at ?h ?from)                           ; Hero at starting location
-        )
-        :effect (and
-            (at ?h ?to)                            ; Hero moves to Whispering Forest
-            (not (at ?h ?from))                    ; Hero leaves previous location
-            (hero-rested)                          ; Hero has prepared/rested
-        )
-    )
-
-    (:action seek-hunter-guidance
-        :parameters (?h - hero ?hunter - npc ?village - village)
-        :precondition (and
-            (at ?h ?village)                       ; Hero in village
-            (at ?hunter ?village)                  ; Hunter in village
-        )
-        :effect (and
-            (has-guidance-from-hunter ?h)          ; Hero gains hunter's guidance
-        )
-    )
-
-    (:action talk-to-villager
-        :parameters (?h - hero ?villager - npc ?village - village)
-        :precondition (and
-            (at ?h ?village)                       ; Hero in village
-            (at ?villager ?village)               ; Villager in village
-        )
-        :effect (and
-            (has-rumors-about-temple ?h)           ; Hero gains rumors about temple
-        )
-    )
-
-    (:action seek-forest-spirit-glade
-        :parameters (?h - hero ?forest - forest)
-        :precondition (and
-            (at ?h ?forest)                        ; Hero in Whispering Forest
-        )
-        :effect (and
-            (at-forest-spirit-glade ?h)            ; Hero at forest spirit's glade
-            (not (at ?h ?forest))
+            (at ?d ?loc) ; Character arrives at town
+            (reputation-unknown ?d) ; Reputation unknown
+            (gang-suspicious) ; Gang suspicious
+            (miners-skeptical) ; Miners skeptical
+            (settlers-cautious)
+            (player ?d)
         )
     )
-
-    (:action explore-deeper-forest
-        :parameters (?h - hero ?forest - forest)
-        :precondition (and
-            (at ?h ?forest)                        ; Hero in Whispering Forest
-        )
+    
+    (:action visit-miners-camp
+        :parameters (?d - character ?from ?to - location)
+        :precondition (and (at ?d ?from))
         :effect (and
-            (injured ?h)                          ; Hero gets injured exploring deeper
+            (not (at ?d ?from))
+            (at ?d ?to)
+            (miners-skeptical) ; Miners remain skeptical initially
+            (gang-suspicious)
+            (settlers-cautious)
         )
     )
-
-    (:action follow-animal-tracks
-        :parameters (?h - hero ?forest - forest)
-        :precondition (and
-            (at ?h ?forest)                        ; Hero in Whispering Forest
-        )
+    
+    (:action approach-settlers-council
+        :parameters (?d - character ?from ?to - location)
+        :precondition (and (at ?d ?from))
         :effect (and
-            (secret-entrance-found)                ; Following tracks leads to secret entrance found
+            (not (at ?d ?from))
+            (at ?d ?to)
+            (settlers-cautious) ; Settlers cautiously optimistic
+            (miners-skeptical)
+            (gang-suspicious)
         )
     )
-
-    (:action rest
-        :parameters (?h - hero ?loc - location)
-        :precondition (and
-            (at ?h ?loc)                          ; Hero at some location
-        )
+    
+    (:action infiltrate-saloon
+        :parameters (?d - character ?from ?to - location)
+        :precondition (and (at ?d ?from))
         :effect (and
-            (hero-rested)                         ; Hero has rested
-            (not (injured ?h))                    ; Hero recovers from injury if any
+            (not (at ?d ?from))
+            (at ?d ?to)
+            (gang-suspicious) ; Gang suspicious but open to negotiation
+            (miners-skeptical)
+            (settlers-cautious)
         )
     )
-
-    (:action accept-test
-        :parameters (?h - hero)
-        :precondition (and
-            (at-forest-spirit-glade ?h)           ; Hero at forest spirit's glade
-            (not (magical-key-obtained ?h))       ; Hero does not have key yet
-        )
+    
+    (:action promise-protection-miners
+        :parameters (?d - character ?loc - location)
+        :precondition (and (at ?d ?loc) (miners-skeptical))
         :effect (and
-            (magical-key-obtained ?h)              ; Hero obtains magical key
+            (not (miners-skeptical))
+            (miners-trust-increased)
+            (miners-agree-support)
         )
     )
-
-    (:action injured-explore-forest
-        :parameters (?h - hero ?forest - forest)
-        :precondition (and
-            (at ?h ?forest)
-            (injured ?h)
-        )
+    
+    (:action reveal-mallory-corruption-to-miners
+        :parameters (?d - character ?loc - location)
+        :precondition (and (at ?d ?loc) (miners-skeptical) (not (mallory-corrupt)))
         :effect (and
-            (at-forest-spirit-glade ?h)
-            (not (at ?h ?forest))
+            (mallory-corrupt)
+            (not (miners-skeptical))
+            (miners-trust-increased)
         )
     )
-
-    (:action proceed-temple-entrance
-        :parameters (?h - hero ?forest - forest ?temple - temple)
-        :precondition (and
-            (magical-key-obtained ?h)
-            (at ?h ?forest)
-            (secret-entrance-found)
-        )
+    
+    (:action volunteer-retrieve-documents-settlers
+        :parameters (?d - character ?loc - location)
+        :precondition (and (at ?d ?loc) (settlers-cautious))
         :effect (and
-            (at-temple-entrance ?h)
-            (not (at ?h ?forest))
-            (at ?h ?temple)
+            (not (settlers-cautious))
+            (documents-available)
+            (settlers-trust-increased)
         )
     )
-
-    (:action leave-forest-spirit-glade
-        :parameters (?h - hero ?forest - forest)
-        :precondition (and
-            (at-forest-spirit-glade ?h)
-        )
+    
+    (:action offer-protection-land-settlers
+        :parameters (?d - character ?loc - location)
+        :precondition (and (at ?d ?loc) (settlers-cautious))
         :effect (and
-            (at ?h ?forest)
-            (not (at-forest-spirit-glade ?h))
+            (not (settlers-cautious))
+            (settlers-trust-increased)
+            (settlers-agree-support)
         )
     )
-
-    (:action leave-temple-entrance
-        :parameters (?h - hero ?temple - temple)
-        :precondition (and
-            (at-temple-entrance ?h)
-        )
+    
+    (:action challenge-poker-jake
+        :parameters (?d - character ?loc - location)
+        :precondition (and (at ?d ?loc) (gang-suspicious))
         :effect (and
-            (at ?h ?temple)
-            (not (at-temple-entrance ?h))
+            (not (gang-suspicious))
+            (gang-partial-trust)
         )
     )
-
-    (:action enter-temple
-        :parameters (?h - hero ?temple - temple ?warden - npc)
-        :precondition (and
-            (at-temple-entrance ?h)
-            (magical-key-obtained ?h)
-            (dark-warden-guards-temple)
-            (at ?warden ?temple)
-        )
+    
+    (:action threaten-gang
+        :parameters (?d - character ?loc - location)
+        :precondition (and (at ?d ?loc) (gang-suspicious))
         :effect (and
-            (inside-temple ?h)
-            (hero-in-battle)
-            (not (dark-warden-guards-temple))
-            (not (at-temple-entrance ?h))
-            (not (at ?h ?temple))
+            (not (gang-suspicious))
+            (gang-hostile)
         )
     )
-
-    (:action scout-temple-perimeter
-        :parameters (?h - hero ?temple - temple)
-        :precondition (and
-            (at-temple-entrance ?h)
-            (magical-key-obtained ?h)
-        )
+    
+    (:action promise-raid-bank
+        :parameters (?d - character)
+        :precondition (and (miners-agree-support))
         :effect (and
-            (secret-entrance-found)
+            (bank-liberated)
+            (miners-trust-increased)
+            (settlers-trust-increased)
         )
     )
-
-    (:action call-out-warden
-        :parameters (?h - hero ?temple - temple ?warden - npc)
-        :precondition (and
-            (at-temple-entrance ?h)
-            (dark-warden-guards-temple)
-            (magical-key-obtained ?h)
-            (at ?warden ?temple)
-        )
+    
+    (:action plan-strike-supply-lines
+        :parameters (?d - character)
+        :precondition (and (miners-trust-increased))
         :effect (and
-            (dark-warden-weakened)
+            (mallory-power-weakened)
+            (risk-violent-retaliation)
         )
     )
-
-    (:action rest-before-battle
-        :parameters (?h - hero ?loc - location)
-        :precondition (and
-            (or (at-temple-entrance ?h) (secret-entrance-found))
-            (magical-key-obtained ?h)
-        )
+    
+    (:action sneak-steal-documents
+        :parameters (?d - character ?loc - location)
+        :precondition (and (at ?d ?loc) (documents-available) (not (documents-possession ?d)) (not (deputy-patrol)))
         :effect (and
-            (hero-rested)
+            (documents-possession ?d)
+            (not (documents-available))
         )
     )
-
-    (:action use-key-power
-        :parameters (?h - hero)
-        :precondition (and
-            (hero-in-battle)
-            (magical-key-obtained ?h)
-            (not (dark-warden-weakened))
-        )
+    
+    (:action confront-deputy
+        :parameters (?d - character ?loc - location)
+        :precondition (and (at ?d ?loc) (deputy-patrol))
         :effect (and
-            (dark-warden-weakened)
+            (not (deputy-patrol))
         )
     )
-
-    (:action direct-combat
-        :parameters (?h - hero)
-        :precondition (and
-            (hero-in-battle)
-            (not (dark-warden-defeated))
-        )
+    
+    (:action rally-settlers-defend-bank
+        :parameters (?d - character)
+        :precondition (and (settlers-agree-support) (bank-liberated))
         :effect (and
-            (dark-warden-defeated)
-            (not (hero-in-battle))
+            (miners-trust-increased)
+            (settlers-trust-increased)
         )
     )
-
-    (:action dodge-and-search-crystal
-        :parameters (?h - hero)
-        :precondition (and
-            (hero-in-battle)
-            (not (crystal-visible))
-        )
+    
+    (:action organize-settlers-challenge-mallory
+        :parameters (?d - character)
+        :precondition (and (settlers-agree-support))
         :effect (and
-            (crystal-visible)
-            (not (crystal-lost))
+            (settlers-full-trust)
+            (risk-violent-retaliation)
         )
     )
-
-    (:action enter-secret-entrance
-        :parameters (?h - hero ?temple - temple)
-        :precondition (and
-            (secret-entrance-found)
-            (magical-key-obtained ?h)
-            (at ?h ?temple)
-        )
+    
+    (:action negotiate-gang-betrayal
+        :parameters (?d - character)
+        :precondition (and (gang-partial-trust))
         :effect (and
-            (inside-temple ?h)
-            (hero-in-battle)
-            (not (at ?h ?temple))
+            (ally-gang ?d)
+            (mallory-power-weakened)
         )
     )
-
-    (:action rush-grab-crystal
-        :parameters (?h - hero)
-        :precondition (and
-            (hero-in-battle)
-            (crystal-visible)
-            (not (crystal-possessed ?h))
-            (inside-temple ?h)
-        )
+    
+    (:action duel-lieutenant-cole
+        :parameters (?d - character ?cole - character)
+        :precondition (and (cole-identified) (not (cole-ally ?d)))
         :effect (and
-            (crystal-possessed ?h)
-            (dark-warden-defeated)
-            (not (hero-in-battle))
-            (not (crystal-lost))
+            (not (cole-identified))
+            (mallory-power-weakened)
+            (cole-ally ?d)
         )
     )
-
-    (:action distract-warden
-        :parameters (?h - hero)
-        :precondition (and
-            (hero-in-battle)
-            (dark-warden-weakened)
-            (not (dark-warden-defeated))
-        )
+    
+    (:action recruit-cole
+        :parameters (?d - character ?cole - character)
+        :precondition (and (cole-identified) (not (cole-ally ?d)))
         :effect (and
-            (distracted)
+            (cole-ally ?d)
+            (mallory-power-weakened)
         )
     )
-
-    (:action disarm-warden
-        :parameters (?h - hero)
-        :precondition (and
-            (hero-in-battle)
-            (dark-warden-weakened)
-            (not (dark-warden-defeated))
-        )
+    
+    (:action draw-pistol-gang
+        :parameters (?d - character)
+        :precondition (and (gang-hostile))
         :effect (and
-            (dark-warden-defeated)
-            (not (hero-in-battle))
+            (not (gang-hostile))
+            (gang-intimidated)
+            (ally-gang ?d)
+            (risk-tyranny)
         )
     )
-
-    (:action take-crystal
-        :parameters (?h - hero)
-        :precondition (and
-            (dark-warden-defeated)
-            (not (crystal-possessed ?h))
-            (crystal-visible)
-            (inside-temple ?h)
-        )
+    
+    (:action confront-deputy-publicly
+        :parameters (?d - character)
+        :precondition (and (bank-liberated))
         :effect (and
-            (crystal-possessed ?h)
-            (not (crystal-lost))
+            (mallory-power-weakened)
+        )
+    )
+    
+    (:action fortify-alliance-outlaws
+        :parameters (?d - character)
+        :effect (and
+            (outlaws-allied)
+            (mallory-power-weakened)
+        )
+    )
+    
+    (:action present-documents-to-factions
+        :parameters (?d - character)
+        :precondition (and (documents-possession ?d))
+        :effect (and
+            (trusts miners ?d)
+            (trusts settlers ?d)
+            (mallory-corrupt)
+            (mallory-power-weakened)
+        )
+    )
+    
+    (:action demand-mallory-resignation
+        :parameters (?d - character ?mallory - character)
+        :precondition (and (mallory-power-weakened))
+        :effect (and
+            (mallory-resigned)
+        )
+    )
+    
+    (:action prepare-final-duel
+        :parameters (?d - character)
+        :precondition (and (mallory-power-weakened))
+        :effect (and
+            (final-duel-pending)
+        )
+    )
+    
+    (:action storm-townhall
+        :parameters (?d - character)
+        :precondition (and (ally-gang ?d))
+        :effect (and
+            (townhall-controlled ?d)
+            (mallory-power-weakened)
+        )
+    )
+    
+    (:action duel-mallory
+        :parameters (?d - character ?mallory - character)
+        :precondition (and (final-duel-pending))
+        :effect (and
+            (mallory-defeated)
+            (not (final-duel-pending))
+            (dusty-leader)
+        )
+    )
+    
+    (:action negotiate-mallory-resignation
+        :parameters (?d - character ?mallory - character)
+        :precondition (and (mallory-power-weakened))
+        :effect (and
+            (mallory-resigned)
+            (dusty-leader)
+        )
+    )
+    
+    (:action establish-leadership
+        :parameters (?d - character)
+        :precondition (and (dusty-leader))
+        :effect (and
+            (dusty-leads-council)
+        )
+    )
+    
+    (:action consult-factions-council
+        :parameters (?d - character)
+        :precondition (and (dusty-leader))
+        :effect (and
+            (dusty-leads-council)
+            (not (risk-tyranny))
+        )
+    )
+    
+    (:action confront-cole-loyalty
+        :parameters (?d - character ?cole - character)
+        :precondition (and (cole-ally ?d) (cole-unsteady))
+        :effect (and
+            (cole-loyal)
+            (not (cole-unsteady))
+        )
+    )
+    
+    (:action give-cole-chance
+        :parameters (?d - character ?cole - character)
+        :precondition (and (cole-ally ?d) (cole-unsteady))
+        :effect (and
+            (cole-loyal)
+            (not (cole-unsteady))
         )
     )
 )
-

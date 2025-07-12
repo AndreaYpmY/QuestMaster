@@ -1,0 +1,416 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>La Quête di Eldoria</title>
+<style>
+  body {
+    background: #f9f9f9;
+    color: #222;
+    font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
+    margin: 0;
+    padding: 0;
+    display: flex;
+    min-height: 100vh;
+    flex-direction: column;
+  }
+  #game {
+    max-width: 720px;
+    margin: 2rem auto 3rem auto;
+    background: #fff;
+    border-radius: 8px;
+    box-shadow: 0 0 12px rgba(0,0,0,0.1);
+    padding: 1.5rem 2rem 2rem 2rem;
+  }
+  h1, h2 {
+    color: #004d40;
+    margin-top: 0;
+  }
+  p {
+    line-height: 1.5;
+    font-size: 1.1rem;
+  }
+  .buttons {
+    margin-top: 1.5rem;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.8rem;
+  }
+  button {
+    background: #00796b;
+    border: none;
+    color: white;
+    padding: 0.6rem 1.2rem;
+    border-radius: 5px;
+    font-size: 1rem;
+    cursor: pointer;
+    flex-grow: 1;
+    min-width: 140px;
+    transition: background-color 0.3s ease;
+  }
+  button:hover, button:focus {
+    background: #004d40;
+    outline: none;
+  }
+  footer {
+    text-align: center;
+    font-size: 0.9rem;
+    color: #666;
+    margin-bottom: 1rem;
+  }
+</style>
+</head>
+<body>
+<div id="game" role="main" aria-live="polite" aria-atomic="true">
+  <!-- Content dynamically inserted here -->
+</div>
+<footer>© Regno di Eldoria - Avventura Interattiva</footer>
+<script>
+(() => {
+  // Sections data keyed by section number
+  const sections = {
+    0: {
+      title: "Benvenuto a Eldoria",
+      narrative: `Il Regno di Eldoria è sull'orlo del collasso dopo il furto del Cristallo di Luce. Tu, eroe del regno, devi recuperarlo attraversando la Foresta Sussurrante, trovando il nascosto Tempio degli Echi e sconfiggendo il Guardiano Oscuro.`,
+      summary: `Il sole tramonta sul pacifico villaggio di Dawnmere, gettando lunghe ombre sulle strade di ciottoli. Il Cristallo di Luce, speranza del regno, è stato rubato. Senza di esso, l'oscurità consumerà la terra. Devi trovare la chiave magica dal guardiano della foresta per entrare nel tempio e affrontare il Guardiano Oscuro.`,
+      choices: [
+        { text: "Inizia la tua avventura", next: 1 }
+      ]
+    },
+    1: {
+      title: "Piazza del Villaggio di Dawnmere",
+      narrative: `Il sole tramonta sul pacifico villaggio di Dawnmere, gettando lunghe ombre sulle strade di ciottoli. Tu, eroe di Eldoria, stai nella piazza del villaggio, il cuore gravato da una missione importante. Il Cristallo di Luce è stato rubato. I villaggi mormorano nervosi, temendo ciò che verrà. La Foresta Sussurrante si estende oltre il villaggio, con i suoi alberi che sussurrano segreti e pericoli. Nel profondo si trova il nascosto Tempio degli Echi, dove il Guardiano Oscuro protegge il Cristallo. Ma per entrare devi trovare una chiave magica tenuta da uno spirito della foresta, che aiuta solo i degni. Ti prepari, consapevole che il viaggio sarà pericoloso ma necessario per salvare Eldoria.`,
+      choices: [
+        { text: "Avventurati nella Foresta Sussurrante per cercare lo spirito della foresta", next: 2 },
+        { text: "Cerca consiglio dall'anziana del villaggio sullo spirito della foresta", next: 3 },
+        { text: "Prepara le provviste al mercato del villaggio prima di partire", next: 4 }
+      ]
+    },
+    2: {
+      title: "Foresta Sussurrante",
+      narrative: `Entri cautamente sotto la fitta chioma della Foresta Sussurrante. L'aria è fresca e densa del profumo di muschio e terra. Suoni strani riecheggiano intorno a te: uccelli che chiamano, foglie che frusciano e sussurri quasi come voci. Addentrandoti, una figura luminosa si materializza davanti a te: lo spirito della foresta. Ti osserva in silenzio, con occhi che brillano di antica saggezza. "Per ottenere il mio aiuto, devi dimostrare il tuo valore," intona. "Affronterai la prova del coraggio o quella della saggezza?" La tua scelta determinerà il cammino.`,
+      choices: [
+        { text: "Accetta la prova del coraggio per dimostrare il tuo valore", next: 5 },
+        { text: "Accetta la prova della saggezza per dimostrare il tuo intelletto", next: 6 },
+        { text: "Prova a persuadere lo spirito senza affrontare la prova", next: 7 }
+      ]
+    },
+    3: {
+      title: "La Casa dell'Anziana",
+      narrative: `Trovi l'anziana del villaggio nella sua piccola casa, circondata da antichi tomi e artefatti. Ti ascolta attentamente mentre descrivi la tua missione. "Lo spirito della foresta è un guardiano dell'equilibrio," spiega. "Metterà alla prova chi cerca la chiave. A volte il coraggio è la risposta; altre volte la saggezza. Alcuni dicono che lo spirito rispetti soprattutto l'onestà e la gentilezza." Ti offre una benedizione per aiutarti nell'incontro e ti avverte di scegliere con saggezza l'approccio.`,
+      choices: [
+        { text: "Avventurati nella Foresta Sussurrante e scegli la prova del coraggio", next: 5, blessed: true },
+        { text: "Avventurati nella Foresta Sussurrante e scegli la prova della saggezza", next: 6, blessed: true },
+        { text: "Avventurati nella Foresta Sussurrante e prova a persuadere lo spirito con gentilezza", next: 7, blessed: true }
+      ]
+    },
+    4: {
+      title: "Mercato del Villaggio",
+      narrative: `Prima di partire, visiti il vivace mercato del villaggio. I mercanti chiamano i loro prodotti: pozioni, armi, amuleti e provviste. Raccogli l'essenziale: una pozione curativa, un pugnale robusto e una mappa della Foresta Sussurrante. Equipaggiato e pronto, ti senti più sicuro ad affrontare l'ignoto. I villaggi ti guardano con speranza mentre lasci il mercato, dirigendoti verso gli alberi imponenti.`,
+      choices: [
+        { text: "Entra nella Foresta Sussurrante per cercare lo spirito della foresta", next: 2, hasSupplies: true },
+        { text: "Cerca consiglio dall'anziana del villaggio prima di procedere", next: 3, hasSupplies: true }
+      ]
+    },
+    5: {
+      title: "Prova del Coraggio",
+      narrative: `La forma dello spirito della foresta si illumina. "Molto bene, coraggioso. Affronta le Ombre del Dubbio," ordina. Improvvisamente, figure ombrose emergono, sussurrando paure e dubbi. Il tuo cuore batte forte mentre ti prepari contro le illusioni. Stringi forte il pugnale e carichi avanti, dissipando le ombre con ogni colpo di volontà. Dopo una lotta intensa, le ombre svaniscono e lo spirito annuisce con approvazione. "Hai dimostrato il tuo coraggio. La chiave magica è tua." Una piccola chiave luminosa appare nella tua mano, vibrante di potere.`,
+      choices: [
+        { text: "Procedi verso il Tempio degli Echi", next: 8 },
+        { text: "Riposa brevemente per recuperare le forze", next: 9 }
+      ]
+    },
+    6: {
+      title: "Prova della Saggezza",
+      narrative: `Lo spirito della foresta sorride enigmaticamente. "Rispondi al mio indovinello e la chiave sarà tua." Recita: "Parlo senza bocca e sento senza orecchie. Non ho corpo, ma prendo vita col vento. Cosa sono?" Rifletti attentamente, ricordando i sussurri degli alberi. "Un'eco," rispondi con sicurezza. Lo spirito sorride con approvazione. "Hai mostrato saggezza. Prendi questa chiave ed entra nel tempio." Una chiave radiosa si materializza nel palmo della tua mano, luminosa di luce eterea.`,
+      choices: [
+        { text: "Dirigiti al Tempio degli Echi per affrontare il Guardiano Oscuro", next: 8 },
+        { text: "Esplora ulteriormente la foresta per trovare erbe utili", next: 10 }
+      ]
+    },
+    7: {
+      title: "Tentativo di Persuasione",
+      narrative: `Inginocchiandoti rispettosamente, parli con sincerità allo spirito della foresta. "Cerco solo di salvare il mio regno e restaurare il Cristallo di Luce. Ti prego, concedimi la tua chiave." Lo spirito ti osserva solennemente, considerando le tue parole. "Molti hanno tentato di evitare le prove," dice, "ma solo i degni riescono. Non posso darti la chiave senza che tu ti dimostri." La tua richiesta viene negata e lo spirito svanisce nelle ombre, lasciandoti a riflettere sul tuo approccio.`,
+      choices: [
+        { text: "Accetta la prova del coraggio per dimostrare il tuo valore", next: 5 },
+        { text: "Accetta la prova della saggezza per dimostrare il tuo intelletto", next: 6 }
+      ]
+    },
+    8: {
+      title: "Tempio degli Echi",
+      narrative: `L'antico Tempio degli Echi si erge davanti a te, le sue mura di pietra coperte da rune mistiche. La chiave magica pulsa nella tua mano, sbloccando la pesante porta con un clic risonante. All'interno, le ombre danzano mentre emerge il Guardiano Oscuro: una figura imponente avvolta nell'oscurità, brandendo una lama sinistra. "Osi sfidarmi?" ringhia il Guardiano. Il tuo destino e quello del regno dipendono da questa battaglia. Prepari le armi e ti prepari a combattere.`,
+      choices: [
+        { text: "Affronta il Guardiano Oscuro in combattimento", next: 11 },
+        { text: "Prova a negoziare con il Guardiano Oscuro", next: 12 },
+        { text: "Usa una pozione curativa prima della lotta", next: 13, requiresPotion: true }
+      ]
+    },
+    9: {
+      title: "Riposo nella Radura",
+      narrative: `Trovi una radura tranquilla illuminata dalla soffusa luce della luna e ti riposi un momento, curando le ferite e riprendendo fiato. La foresta intorno a te è calma e la chiave magica riscalda il palmo della tua mano. Senti tornare la forza e la tua determinazione si rafforza. Presto dovrai affrontare il Guardiano Oscuro e reclamare il Cristallo.`,
+      choices: [
+        { text: "Procedi verso il Tempio degli Echi", next: 8 },
+        { text: "Cerca nella foresta risorse aggiuntive", next: 10 }
+      ]
+    },
+    10: {
+      title: "Ricerca di Erbe Curative",
+      narrative: `Ti addentri nella fitta vegetazione, cercando erbe note per curare le ferite e aumentare la resistenza. Dopo un po', trovi diverse piante con foglie luminose: il dono della foresta per aiutarti. Le raccogli con cura, sperando che ti diano un vantaggio nelle battaglie a venire.`,
+      choices: [
+        { text: "Torna al Tempio degli Echi con le erbe", next: 8, hasHerbs: true },
+        { text: "Riposa nella foresta per prepararti", next: 9 }
+      ]
+    },
+    11: {
+      title: "Combattimento con il Guardiano Oscuro",
+      narrative: `Acciaio contro ombra mentre combatti il Guardiano Oscuro. I suoi colpi sono feroci, ma il tuo coraggio e la tua abilità resistono. Schivi un colpo mortale e contrattacchi, il tuo pugnale che brilla con la luce del Cristallo. Dopo una lotta intensa, il Guardiano vacilla e cade, sconfitto. Il Cristallo di Luce brilla intensamente dal suo piedistallo, ora libero per te. Sollievo e trionfo riempiono il tuo cuore mentre la speranza del regno si rinnova.`,
+      choices: [
+        { text: "Prendi il Cristallo e torna a Dawnmere", next: 14 }
+      ]
+    },
+    12: {
+      title: "Tentativo di Negoziazione",
+      narrative: `Abbassi l'arma e parli con calma al Guardiano Oscuro. "Non c'è bisogno di altro spargimento di sangue. Restituisci il Cristallo e la pace potrà tornare." Gli occhi del Guardiano tremolano d'incertezza. Dopo un momento teso, ringhia: "Solo i degni possono reclamare il Cristallo." Attacca improvvisamente, costringendoti a difenderti. La lotta è brutale, ma la tua determinazione non vacilla.`,
+      choices: [
+        { text: "Combatti il Guardiano Oscuro", next: 11 },
+        { text: "Cerca di fuggire e riorganizzarti", next: 9 }
+      ]
+    },
+    13: {
+      title: "Uso della Pozione Curativa",
+      narrative: `Stappi una pozione curativa, sentendo la sua energia calda diffondersi nel corpo. Le ferite si chiudono e i muscoli si rilassano, preparandoti alla sfida. Il Guardiano Oscuro osserva in silenzio, aspettando la tua mossa. Con nuova forza, ti prepari a combattere.`,
+      choices: [
+        { text: "Affronta il Guardiano Oscuro in combattimento", next: 11 },
+        { text: "Prova a negoziare con il Guardiano Oscuro", next: 12 }
+      ]
+    },
+    14: {
+      title: "Ritorno a Dawnmere",
+      narrative: `Con il Cristallo di Luce al sicuro nelle tue mani, torni attraverso la Foresta Sussurrante, le sue ombre ora meno minacciose. I villaggi di Dawnmere ti accolgono come un eroe, i loro volti illuminati dalla gioia e dal sollievo. Il futuro del regno è di nuovo luminoso. La tua missione è compiuta, ma le storie del tuo coraggio riecheggeranno in Eldoria per generazioni.`,
+      choices: [
+        { text: "Celebra la tua vittoria e riposa", next: "end" }
+      ]
+    }
+  };
+
+  // Game state
+  let state = {
+    currentSection: 0,
+    blessed: false,
+    hasSupplies: false,
+    hasHerbs: false,
+    hasPotion: false,
+    hasDagger: false,
+    hasMap: false,
+    hasMagicalKey: false,
+    trialCourageCompleted: false,
+    trialWisdomCompleted: false,
+    darkWardenDefeated: false,
+    darkWardenHostile: false,
+    heroHealthFull: true,
+    heroHealthPartial: false,
+    crystalPossessed: false
+  };
+
+  const gameDiv = document.getElementById("game");
+
+  // Utility to clear and set content
+  function renderSection(sectionId) {
+    if (sectionId === "end") {
+      renderEnd();
+      return;
+    }
+    const sec = sections[sectionId];
+    if (!sec) {
+      gameDiv.innerHTML = `<h2>Errore: sezione non trovata.</h2>`;
+      return;
+    }
+    state.currentSection = sectionId;
+
+    // Update state flags based on section transitions
+    switch(sectionId) {
+      case 2: // Entered forest, encounter spirit
+        state.hasMagicalKey = false;
+        state.darkWardenHostile = false;
+        break;
+      case 3: // Elder's cottage, blessing granted
+        state.blessed = true;
+        break;
+      case 4: // Market, supplies gathered
+        state.hasSupplies = true;
+        state.hasPotion = true;
+        state.hasDagger = true;
+        state.hasMap = true;
+        break;
+      case 5: // Trial of courage completed
+        state.trialCourageCompleted = true;
+        state.hasMagicalKey = true;
+        break;
+      case 6: // Trial of wisdom completed
+        state.trialWisdomCompleted = true;
+        state.hasMagicalKey = true;
+        break;
+      case 7: // Persuasion failed, spirit fades, dark warden hostile
+        state.darkWardenHostile = true;
+        break;
+      case 8: // Enter temple
+        // nothing special here, key must be possessed
+        break;
+      case 9: // Resting, partial health
+        state.heroHealthPartial = true;
+        state.heroHealthFull = false;
+        break;
+      case 10: // Herbs collected
+        state.hasHerbs = true;
+        break;
+      case 11: // Dark Warden defeated
+        state.darkWardenDefeated = true;
+        state.crystalPossessed = true;
+        break;
+      case 12: // Negotiation attempt, dark warden hostile
+        state.darkWardenHostile = true;
+        break;
+      case 13: // Used healing potion
+        if(state.hasPotion) {
+          state.heroHealthFull = true;
+          state.heroHealthPartial = false;
+          state.hasPotion = false;
+        }
+        break;
+      case 14: // Returned to village with crystal
+        // Quest complete
+        break;
+    }
+
+    // Compose HTML
+    let html = `<h1>${sec.title}</h1>`;
+    if (sectionId === 0) {
+      html += `<p><em>${sec.narrative}</em></p>`;
+      html += `<p>${sec.summary}</p>`;
+    } else {
+      html += `<p>${sec.narrative}</p>`;
+    }
+
+    // Show inventory and status summary for immersion
+    html += `<hr/><p><strong>Stato attuale:</strong> `;
+    let statusParts = [];
+    if(state.hasSupplies) statusParts.push("Hai provviste essenziali");
+    if(state.blessed) statusParts.push("Benedizione dell'anziana");
+    if(state.hasMagicalKey) statusParts.push("Possiedi la chiave magica");
+    if(state.trialCourageCompleted) statusParts.push("Prova del coraggio superata");
+    if(state.trialWisdomCompleted) statusParts.push("Prova della saggezza superata");
+    if(state.hasHerbs) statusParts.push("Hai raccolto erbe curative");
+    if(state.hasPotion) statusParts.push("Hai una pozione curativa");
+    if(state.heroHealthFull) statusParts.push("Salute piena");
+    else if(state.heroHealthPartial) statusParts.push("Salute parziale");
+    if(state.darkWardenDefeated) statusParts.push("Guardiano Oscuro sconfitto");
+    if(state.crystalPossessed) statusParts.push("Possiedi il Cristallo di Luce");
+    if(statusParts.length === 0) statusParts.push("Nessuna risorsa o stato speciale");
+    html += statusParts.join(", ") + ".</p><hr/>";
+
+    // Buttons for choices
+    html += `<div class="buttons">`;
+    sec.choices.forEach(choice => {
+      // Check conditions for showing buttons
+      if(choice.requiresPotion && !state.hasPotion) return;
+      if(choice.blessed && !state.blessed) return;
+      if(choice.hasSupplies && !state.hasSupplies) return;
+      if(choice.hasHerbs && !state.hasHerbs) return;
+      html += `<button type="button" data-next="${choice.next}">${choice.text}</button>`;
+    });
+    html += `</div>`;
+
+    gameDiv.innerHTML = html;
+
+    // Add event listeners to buttons
+    const buttons = gameDiv.querySelectorAll("button[data-next]");
+    buttons.forEach(btn => {
+      btn.addEventListener("click", () => {
+        const nextId = btn.getAttribute("data-next");
+        // Special logic for some transitions
+        if(state.currentSection === 1) {
+          // From village start, if user chooses to prepare supplies, mark supplies
+          if(nextId === 4) {
+            state.hasSupplies = true;
+            state.hasPotion = true;
+            state.hasDagger = true;
+            state.hasMap = true;
+          }
+        }
+        if(state.currentSection === 3) {
+          // Blessing granted at elder's cottage
+          state.blessed = true;
+        }
+        if(state.currentSection === 5) {
+          // Trial courage completed
+          state.trialCourageCompleted = true;
+          state.hasMagicalKey = true;
+        }
+        if(state.currentSection === 6) {
+          // Trial wisdom completed
+          state.trialWisdomCompleted = true;
+          state.hasMagicalKey = true;
+        }
+        if(state.currentSection === 7) {
+          // Persuasion failed, dark warden hostile
+          state.darkWardenHostile = true;
+        }
+        if(state.currentSection === 13) {
+          // Used healing potion
+          if(state.hasPotion) {
+            state.heroHealthFull = true;
+            state.heroHealthPartial = false;
+            state.hasPotion = false;
+          }
+        }
+        if(state.currentSection === 11) {
+          // Dark warden defeated
+          state.darkWardenDefeated = true;
+          state.crystalPossessed = true;
+        }
+        if(state.currentSection === 14) {
+          // Quest complete
+        }
+        renderSection(nextId);
+      });
+    });
+  }
+
+  function renderEnd() {
+    gameDiv.innerHTML = `
+      <h1>Fine della Storia</h1>
+      <p>Hai completato la tua missione e salvato il Regno di Eldoria. Le gesta del tuo coraggio riecheggeranno per sempre nelle leggende del regno.</p>
+      <div class="buttons">
+        <button type="button" id="playAgain">Gioca di nuovo</button>
+      </div>
+    `;
+    document.getElementById("playAgain").addEventListener("click", () => {
+      // Reset state
+      state = {
+        currentSection: 0,
+        blessed: false,
+        hasSupplies: false,
+        hasHerbs: false,
+        hasPotion: false,
+        hasDagger: false,
+        hasMap: false,
+        hasMagicalKey: false,
+        trialCourageCompleted: false,
+        trialWisdomCompleted: false,
+        darkWardenDefeated: false,
+        darkWardenHostile: false,
+        heroHealthFull: true,
+        heroHealthPartial: false,
+        crystalPossessed: false
+      };
+      renderSection(0);
+    });
+  }
+
+  // Start game
+  renderSection(0);
+})();
+</script>
+</body>
+</html>
