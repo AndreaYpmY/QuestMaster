@@ -1,0 +1,993 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Martian Grand Slam - Avventura Interattiva</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600&display=swap');
+  html, body {
+    margin: 0; padding: 0; height: 100%;
+    font-family: 'Inter', sans-serif;
+    background: #f9fafb;
+    color: #222;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    min-height: 100vh;
+  }
+  #game-container {
+    max-width: 600px;
+    width: 90vw;
+    background: #fff;
+    border-radius: 12px;
+    box-shadow: 0 8px 24px rgba(0,0,0,0.1);
+    padding: 2rem 2.5rem;
+    box-sizing: border-box;
+    display: flex;
+    flex-direction: column;
+    min-height: 480px;
+    position: relative;
+    overflow: hidden;
+  }
+  h1, h2 {
+    margin: 0 0 1rem 0;
+    font-weight: 600;
+    color: #111827;
+    text-align: center;
+  }
+  p {
+    line-height: 1.5;
+    margin-bottom: 1.5rem;
+    font-size: 1rem;
+    color: #374151;
+  }
+  #choices {
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+    margin-top: auto;
+  }
+  button {
+    background: #2563eb;
+    border: none;
+    border-radius: 8px;
+    color: white;
+    font-weight: 600;
+    font-size: 1rem;
+    padding: 0.75rem 1rem;
+    cursor: pointer;
+    transition: background-color 0.3s ease, transform 0.15s ease;
+    box-shadow: 0 4px 8px rgba(37, 99, 235, 0.3);
+  }
+  button:hover, button:focus {
+    background: #1e40af;
+    outline: none;
+    transform: scale(1.05);
+  }
+  button:active {
+    transform: scale(0.98);
+  }
+  #summary {
+    font-size: 1rem;
+    color: #4b5563;
+    margin-bottom: 2rem;
+    white-space: pre-line;
+  }
+  @media (max-width: 480px) {
+    #game-container {
+      padding: 1.5rem 1.5rem;
+      min-height: 420px;
+    }
+    button {
+      font-size: 0.9rem;
+      padding: 0.65rem 0.9rem;
+    }
+  }
+  /* Fade animations */
+  .fade-enter {
+    opacity: 0;
+    transform: translateY(10px);
+    transition: opacity 0.4s ease, transform 0.4s ease;
+  }
+  .fade-enter-active {
+    opacity: 1;
+    transform: translateY(0);
+  }
+  .fade-exit {
+    opacity: 1;
+    transform: translateY(0);
+    transition: opacity 0.3s ease, transform 0.3s ease;
+  }
+  .fade-exit-active {
+    opacity: 0;
+    transform: translateY(-10px);
+  }
+</style>
+</head>
+<body>
+<div id="game-container" role="main" aria-live="polite" aria-atomic="true">
+  <!-- Content dynamically inserted here -->
+</div>
+<script>
+(() => {
+  const container = document.getElementById('game-container');
+
+  // Game state variables
+  let state = {
+    location: 'olympus-station', // 'olympus-station' or 'europa'
+    equipment: 'outdated-eq', // 'outdated-eq' or 'upgraded-eq'
+    ranking: null, // null, 'improved-high'
+    sponsors: [], // array of sponsor ids ['sponsor1', 'sponsor2']
+    sponsorOffersPending: [], // pending offers ['sponsor1', 'sponsor2']
+    qualifiedPreliminary: false,
+    qualifiedOlympusTrials: false,
+    wonOlympusTrials: false,
+    evidence: null, // null, 'partial', 'concrete'
+    reputation: 'good', // 'good' or 'damaged'
+    rivalCliquesBlocking: true,
+    vegaChampion: true,
+    sponsorshipInterest: false,
+    exhibitionMatches: false,
+    investigatingVega: false,
+    preparingFinalMatch: false,
+    finalChampion: false,
+    twoSponsors: false,
+    matchFailure: false,
+    retraining: false,
+    leftOlympusStation: false,
+    publicAccusationBackfire: false,
+    mediaPressure: false,
+    skillRecognized: false,
+  };
+
+  // Sponsors definitions
+  const sponsors = {
+    sponsor1: { name: "Corporazione Tech Marziana" },
+    sponsor2: { name: "Consorzio Planetario" }
+  };
+
+  // Sections data: narrative text (in Italian), choices with labels and next section keys
+  // The keys correspond to the section numbers in the story.
+  // We will implement only the sections used in the plan steps and some branching for choices.
+
+  // To respect the plan steps given, we will follow the sequence:
+  // (travel nova olympus-station europa)
+  // (seek-exhibition-matches nova europa improved-high outdated-eq)
+  // (accept-first-sponsor-offer nova sponsor1 outdated-eq upgraded-eq)
+  // (accept-second-sponsor-offer nova sponsor2)
+  // (enter-olympus-trials-with-sponsors nova sponsor1 upgraded-eq)
+  // (train-for-olympus-trials nova)
+  // (prepare-for-final-championship nova)
+  // (celebrate-victory nova upgraded-eq europa)
+
+  // We will also implement the start page and final success page, plus a failure page fallback.
+
+  // Narrative texts and choices for each section:
+  // Each section: { narrative: string, choices: [{ text: string, action: function }] }
+
+  // Helper to create buttons
+  function createButton(text, onClick) {
+    const btn = document.createElement('button');
+    btn.textContent = text;
+    btn.type = 'button';
+    btn.addEventListener('click', onClick);
+    return btn;
+  }
+
+  // Fade out current content, then run callback to update content, then fade in
+  function transitionContent(updateFunc) {
+    container.style.opacity = '0';
+    setTimeout(() => {
+      updateFunc();
+      container.style.opacity = '1';
+    }, 350);
+  }
+
+  // Format sponsors list in Italian
+  function formatSponsorsList(sponsorIds) {
+    if (sponsorIds.length === 0) return "nessuno";
+    if (sponsorIds.length === 1) return sponsors[sponsorIds[0]].name;
+    return sponsorIds.map(id => sponsors[id].name).join(" e ");
+  }
+
+  // Start Page
+  function showStartPage() {
+    transitionContent(() => {
+      container.innerHTML = '';
+      const title = document.createElement('h1');
+      title.textContent = "Martian Grand Slam";
+      const summary = document.createElement('p');
+      summary.id = 'summary';
+      summary.textContent =
+`Sei Nova Racket, un giovane prodigio del tennis terrestre appena arrivato alla stazione Olympus su Marte, il cuore pulsante degli sport a gravità zero.  
+Il tuo obiettivo è diventare il Campione Intergalattico di Tennis, superando rivali agguerriti, ottenendo sponsor planetari e sconfiggendo il campione in carica, Vega Stratos, in una finale mozzafiato sulla luna Europa di Giove.
+
+Preparati a immergerti in un'avventura fatta di sfide, alleanze e scoperte in un futuro dove il tennis è molto più di un semplice gioco.`;
+
+      const startBtn = createButton("Inizia il Gioco", () => {
+        resetState();
+        showSection1();
+      });
+
+      container.appendChild(title);
+      container.appendChild(summary);
+      container.appendChild(startBtn);
+    });
+  }
+
+  // Reset game state to initial
+  function resetState() {
+    state = {
+      location: 'olympus-station',
+      equipment: 'outdated-eq',
+      ranking: null,
+      sponsors: [],
+      sponsorOffersPending: [],
+      qualifiedPreliminary: false,
+      qualifiedOlympusTrials: false,
+      wonOlympusTrials: false,
+      evidence: null,
+      reputation: 'good',
+      rivalCliquesBlocking: true,
+      vegaChampion: true,
+      sponsorshipInterest: false,
+      exhibitionMatches: false,
+      investigatingVega: false,
+      preparingFinalMatch: false,
+      finalChampion: false,
+      twoSponsors: false,
+      matchFailure: false,
+      retraining: false,
+      leftOlympusStation: false,
+      publicAccusationBackfire: false,
+      mediaPressure: false,
+      skillRecognized: false,
+    };
+  }
+
+  // Section 1: Nova arriva a Olympus Station
+  function showSection1() {
+    transitionContent(() => {
+      container.innerHTML = '';
+      const title = document.createElement('h2');
+      title.textContent = "Arrivo a Olympus Station";
+
+      const p = document.createElement('p');
+      p.textContent =
+`Nova Racket scende dalla navetta sulla superficie rossa e polverosa di Olympus Station, il culmine dell'innovazione sportiva marziana.  
+L'energia è palpabile: atleti fluttuano in assenza di gravità, mentre ologrammi mostrano le prossime partite.  
+Nova stringe una racchetta obsoleta, senza sponsor né classifica.  
+I giocatori locali osservano con diffidenza, le loro fazioni bloccano l'accesso ai tornei.  
+Si mormora che Vega Stratos, campione in carica, usi tecnologie illegali per mantenere il dominio.  
+L'obiettivo di Nova è chiaro: farsi strada, guadagnare rispetto e diventare Campione Intergalattico di Tennis.`;
+
+      const choicesDiv = document.createElement('div');
+      choicesDiv.id = 'choices';
+
+      const btn1 = createButton("Prova a partecipare alle qualificazioni preliminari", () => {
+        // Action: travel nova olympus-station europa (plan step 1)
+        state.location = 'europa';
+        showSection3();
+      });
+      const btn2 = createButton("Cerca partite esibizione per attirare sponsor", () => {
+        state.location = 'europa';
+        showSection3();
+      });
+      const btn3 = createButton("Indaga sulle voci di cheating di Vega", () => {
+        showSection4();
+      });
+
+      // According to plan, first step is travel to europa, then seek exhibition matches
+      // We implement only the plan path: travel then seek exhibition matches
+
+      // For player choice, we show only the two plan-consistent options:
+      // 1 and 2 lead to Section 3, 3 leads to Section 4 (not in plan but available)
+
+      choicesDiv.appendChild(btn1);
+      choicesDiv.appendChild(btn2);
+      choicesDiv.appendChild(btn3);
+
+      container.appendChild(title);
+      container.appendChild(p);
+      container.appendChild(choicesDiv);
+    });
+  }
+
+  // Section 3: Cercare partite esibizione per attirare sponsor (plan step 2)
+  function showSection3() {
+    transitionContent(() => {
+      container.innerHTML = '';
+      const title = document.createElement('h2');
+      title.textContent = "Partite Esibizione per Attirare Sponsor";
+
+      const p = document.createElement('p');
+      p.textContent =
+`Nova visita i campi a gravità zero locali, sfidando giocatori meno noti in partite esibizione.  
+Ad ogni scambio intenso, il talento grezzo e il fair play di Nova conquistano ammirazione.  
+La voce si diffonde tra gli sponsor planetari su questo tenace nuovo arrivato.  
+Due sponsor si avvicinano, attratti dal potenziale di Nova.  
+Tuttavia, la racchetta obsoleta rallenta i progressi.  
+Per assicurarsi il sostegno, Nova deve dimostrare costanza e buona volontà.`;
+
+      // Update state accordingly
+      state.skillRecognized = true;
+      state.sponsorshipInterest = true;
+      state.exhibitionMatches = true;
+
+      const choicesDiv = document.createElement('div');
+      choicesDiv.id = 'choices';
+
+      const btn1 = createButton(`Accetta l'offerta del primo sponsor per migliorare l'equipaggiamento`, () => {
+        // accept-first-sponsor-offer nova sponsor1 outdated-eq upgraded-eq (plan step 3)
+        state.sponsors.push('sponsor1');
+        state.equipment = 'upgraded-eq';
+        showSection7();
+      });
+      const btn2 = createButton("Continua a giocare partite esibizione per guadagnare fiducia degli sponsor", () => {
+        showSection8();
+      });
+
+      choicesDiv.appendChild(btn1);
+      choicesDiv.appendChild(btn2);
+
+      container.appendChild(title);
+      container.appendChild(p);
+      container.appendChild(choicesDiv);
+    });
+  }
+
+  // Section 7: Accettare primo sponsor e migliorare equipaggiamento (plan step 3)
+  function showSection7() {
+    transitionContent(() => {
+      container.innerHTML = '';
+      const title = document.createElement('h2');
+      title.textContent = "Sponsor Accettato e Equipaggiamento Migliorato";
+
+      const p = document.createElement('p');
+      p.textContent =
+`Nova firma con una corporazione tecnologica marziana desiderosa di mostrare i propri prodotti.  
+La compagnia fornisce una racchetta e una tuta all'avanguardia, ottimizzate per la bassa gravità.  
+Le prestazioni migliorano drasticamente: i colpi di Nova curvano in modo imprevedibile e l'agilità aumenta.  
+L'accesso a strutture di allenamento esclusive è garantito.  
+Lo sponsor però richiede apparizioni mediatiche e vittorie in cambio.`;
+
+      // Update state
+      if (!state.sponsorOffersPending.includes('sponsor1')) {
+        state.sponsorOffersPending.push('sponsor1');
+      }
+      if (!state.sponsors.includes('sponsor1')) {
+        state.sponsors.push('sponsor1');
+      }
+      state.equipment = 'upgraded-eq';
+
+      const choicesDiv = document.createElement('div');
+      choicesDiv.id = 'choices';
+
+      const btn1 = createButton("Partecipa alle qualificazioni preliminari per ottenere la classifica ufficiale", () => {
+        // enter-olympus-trials-with-sponsors nova sponsor1 upgraded-eq (plan step 5)
+        state.qualifiedOlympusTrials = true;
+        state.ranking = 'improved-high';
+        showSection11();
+      });
+      const btn2 = createButton("Gioca partite esibizione per mantenere il favore dello sponsor", () => {
+        showSection8();
+      });
+
+      choicesDiv.appendChild(btn1);
+      choicesDiv.appendChild(btn2);
+
+      container.appendChild(title);
+      container.appendChild(p);
+      container.appendChild(choicesDiv);
+    });
+  }
+
+  // Section 8: Continuare partite esibizione per guadagnare fiducia sponsor
+  function showSection8() {
+    transitionContent(() => {
+      container.innerHTML = '';
+      const title = document.createElement('h2');
+      title.textContent = "Continuare Partite Esibizione";
+
+      const p = document.createElement('p');
+      p.textContent =
+`Nova continua a sfidare i giocatori locali in partite esibizione, costruendo una reputazione di abilità e sportività.  
+L'interesse del secondo sponsor cresce, ma la classifica ufficiale è ancora lontana.  
+L'equipaggiamento obsoleto limita la competitività nelle partite serrate.  
+Le fazioni rivali continuano a bloccare l'accesso ai tornei ufficiali.  
+L'approccio lento ma costante mostra promettenti risultati.`;
+
+      // Update state
+      state.skillRecognized = true;
+      state.sponsorshipInterest = true;
+      state.exhibitionMatches = true;
+
+      const choicesDiv = document.createElement('div');
+      choicesDiv.id = 'choices';
+
+      const btn1 = createButton(`Accetta l'offerta del secondo sponsor per migliorare l'equipaggiamento`, () => {
+        // accept-second-sponsor-offer nova sponsor2 (plan step 4)
+        if (!state.sponsors.includes('sponsor2')) {
+          state.sponsors.push('sponsor2');
+        }
+        state.twoSponsors = true;
+        showSection7b();
+      });
+      const btn2 = createButton("Prova a qualificarti per i tornei ufficiali nonostante gli ostacoli", () => {
+        showSection2();
+      });
+
+      choicesDiv.appendChild(btn1);
+      choicesDiv.appendChild(btn2);
+
+      container.appendChild(title);
+      container.appendChild(p);
+      container.appendChild(choicesDiv);
+    });
+  }
+
+  // Section 7b: Dopo secondo sponsor accettato (continuazione)
+  function showSection7b() {
+    transitionContent(() => {
+      container.innerHTML = '';
+      const title = document.createElement('h2');
+      title.textContent = "Due Sponsor Acquisiti";
+
+      const p = document.createElement('p');
+      p.textContent =
+`Con due sponsor planetari al fianco, Nova dispone di equipaggiamento all'avanguardia e supporto finanziario.  
+L'accesso ai tornei ufficiali è più semplice e la reputazione cresce rapidamente.  
+Le fazioni rivali iniziano a frammentarsi di fronte a questo nuovo potere.  
+Il prossimo passo è qualificarsi per il torneo Olympus Trials.`;
+
+      const choicesDiv = document.createElement('div');
+      choicesDiv.id = 'choices';
+
+      const btn1 = createButton("Partecipa alle qualificazioni preliminari per Olympus Trials", () => {
+        state.qualifiedOlympusTrials = true;
+        state.ranking = 'improved-high';
+        showSection11();
+      });
+
+      choicesDiv.appendChild(btn1);
+
+      container.appendChild(title);
+      container.appendChild(p);
+      container.appendChild(choicesDiv);
+    });
+  }
+
+  // Section 2: Tentativo di qualificazione preliminare (branch from Section 8 choice 2)
+  function showSection2() {
+    transitionContent(() => {
+      container.innerHTML = '';
+      const title = document.createElement('h2');
+      title.textContent = "Tentativo di Qualificazione Preliminare";
+
+      const p = document.createElement('p');
+      p.textContent =
+`Nova si avvicina all'arena di Olympus Station dove si tengono le qualificazioni preliminari.  
+Gli ufficiali osservano con scetticismo l'equipaggiamento obsoleto e la mancanza di classifica.  
+Le qualificazioni sono dure, ma la determinazione di Nova emerge.  
+Dopo una partita tesa, Nova riesce a qualificarsi, ottenendo una classifica ufficiale bassa.  
+L'interesse degli sponsor cresce.`;
+
+      // Update state
+      state.qualifiedPreliminary = true;
+      state.ranking = 'improved-high';
+      state.sponsorshipInterest = true;
+
+      const choicesDiv = document.createElement('div');
+      choicesDiv.id = 'choices';
+
+      const btn1 = createButton("Cerca sponsor planetari per ottenere supporto", () => {
+        showSection5();
+      });
+      const btn2 = createButton("Prova a migliorare l'equipaggiamento con i crediti vinti", () => {
+        showSection6();
+      });
+
+      choicesDiv.appendChild(btn1);
+      choicesDiv.appendChild(btn2);
+
+      container.appendChild(title);
+      container.appendChild(p);
+      container.appendChild(choicesDiv);
+    });
+  }
+
+  // Section 5: Networking con sponsor planetari
+  function showSection5() {
+    transitionContent(() => {
+      container.innerHTML = '';
+      const title = document.createElement('h2');
+      title.textContent = "Networking con Sponsor Planetari";
+
+      const p = document.createElement('p');
+      p.textContent =
+`Nova partecipa a un gala nella lounge degli sponsor di Olympus Station, incontrando potenziali finanziatori.  
+Dimostrando umiltà e ambizione, impressiona i presenti.  
+Il primo sponsor offre un contratto condizionato alla vittoria nelle prossime qualificazioni.  
+Il secondo richiede prove di sportività e visibilità.  
+Il sostegno finanziario apre la strada a equipaggiamenti migliori e tornei esclusivi, ma la pressione aumenta.`;
+
+      // Update state
+      if (!state.sponsorOffersPending.includes('sponsor1')) {
+        state.sponsorOffersPending.push('sponsor1');
+      }
+      if (!state.sponsorOffersPending.includes('sponsor2')) {
+        state.sponsorOffersPending.push('sponsor2');
+      }
+
+      const choicesDiv = document.createElement('div');
+      choicesDiv.id = 'choices';
+
+      const btn1 = createButton("Accetta la condizione dello sponsor e partecipa alle qualificazioni Olympus Trials", () => {
+        state.qualifiedOlympusTrials = true;
+        if (!state.sponsors.includes('sponsor1')) {
+          state.sponsors.push('sponsor1');
+        }
+        showSection11();
+      });
+      const btn2 = createButton("Concentrati sul miglioramento delle abilità prima di impegnarti con gli sponsor", () => {
+        showSection12();
+      });
+
+      choicesDiv.appendChild(btn1);
+      choicesDiv.appendChild(btn2);
+
+      container.appendChild(title);
+      container.appendChild(p);
+      container.appendChild(choicesDiv);
+    });
+  }
+
+  // Section 6: Tentativo di acquistare equipaggiamento migliore con crediti
+  function showSection6() {
+    transitionContent(() => {
+      container.innerHTML = '';
+      const title = document.createElement('h2');
+      title.textContent = "Acquisto di Equipaggiamento Avanzato";
+
+      const p = document.createElement('p');
+      p.textContent =
+`Nova visita il mercato tecnologico di Olympus Station, scambiando crediti per una racchetta e una tuta high-tech adatte alla gravità marziana.  
+Le prestazioni migliorano, ma le risorse finanziarie si riducono drasticamente.  
+I rivali notano il nuovo equipaggiamento e rispettano la determinazione di Nova.  
+Il cammino verso i tornei ufficiali si fa più chiaro, ma la stabilità finanziaria è a rischio.`;
+
+      // Update state
+      state.equipment = 'upgraded-eq';
+
+      const choicesDiv = document.createElement('div');
+      choicesDiv.id = 'choices';
+
+      const btn1 = createButton("Partecipa alle qualificazioni Olympus Trials con l'equipaggiamento migliorato", () => {
+        state.qualifiedOlympusTrials = true;
+        state.ranking = 'improved-high';
+        showSection11();
+      });
+      const btn2 = createButton("Cerca sponsor per stabilizzare le finanze", () => {
+        showSection5();
+      });
+
+      choicesDiv.appendChild(btn1);
+      choicesDiv.appendChild(btn2);
+
+      container.appendChild(title);
+      container.appendChild(p);
+      container.appendChild(choicesDiv);
+    });
+  }
+
+  // Section 12: Miglioramento abilità prima di impegnarsi con sponsor
+  function showSection12() {
+    transitionContent(() => {
+      container.innerHTML = '';
+      const title = document.createElement('h2');
+      title.textContent = "Miglioramento delle Abilità";
+
+      const p = document.createElement('p');
+      p.textContent =
+`Nova si dedica ad allenamenti intensi in assenza di gravità, padroneggiando le particolarità fisiche di Marte.  
+Senza la pressione degli sponsor, sperimenta tecniche e affina la resistenza.  
+Nonostante l'equipaggiamento obsoleto, le abilità grezze migliorano notevolmente.  
+I rivali iniziano a rispettare la dedizione, ma le risorse limitate frenano l'accesso a tornei e attrezzature avanzate.  
+Nova deve decidere quando cercare sponsor o puntare alla classifica.`;
+
+      // Update state
+      state.skillRecognized = true;
+
+      const choicesDiv = document.createElement('div');
+      choicesDiv.id = 'choices';
+
+      const btn1 = createButton("Prova a qualificarti per le qualificazioni preliminari", () => {
+        state.qualifiedPreliminary = true;
+        state.ranking = 'improved-high';
+        showSection2();
+      });
+      const btn2 = createButton("Cerca sponsor con le abilità migliorate", () => {
+        showSection5();
+      });
+
+      choicesDiv.appendChild(btn1);
+      choicesDiv.appendChild(btn2);
+
+      container.appendChild(title);
+      container.appendChild(p);
+      container.appendChild(choicesDiv);
+    });
+  }
+
+  // Section 11: Partecipazione alle qualificazioni Olympus Trials
+  function showSection11() {
+    transitionContent(() => {
+      container.innerHTML = '';
+      const title = document.createElement('h2');
+      title.textContent = "Qualificazioni Olympus Trials";
+
+      const p = document.createElement('p');
+      p.textContent =
+`Nova affronta le partite preliminari degli Olympus Trials, sfidando i migliori contendenti marziani.  
+L'equipaggiamento all'avanguardia e il supporto degli sponsor permettono a Nova di competere con forza.  
+Dopo incontri estenuanti, Nova conquista un posto nel torneo Olympus Trials vero e proprio.  
+La classifica ufficiale migliora e l'attenzione mediatica cresce.  
+Le fazioni rivali riconoscono a malincuore l'arrivo di Nova.  
+Vega osserva da lontano, la sfida finale si avvicina.`;
+
+      // Update state
+      state.wonOlympusTrials = false; // ancora da vincere
+      state.ranking = 'improved-high';
+      state.qualifiedOlympusTrials = true;
+
+      const choicesDiv = document.createElement('div');
+      choicesDiv.id = 'choices';
+
+      const btn1 = createButton("Allenati intensamente per il torneo Olympus Trials", () => {
+        state.wonOlympusTrials = true;
+        showSection15();
+      });
+      const btn2 = createButton("Indaga ulteriormente sulle voci di cheating di Vega", () => {
+        showSection4();
+      });
+
+      choicesDiv.appendChild(btn1);
+      choicesDiv.appendChild(btn2);
+
+      container.appendChild(title);
+      container.appendChild(p);
+      container.appendChild(choicesDiv);
+    });
+  }
+
+  // Section 4: Indagare sulle voci di cheating di Vega
+  function showSection4() {
+    transitionContent(() => {
+      container.innerHTML = '';
+      const title = document.createElement('h2');
+      title.textContent = "Indagine sulle Voci di Cheating di Vega";
+
+      const p = document.createElement('p');
+      p.textContent =
+`Nova parla discretamente con addetti ai lavori, ex rivali e specialisti tecnologici.  
+Conversazioni sussurrate suggeriscono che Vega usi dispositivi illegali nascosti nella tuta, migliorando riflessi oltre i limiti umani.  
+Raccogliere prove concrete è rischioso: l'influenza di Vega è profonda.  
+Nova deve decidere se seguire questa strada pericolosa o concentrarsi solo sulle abilità.  
+La rete sotterranea della stazione offre indizi ma anche minacce.  
+Il successo potrebbe livellare il campo di gioco, il fallimento chiuderebbe molte porte.`;
+
+      // Update state
+      state.investigatingVega = true;
+
+      const choicesDiv = document.createElement('div');
+      choicesDiv.id = 'choices';
+
+      const btn1 = createButton("Infiltrati nella struttura di allenamento di Vega per raccogliere prove", () => {
+        state.evidence = 'concrete';
+        showSection9();
+      });
+      const btn2 = createButton("Analizza i filmati delle partite per trovare irregolarità", () => {
+        state.evidence = 'partial';
+        showSection10();
+      });
+
+      choicesDiv.appendChild(btn1);
+      choicesDiv.appendChild(btn2);
+
+      container.appendChild(title);
+      container.appendChild(p);
+      container.appendChild(choicesDiv);
+    });
+  }
+
+  // Section 9: Infiltrarsi nella struttura di Vega
+  function showSection9() {
+    transitionContent(() => {
+      container.innerHTML = '';
+      const title = document.createElement('h2');
+      title.textContent = "Infiltrazione nella Struttura di Vega";
+
+      const p = document.createElement('p');
+      p.textContent =
+`Nella penombra, Nova si intrufola nel complesso di allenamento ad alta sicurezza di Vega.  
+Droni di sorveglianza ronzano sopra, i protocolli di sicurezza sono rigidi.  
+Nova scopre scomparti nascosti con dispositivi illegali incorporati nella tuta di Vega.  
+Riesce a copiare schemi dettagliati e video prima di sfuggire per un soffio alla cattura.  
+Queste prove potrebbero squalificare Vega e scuotere la lega, ma rivelarle comporta rischi di ritorsioni e danni alla reputazione.`;
+
+      const choicesDiv = document.createElement('div');
+      choicesDiv.id = 'choices';
+
+      const btn1 = createButton("Presenta le prove agli ufficiali della lega per penalizzare Vega", () => {
+        state.vegaChampion = false;
+        state.reputation = 'good';
+        state.sponsorshipInterest = true;
+        showSection13();
+      });
+      const btn2 = createButton("Usa le prove come leva per ottenere offerte di sponsorizzazione", () => {
+        if (!state.sponsors.includes('sponsor1')) {
+          state.sponsors.push('sponsor1');
+        }
+        if (!state.sponsors.includes('sponsor2')) {
+          state.sponsors.push('sponsor2');
+        }
+        state.equipment = 'upgraded-eq';
+        state.twoSponsors = true;
+        showSection14();
+      });
+
+      choicesDiv.appendChild(btn1);
+      choicesDiv.appendChild(btn2);
+
+      container.appendChild(title);
+      container.appendChild(p);
+      container.appendChild(choicesDiv);
+    });
+  }
+
+  // Section 10: Analisi filmati partite
+  function showSection10() {
+    transitionContent(() => {
+      container.innerHTML = '';
+      const title = document.createElement('h2');
+      title.textContent = "Analisi dei Filmati delle Partite";
+
+      const p = document.createElement('p');
+      p.textContent =
+`Nova passa ore a rivedere filmati ad alta velocità delle partite di Vega, cercando anomalie.  
+Replay al rallentatore mostrano micro-regolazioni nella tuta di Vega che migliorano riflessi oltre i limiti naturali.  
+Sebbene indirette, queste prove sollevano dubbi seri.  
+Nova compila un dossier e valuta i prossimi passi.  
+Questo approccio è più sicuro ma manca di prove concrete per forzare sanzioni.  
+Deve decidere se premere sull'accusa o concentrarsi su abilità e sponsor.`;
+
+      const choicesDiv = document.createElement('div');
+      choicesDiv.id = 'choices';
+
+      const btn1 = createButton("Condividi il dossier con sponsor fidati per ottenere supporto", () => {
+        if (!state.sponsors.includes('sponsor1')) {
+          state.sponsors.push('sponsor1');
+        }
+        if (!state.sponsors.includes('sponsor2')) {
+          state.sponsors.push('sponsor2');
+        }
+        state.twoSponsors = true;
+        showSection14();
+      });
+      const btn2 = createButton("Concentrati sulle qualificazioni Olympus Trials e dimostra abilità", () => {
+        state.qualifiedPreliminary = true;
+        showSection2();
+      });
+
+      choicesDiv.appendChild(btn1);
+      choicesDiv.appendChild(btn2);
+
+      container.appendChild(title);
+      container.appendChild(p);
+      container.appendChild(choicesDiv);
+    });
+  }
+
+  // Section 13: Presentare prove alla lega
+  function showSection13() {
+    transitionContent(() => {
+      container.innerHTML = '';
+      const title = document.createElement('h2');
+      title.textContent = "Prove Presentate alla Lega";
+
+      const p = document.createElement('p');
+      p.textContent =
+`Nova consegna le prove rubate al comitato etico della Lega Intergalattica di Tennis.  
+Dopo deliberazioni segrete, Vega viene multato e privato di alcuni privilegi in attesa di processo.  
+Il campo di gioco si livella.  
+Rivali e sponsor si schierano con Nova, impressionati dal coraggio e dall'integrità.  
+Tuttavia, gli alleati di Vega tramano per ostacolare l'ascesa di Nova.  
+La strada verso Olympus Trials e la finale su Europa richiede ancora vittorie sul campo.`;
+
+      const choicesDiv = document.createElement('div');
+      choicesDiv.id = 'choices';
+
+      const btn1 = createButton("Partecipa al torneo Olympus Trials", () => {
+        state.qualifiedOlympusTrials = true;
+        showSection15();
+      });
+      const btn2 = createButton("Ottieni ulteriori sponsor sfruttando la nuova reputazione", () => {
+        if (!state.sponsors.includes('sponsor1')) {
+          state.sponsors.push('sponsor1');
+        }
+        if (!state.sponsors.includes('sponsor2')) {
+          state.sponsors.push('sponsor2');
+        }
+        state.twoSponsors = true;
+        showSection14();
+      });
+
+      choicesDiv.appendChild(btn1);
+      choicesDiv.appendChild(btn2);
+
+      container.appendChild(title);
+      container.appendChild(p);
+      container.appendChild(choicesDiv);
+    });
+  }
+
+  // Section 14: Usare prove per ottenere sponsor
+  function showSection14() {
+    transitionContent(() => {
+      container.innerHTML = '';
+      const title = document.createElement('h2');
+      title.textContent = "Uso delle Prove per Ottenere Sponsor";
+
+      const p = document.createElement('p');
+      p.textContent =
+`Nova condivide le prove di cheating con sponsor selezionati, convincendoli che sostenere un giocatore onesto e talentuoso è fondamentale.  
+Due sponsor firmano contratti, fornendo equipaggiamento high-tech e supporto finanziario.  
+Le prestazioni migliorano e l'accesso ai tornei diventa più agevole.  
+Le fazioni rivali iniziano a frammentarsi mentre il sostegno si sposta.  
+Nova però resta cauto: accuse pubbliche potrebbero provocare ritorsioni se le prove venissero contestate.`;
+
+      const choicesDiv = document.createElement('div');
+      choicesDiv.id = 'choices';
+
+      const btn1 = createButton("Partecipa al torneo Olympus Trials", () => {
+        state.qualifiedOlympusTrials = true;
+        showSection15();
+      });
+      const btn2 = createButton("Raccogli altre prove per rafforzare il caso contro Vega", () => {
+        showSection4();
+      });
+
+      choicesDiv.appendChild(btn1);
+      choicesDiv.appendChild(btn2);
+
+      container.appendChild(title);
+      container.appendChild(p);
+      container.appendChild(choicesDiv);
+    });
+  }
+
+  // Section 15: Torneo Olympus Trials
+  function showSection15() {
+    transitionContent(() => {
+      container.innerHTML = '';
+      const title = document.createElement('h2');
+      title.textContent = "Torneo Olympus Trials";
+
+      const p = document.createElement('p');
+      p.textContent =
+`Il torneo Olympus Trials inizia nell'arena a gravità zero.  
+Nova affronta rivali agguerriti, ogni partita è una prova di abilità, resistenza e forza mentale.  
+L'equipaggiamento all'avanguardia e il supporto degli sponsor pagano: i colpi di Nova sono precisi, i movimenti fluidi.  
+Dopo una serie di incontri estenuanti, Nova emerge vittorioso, conquistando il posto nel campionato Intergalattico di Tennis su Europa.  
+La sfida finale si avvicina: affrontare Vega Stratos in uno scontro mozzafiato a gravità zero.`;
+
+      // Update state
+      state.wonOlympusTrials = true;
+
+      const choicesDiv = document.createElement('div');
+      choicesDiv.id = 'choices';
+
+      const btn1 = createButton("Preparati per la partita finale su Europa", () => {
+        state.preparingFinalMatch = true;
+        state.location = 'europa';
+        showSection16();
+      });
+      const btn2 = createButton("Indaga un'ultima volta sulle voci di cheating di Vega", () => {
+        showSection4();
+      });
+
+      choicesDiv.appendChild(btn1);
+      choicesDiv.appendChild(btn2);
+
+      container.appendChild(title);
+      container.appendChild(p);
+      container.appendChild(choicesDiv);
+    });
+  }
+
+  // Section 16: Partita finale a gravità zero su Europa (Success)
+  function showSection16() {
+    transitionContent(() => {
+      container.innerHTML = '';
+      const title = document.createElement('h2');
+      title.textContent = "Finale a Gravità Zero su Europa";
+
+      const p = document.createElement('p');
+      p.textContent =
+`Nella grandiosa arena su Europa, sotto lo sguardo di milioni nel sistema solare, Nova affronta Vega Stratos.  
+La partita è uno spettacolo mozzafiato di agilità, strategia e cuore.  
+La fisica a gravità zero piega ogni colpo; l'equipaggiamento migliorato e le abilità affinate di Nova si scontrano con la potenza e l'astuzia di Vega.  
+A metà partita, Nova ricorda le prove di cheating e adatta la tattica per neutralizzare i vantaggi sleali.  
+Dopo un rally finale intenso, Nova segna il punto vincente.  
+La folla esplode in applausi. Nova Racket è incoronato Campione Intergalattico di Tennis, una nuova leggenda nata tra le stelle.`;
+
+      // Update state
+      state.finalChampion = true;
+      state.vegaChampion = false;
+
+      const choicesDiv = document.createElement('div');
+      choicesDiv.id = 'choices';
+
+      const btn1 = createButton("Festeggia la vittoria e pianifica la carriera futura", () => {
+        showEndingSuccess();
+      });
+
+      choicesDiv.appendChild(btn1);
+
+      container.appendChild(title);
+      container.appendChild(p);
+      container.appendChild(choicesDiv);
+    });
+  }
+
+  // Ending success page
+  function showEndingSuccess() {
+    transitionContent(() => {
+      container.innerHTML = '';
+      const title = document.createElement('h1');
+      title.textContent = "Congratulazioni!";
+
+      const p = document.createElement('p');
+      p.textContent =
+`Hai guidato Nova Racket alla vittoria del titolo di Campione Intergalattico di Tennis!  
+La tua determinazione, abilità e scelte strategiche hanno superato ogni ostacolo.  
+Il futuro è luminoso e pieno di nuove sfide e avventure tra le stelle.`;
+
+      const btnRestart = createButton("Gioca di nuovo", () => {
+        showStartPage();
+      });
+
+      container.appendChild(title);
+      container.appendChild(p);
+      container.appendChild(btnRestart);
+    });
+  }
+
+  // Failure endings (not in plan but implemented for completeness)
+  function showFailurePage(reason) {
+    transitionContent(() => {
+      container.innerHTML = '';
+      const title = document.createElement('h1');
+      title.textContent = "Fine del Gioco";
+
+      const p = document.createElement('p');
+      p.textContent = reason;
+
+      const btnRestart = createButton("Riprova", () => {
+        showStartPage();
+      });
+
+      container.appendChild(title);
+      container.appendChild(p);
+      container.appendChild(btnRestart);
+    });
+  }
+
+  // Initialize game on load
+  showStartPage();
+
+})();
+</script>
+</body>
+</html>

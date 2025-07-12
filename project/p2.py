@@ -8,7 +8,7 @@ load_dotenv()
 
 from langchain_openai import ChatOpenAI
 
-from typing import Annotated, List, Optional
+from typing import List
 from langchain_ollama import ChatOllama
 from langchain_core.prompts import ChatPromptTemplate, MessagesPlaceholder
 
@@ -22,7 +22,7 @@ TEMPERATURE_STORY=0.7
 TEMPERATURE_PDDL=0.05
 TEMPERATURE_PDDL_DOMAIN=0.05
 TEMPERATURE_PDDL_PROBLEM=0.05
-TEMPERATURE_PDDL_REFLECTION=0.3
+TEMPERATURE_PDDL_REFLECTION=0.25
 TEMPERATURE_HTML=0.1
 
 TOP_P = 1.0
@@ -317,6 +317,7 @@ def CaricaLore_node(state: QuestMasterState):
             content = f.read()
     return {"lore": content}
 
+
 # 2. Genera la storia interattiva
 def GeneraStoria_node(state: QuestMasterState):
     llm = get_model(TEMPERATURE_STORY)
@@ -325,13 +326,13 @@ def GeneraStoria_node(state: QuestMasterState):
     f"""You are a narrative engine that creates structured interactive stories for PDDL planning conversion.
 
         CRITICAL REQUIREMENTS:
-        - Extract and respect ALL constraints from the Lore Document
-        - Generate a story structure that maps to planning states and actions
-        - Each story section must represent a distinct WORLD STATE
-        - Each choice must represent a specific ACTION that changes the world state
-        - Respect branching factor: each section must have between MIN and MAX choices
-        - Respect depth constraints: story must have between MIN and MAX steps to reach goal
-        - May be more than one distinct goal states 
+            1. **Extract and respect ALL constraints from the Lore Document**
+            2. **Generate a story structure that maps to planning states and actions**
+            3. **Each story section must represent a distinct WORLD STATE**
+            4. **Each choice must represent a specific ACTION that changes the world state**
+            5. **Respect branching factor: each section must have between MIN and MAX choices**
+            6. **Respect depth constraints: story must have between MIN and MAX steps to reach goal**
+            7. **There will be a successful goal state and a failure goal state**
 
         STRUCTURE REQUIREMENTS:
         1. Start with the exact INITIAL STATE from the lore
@@ -355,19 +356,20 @@ def GeneraStoria_node(state: QuestMasterState):
         - [Action 2]: [Clear description] → Go to Section [Y]
         [Continue for MIN-MAX choices as specified in lore]
 
-        Section 2: [State after Action 1]
+        Section 2: [State after Action X]
+        Narrative: [...]
         Current State: [Updated world facts]
         Available Actions:
         - [Action A]: [Description] → Go to Section [Z]
         [Continue...]
 
         VALIDATION CHECKLIST:
-        ✓ Story starts with exact initial state from lore
-        ✓ Goal state is reachable within depth constraints
-        ✓ Each section has branching factor within min/max range
-        ✓ Actions have clear preconditions and effects
-        ✓ All obstacles from lore are incorporated
-        ✓ Story is complete with all paths written
+            1. Story starts with exact initial state from lore
+            2. Successful goal state is reachable between MIN and MAX depth constraints
+            3. Each section has branching factor within min/max range
+            4. Actions have clear preconditions and effects
+            5. All obstacles from lore are incorporated
+            6. Story is complete with all paths written
         If is impossible to create the story with the given lore document and respect the constraints, returns ONLY the word "IMPOSSIBLE".
 
         Generate the COMPLETE story structure now and do not insert the validation checklist or summary at the end."""),
@@ -381,6 +383,9 @@ def GeneraStoria_node(state: QuestMasterState):
     if response == "IMPOSSIBLE" or "IMPOSSIBLE" in response:
         return {"is_valid_story": False}
     else:
+        story_file = open("storia.txt", "w")
+        story_file.write(response)
+        story_file.close()
         return{"story": response, "is_valid_story": True}
 
 
@@ -455,16 +460,31 @@ def GeneraPDDLdomain_node(state: QuestMasterState):
     llm = get_model(TEMPERATURE_PDDL_DOMAIN)
     
     prompt = ChatPromptTemplate.from_messages([("system", f"""You are an expert PDDL domain generator for the QuestMaster interactive story system.
-                Generate a complete and valid PDDL domain file from the given interactive story.
-                
+                Your task is to translate a narrative story and generate a well-structured and interdependent PDDL domain file.
+                You have to strictly adhering to the lore, narrative story and choices to define actions, ensuring actions are executed in the order of the sections, and preventing "Undefined object" errors by ensuring all objects are consistently defined and referenced.
+
                 CRITICAL DOMAIN PDDL REQUIREMENTS:
-                    1. Each line must have a comment explaining what it does
-                    2. Define predicates that capture ALL story states and conditions
-                    3. Create actions for EVERY choice mentioned in the story
-                    4. Ensure actions have proper preconditions and effects
-                    5. Include object types for characters, items, locations
-                    6. Make sure the domain supports the narrative flow
-                                                     
+                    1. STRICT NODE ADHERENCE: Actions must correspond directly to the choices in each section of the narrative story (e.g., action 1 choices lead to nodes 2, 3, or 4). Each action must reflect a specific choice and transition to the corresponding section's state.
+                    2. NODE ORDER: Actions must respect the sequence of section's choices , with preconditions and effects aligning with the state changes (e.g., location, items, allies, traps, puzzles) described in each section.
+                    3. INTERCONNECTED ACTIONS: Preconditions must depend on effects from previous sections, ensuring progression (discovery → interaction → unlocking → goal).
+                    4. MID-LEVEL PREDICATES: Use predicates to represent progress (e.g., (map-deciphered), (altar-solved), (poisoned ?p), (ally-present ?a ?l)), reflecting narrative states.
+                    5. NEGATIVE EFFECTS: Include (not ...) effects for state transitions (e.g., changing location, removing items, disarming traps) as per the narrative.
+                    6. KEBAB-CASE: Use kebab-case for all identifiers (e.g., grandfathers-compass, dense-jungle, altar-solved).
+                    7. NO UNUSED PREDICATES: Only include predicates used by actions, derived from the narrative’s states and transitions.
+                    8. MEANINGFUL CONDITIONS: Preconditions must reflect narrative preconditions (e.g., player location, items held, health status, ally status) at each node.
+                    9. NO CONSTANTS: Use only variables (e.g., ?p - player, ?l - location) in predicates, preconditions, and effects, declared in :parameters.
+                    10. NO :init or :goal: Define only the domain, not the problem file.
+                    11. ACTION MAPPING: Each action must map to a narrative choice (e.g., venture-into-jungle for section 1 → section 2) and produce effects matching the destination section's state.
+                    12. FAILURE AND SUCCESS STATES: Include actions for failure endings and success ending.
+                    13. OBJECT MANAGEMENT:
+                        - EXPLICIT OBJECT LISTING: Ensure all objects mentioned in the narrative are accounted for in predicates and actions.
+                        - TYPE CONSISTENCY: Assign each object to a specific type and ensure actions reference them correctly.
+                        - OBJECT REFERENCE VALIDATION: All objects used in action parameters, preconditions, or effects must be declared as variables in :parameters and bound to narrative-defined objects.
+                        - PREVENT UNDEFINED OBJECTS: Ensure no action references an object not explicitly defined in the narrative or not covered by a typed variable.
+                    14. OBSTACLES: Model obstacles with predicates like (trap-active ?t ?l) and (trap-triggered ?t ?l).
+                    15. DO COMMENTS: Each line must have a comment explaining what it does
+                                    
+                        
                 Standard domain PDDL structure to follow:
                 (define (domain quest-domain)
                     (:requirements :strips :typing :negative-preconditions)
@@ -486,14 +506,19 @@ def GeneraPDDLdomain_node(state: QuestMasterState):
                         )
                     )
                 )
+                                                
+                To prevent "Undefined object" errors in the problem file:
+                    - Declare all objects in :objects with their types, matching the narrative.
+                    - Ensure object names in the problem file match the kebab-case identifiers in the domain.
+                    - Verify that all objects referenced in :init are declared in :objects.
+                    - Check that goal conditions in :goal only reference declared objects and valid predicates.
 
-                DO NOT invent predicates, objects or goals that are not justified by the story.
                 DO A DOUBLE CHECK of the output for syntax errors and for be sure the PDDLs MUST be solvable by a classical planner as Fast Downward.
                 Return ONLY the PDDL domain code, which begins with "(define (domain...", no other text at begin or end of the PDDL file."""), 
-                MessagesPlaceholder(variable_name="examples"),
-                ("user", "Given the interactive story, generate the corresponding PDDL domain file with detailed comments. Check the validation of the output \n Story {story_text}. ")])
+                MessagesPlaceholder(variable_name="PDDL examples"),
+                ("user", "Given the interactive story, generate the corresponding PDDL domain file with detailed comments. Check the validation of the output \n Story: {story_text}. \n Lore: {lore}. ")])
         
-    formatted_prompt = prompt.invoke({"story_text": state["story"], "examples": [msg for esempi in messaggi_esempi_domain for msg in esempi]})
+    formatted_prompt = prompt.invoke({"story_text": state["story"], "PDDL examples": [msg for esempi in messaggi_esempi_domain for msg in esempi], "lore": state["lore"]})
     
 
     
@@ -515,16 +540,31 @@ def GeneraPDDLproblem_node(state: QuestMasterState):
 
     
     prompt = ChatPromptTemplate.from_messages([("system", f"""You are an expert PDDL problem generator for the QuestMaster interactive story system..
-            Generate a complete and valid valid PDDL problem file from the given interactive story and the corrisponding PDDL domain file.
-                                                
+            Your task is to generate a complete and valid PDDL problem file based on a narrative, a PDDL domain definition, and an initial state described in the lore.
+
             CRITICAL PROBLEM PDDL REQUIREMENTS:
-                1. Each line must have a comment explaining what it does
-                2. Define ALL objects mentioned in the story (characters, items, locations)
-                3. Set up initial state that matches the story's beginning
-                4. Define goal state that matches the story's objective
-                5. Ensure consistency with the provided domain file
-                6. Use proper PDDL syntax and typing
-                                                    
+                1. Use only predicates and types declared in the domain.
+                2. All constants in init and goal must be declared in the objects section, EXCEPT those constants already defined as fixed constants in the domain file.
+                3. Do NOT include in the objects section any constants that are already declared in the domain as fixed constants.
+                4. Do NOT use variables in init or goal.
+                5. Do not invent new types or predicates.
+                6. The init should reflect the lore (i.e., the initial world state).
+                7. The goal must reflect the success criteria in the narrative.
+                8. For objects that must be acquired (e.g., a tome), include a predicate in init to specify their location (e.g., (tome-at tome1 library)).
+                9. Only locations explicitly accessible in the initial state (for the lore) should have (accessible location) in init.
+                10. Ensure the goal aligns with the narrative’s objective (e.g., possessing a specific object).
+                11. Use only object names (constants) consistent with the domain's expectations, e.g., if the domain assumes objects like "map-fragment", name them accordingly (e.g., "map-fragment-1").
+                12. The goal must correspond to the outcome of a high-level success action defined in the domain.
+                13. Every object used in the goal must appear in init or be the result of a reachable action.
+                14. Do not include predicates in init or goal that refer to undefined constants or omit required parameters.
+                15. Each line must have a comment explaining what it does
+
+            STEPS TO FOLLOW:
+                1. Extract all objects and assign them types based on the domain and narrative, EXCLUDING any constants already declared in the domain as fixed constants.
+                2. Instantiate the initial state from the lore using only valid predicates, including object locations.
+                3. Define the goal according to the narrative’s objective using ground atoms.
+                4. Ensure objects are placed in their correct initial locations for the narrative.                        
+                                                                                 
             Standard problem PDDL problem structure:
                 (define (problem quest-problem)
                     (:domain quest-domain)
@@ -545,13 +585,12 @@ def GeneraPDDLproblem_node(state: QuestMasterState):
                     )
                 )
             
-            DO NOT invent predicates, objects or goals that are not justified by the story.
             DO A DOUBLE CHECK of the output for syntax errors and for be sure the PDDL problem file MUST be solvable by a classical planner as Fast Downward given the domain.
             Return ONLY the PDDL problem code, which begins with "(define (problem...", no other text at begin or end of the PDDL file."""), 
-            MessagesPlaceholder(variable_name="examples"),
-            ("user", "Given the interactive story and the corrisponding PDDL domain file, generate the corresponding PDDL problem file, with detailed comments, in order to be solvable by a classical planner with the domain PDLL. \n Domain PDDL: {domain_pddl}. \n Story: {story_text}.")])
+            MessagesPlaceholder(variable_name="PDDL examples"),
+            ("user", "Given the lore, the interactive story and the corrisponding PDDL domain file, generate the corresponding PDDL problem file, with detailed comments, in order to be solvable by a classical planner with the domain PDLL. \n Domain PDDL: {domain_pddl}. \n Story: {story_text}. \n Lore: {lore}")])
     
-    formatted_prompt = prompt.invoke({"domain_pddl": state["domain_pddl"], "story_text": state["story"], "examples": [msg for esempi in messaggi_esempi_problem for msg in esempi]})
+    formatted_prompt = prompt.invoke({"domain_pddl": state["domain_pddl"], "story_text": state["story"], "PDDL examples": [msg for esempi in messaggi_esempi_problem for msg in esempi], "lore": state["lore"]})
     
 
     print("3B# LLM per generare il PDDL problem invocato \n")
@@ -625,6 +664,7 @@ def ValidatePDDL_node(state: QuestMasterState):
 class IssueDetail(BaseModel):
     issue: str
     fix: str
+    priority: str
 
 class PDDLIssue(BaseModel):
     domain_issue: List[IssueDetail]
@@ -640,10 +680,11 @@ def reflection_node(state: QuestMasterState):
     #errors = extract_planner_error_block(state["log"])
     error = state["log"]
 
-    llm= get_model(TEMPERATURE_PDDL_REFLECTION, TOP_P).with_structured_output(PDDLfix)
+    llm= get_model(TEMPERATURE_PDDL_REFLECTION).with_structured_output(PDDLfix)
 
     prompt = ChatPromptTemplate.from_messages([("system", f"""You are a PDDL expert and logical reasoning agent.
-            Analyze the PDDLs files which you can found at the end, and reflect on these files to detect issues, logical inconsistencies, narrative gaps and suggest improvements, based on the error message given from the planner and remaining complient with the given story.
+            Analyze the PDDLs files which you can found at the end, and reflect on these files to detect issues, logical inconsistencies, narrative gaps and suggest improvements, based on the error message given from the planner
+            Your task is to generate the corrections to be made to the PDDLs to correct the error given by the planner. Additionally, find other possible errors and inconsistencies.
                                                 
             Follow these steps carefully: 
                 1. Make syntax validation:
@@ -664,15 +705,15 @@ def reflection_node(state: QuestMasterState):
                         b. Are the objects, predicates, and actions in the domain properly used to progress toward the goal?
                         c. Are there missing actions or predicates that prevent reaching the goal?
                                                 
-                3. If the planner error says "no plans found", first list all possible actions from the initial state. Then simulate whether these actions can progress the state toward the goal. If not, explain what's missing.
+                3. If the planner error says "Searching without finding a solution", first list all possible actions from the initial state. Then simulate whether these actions can progress the state toward the goal. If not, explain what's missing.
 
                 4. Generate a structured output, where you separate PDDL domain-related issues from the PDDL problem-related issues
-                Provide a structured JSON like response of problems followed by the possible fixes
-                        - [ ] Briefly describe each syntax error (e.g., "Missing closing parenthesis in `:action move`") and suggest a fix for each issue.
-                        - [ ] If the planner cannot reach the goal, explain why (e.g., There is no action that makes door-open true) and suggest changes to the domain or problem to make the goal achievable.
-                                                
             
-            Return at max the 10 most important problems and fixes to resolve the error given from the planner."""),
+            Provide a structured JSON like response of problems followed by the possible fixes and the priority. If no fix needed don't add the suggestion to the response
+                - Briefly describe each syntax error (e.g., "Missing closing parenthesis in `:action move`") and suggest a fix for each issue.
+                - If the planner cannot reach the goal, explain why (e.g., There is no action that makes door-open true) and suggest changes to the domain or problem to make the goal achievable. 
+            
+            RETURN the MOST IMPORTANTS problems with related fixes to resolve the error given from the planner."""),
             
             
             ("user", "Please analyze the following PDDL domain and problem files and suggest changes to fix the given error and other syntax and logical errors, so that the PDDL is solvable by a classical planner. \n ERROR: *{error}* \n Domain PDDL: {domain_pddl} \n Problem PDDL: {problem_pddl} \n Story: {story}")])
@@ -698,14 +739,14 @@ def human_in_the_loop_node(state: QuestMasterState):
 
     print("DOMAIN ISSUES:")
     for i, item in enumerate(suggestion.pddl_issue.domain_issue, 1):
-        print(f"{i}. Issue: {item.issue} \n Fix:   {item.fix}")
+        print(f"{i}. Issue: {item.issue} \n Fix: {item.fix} \n Priority: {item.priority}")
         u_input = input("> Vuoi accettare questa modifica? (y/n): ")
         if u_input == "y":
             accepted_suggestion_domain.append(item)
 
     print("\nPROBLEM ISSUES:")
     for i, item in enumerate(suggestion.pddl_issue.problem_issue, 1):
-        print(f"{i}. Issue: {item.issue} \n Fix:   {item.fix}")
+        print(f"{i}. Issue: {item.issue} \n Fix: {item.fix} \n Priority: {item.priority}")
         u_input = input("> Vuoi accettare questa modifica? (y/n): ")
         if u_input == "y":
             accepted_suggestion_problem.append(item)
@@ -715,35 +756,53 @@ def human_in_the_loop_node(state: QuestMasterState):
 
 
 def fix_pddl_node(state: QuestMasterState):
-    print("6# Correzione PDDL tramite i suggerimenti \n")
+    print("6# Generazione nuovi PDDL \n")
 
-    llm= get_model(TEMPERATURE_PDDL_REFLECTION, TOP_P)
+    llm= get_model(TEMPERATURE_PDDL)
 
     prompt_domain = ChatPromptTemplate.from_messages([("system", f"""You are a PDDL expert generator agent and repair assistant.
+                Use the domain-related suggestions to fix all detected problems, including syntax errors and logical inconsistencies.
                 Generate a new PDDL domain file accordingly to fix the issues, focus on preserving the original structure and content as much as possible, making minimal necessary changes for correctness and solvability.
-                Use the domain-related suggestions to correct all detected problems, including syntax errors and logical inconsistencies, so that: The PDDL syntax is fully valid.                        
                 
-                DO NOT invent predicates, objects or goals that are not justified by the story.
-                DO A DOUBLE CHECK of the output for syntax errors and for be sure the PDDLs MUST be solvable by a classical planner as Fast Downward.
+                Pay attention to:
+                    - DO NOT incluede Undefined object
+                    - Expected logical operator or predicate name. Use *=* as logical operator
+                    - DO NOT include Duplicate objects
+                                                       
+                To prevent "Undefined object" errors in the problem file:
+                    - Declare all objects in :objects with their types, matching the narrative.
+                    - Ensure object names in the problem file match the kebab-case identifiers in the domain.
+                    - Verify that all objects referenced in :init are declared in :objects.
+                    - Check that goal conditions in :goal only reference declared objects and valid predicates.
+            
                 Return ONLY the PDDL domain code, which begins with "(define (domain...", no other text at begin or end of the PDDL file."""),
             ("user", "Apply the following FIXES one by one to the given PDDL domain, in ordert to correct the issue and make the PDDL solvable by a classical planner. \n FIXES: {suggestion}. \n Domain PDDL: {domain_pddl}. \n")])
     
     prompt_problem = ChatPromptTemplate.from_messages([("system", f"""You are a PDDL expert generator agent and repair assistant.
-                Generate a new PDDL problem file accordingly to fix the issues, focus on preserving the original structure and content as much as possible, making minimal necessary changes for correctness and solvability.
-                Use the problem-related suggestions to correct all detected problems, including syntax errors and logical inconsistencies, so that:
-                    - The PDDL syntax is fully valid.
-                    - The problem is solvable: the goal is reachable from the initial state using the defined actions.                        
-                                            
-                DO NOT invent predicates, objects or goals that are not justified by the story.
-                DO A DOUBLE CHECK of the output for syntax errors and for be sure the PDDLs MUST be solvable by a classical planner as Fast Downward.
+                Use the problem-related suggestions to fix all detected problems, including syntax errors and logical inconsistencies.
+                Generate a new PDDL problem file accordingly to fix the issues, focus on preserving the original structure and content as much as possible, making minimal necessary changes for correctness and solvability.                   
+
+                Pay attention to:
+                    - Ensure consistency with the provided domain file 
+                    - Use only predicates and types declared in the domain.
+                    - All constants in init and goal must be declared in the objects section, EXCEPT those constants already defined as fixed constants in the domain file.
+                    - Do NOT include in the objects section any constants that are already declared in the domain as fixed constants.
+                    - Do NOT use variables in init or goal.
+                    - Do not invent new types or predicates.
+                    - For objects that must be acquired (e.g., a tome), include a predicate in init to specify their location (e.g., (tome-at tome1 library)).
+                    - Use only object names (constants) consistent with the domain's expectations, e.g., if the domain assumes objects like "map-fragment", name them accordingly (e.g., "map-fragment-1").
+                    - The goal must correspond to the outcome of a high-level success action defined in the domain.
+                    - Every object used in the goal must appear in init or be the result of a reachable action.
+                    - Do not include predicates in init or goal that refer to undefined constants or omit required parameters. 
+                
                 Return ONLY the PDDL problem code, which begins with "(define (problem...", no other text at begin or end of the PDDL file."""),
-            ("user", "Apply the following FIXES one by one to the given PDDL problem, in ordert to correct the issue and make the PDDLs solvable by a classical planner. Generate the new corresponding PDDL problem file accordingly to the PDDL domain file. \n FIXES: {suggestion}. \n Domain PDDL: {domain_pddl}. \n Problem PDDL: {problem_pddl}.")])
+            ("user", "Apply the following FIXES one by one to the given PDDL problem, in ordert to correct the issue and make the PDDLs solvable by a classical planner. Generate the new corresponding PDDL problem file accordingly to the PDDL new domain file. \n FIXES: {suggestion}. \n New Domain PDDL: {domain_pddl}. \n Problem PDDL: {problem_pddl}.")])
     
     formatted_prompt_domain = prompt_domain.invoke({"domain_pddl": state["domain_pddl"], "suggestion": state["acepted_suggestion_domain"]})
-    formatted_prompt_problem = prompt_problem.invoke({"domain_pddl": state["domain_pddl"], "problem_pddl": state["problem_pddl"], "suggestion": state["acepted_suggestion_problem"]})
-
-    print("6# Generazione nuovi PDDL \n")
     response_domain = llm.invoke(formatted_prompt_domain)
+    
+    
+    formatted_prompt_problem = prompt_problem.invoke({"domain_pddl": response_domain, "problem_pddl": state["problem_pddl"], "suggestion": state["acepted_suggestion_problem"]})
     response_problem = llm.invoke(formatted_prompt_problem)
     
     domain_pddl = response_domain.content.strip()
