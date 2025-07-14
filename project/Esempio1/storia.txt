@@ -1,0 +1,516 @@
+Section 1: [INITIAL STATE - Theseus Leontos begins his quest at the Temple of Athena in Valyria]
+Narrative:
+Dawn breaks over the ancient Temple of Athena Phrónesis, perched atop the cliffs overlooking the sea. Theseus Leontos, the Heir of Light, stands before the goddess's statue, the air heavy with divine expectation. Athena’s voice echoes in his mind: “Theseus, the cosmic balance falters. The Titan Cronos stirs in the Rift of Ner'Adûn. You must recover the Five Gifts of Helios scattered across Valyria. Only then can you face the Four Champions of Cronos and seal the Rift. Your path will be perilous, shadowed by trials of flesh and spirit.”
+
+Jason Argeïou, Theseus’s steadfast ally, approaches with a map. Cassandra of the Twin Oracle’s prophecies are still fresh in Theseus’s thoughts — warnings of sacrifice and the relentless march of time. The first step awaits: the forests where Periphetes the Clubman blocks the path, a giant with a bronze club guarding the Gift of Strength.
+
+Current State:
+- Location: Temple of Athena, Valyria
+- Theseus Leontos is prepared with basic gear and blessings from Athena
+- Five Gifts of Helios uncollected
+- Allies present: Jason Argeïou
+- Enemies and obstacles not yet engaged
+- Rift of Ner'Adûn sealed but weakening
+
+Available Actions:
+- Journey to the Forest of Periphetes to confront the giant and seek the Gift of Strength → Go to Section 2
+- Travel to the Bandit Wood to face Sinis the Tree-Bender and claim the Gift of Agility → Go to Section 3
+- Visit Cassandra of the Twin Oracle to seek further guidance and possibly unlock hidden knowledge → Go to Section 4
+
+---
+
+Section 2: [After choosing to confront Periphetes the Clubman in the Forest of Periphetes]
+Narrative:
+The dense forest canopy filters the morning light into scattered emerald beams. The ground trembles beneath Theseus’s feet as Periphetes the Clubman emerges, towering and fierce, his bronze club gleaming with ancient runes. “None shall pass without facing my wrath!” he bellows. Theseus grips his sword tightly, recalling Athena’s blessing of light.
+
+Jason whispers, “Strength alone won’t win this. You must outwit his brute force.” The battle is imminent. Defeating Periphetes will grant the first Gift of Helios — Strength, essential for the trials ahead. But failure means retreat or death.
+
+Current State:
+- Location: Forest of Periphetes
+- Theseus faces Periphetes the Clubman
+- Gift of Strength: locked
+- Jason Argeïou present
+- Athena’s blessing active
+
+Available Actions:
+- Engage Periphetes directly in combat using sword and shield → Go to Section 5
+- Attempt to lure Periphetes into a trap using the environment → Go to Section 6
+
+---
+
+Section 3: [After choosing to face Sinis the Tree-Bender in the Bandit Wood]
+Narrative:
+The Bandit Wood is thick with twisted trees, their branches seeming to watch and whisper. Sinis the Tree-Bender, a lithe and deadly bandit, stands among the bent trunks, ready to snap them around intruders. “You’ll be crushed like saplings,” he sneers.
+
+Theseus must move swiftly and with precision. The Gift of Agility lies somewhere in this treacherous wood, guarded by Sinis’s deadly manipulation of nature.
+
+Current State:
+- Location: Bandit Wood
+- Opponent: Sinis the Tree-Bender
+- Gift of Agility: locked
+- Jason Argeïou present
+- Athena’s blessing active
+
+Available Actions:
+- Dodge and weave to outmaneuver Sinis’s traps and strike → Go to Section 7
+- Use fire to burn the bent trees and disrupt Sinis’s control → Go to Section 8
+
+---
+
+Section 4: [After choosing to visit Cassandra of the Twin Oracle at the Temple]
+Narrative:
+Within the shadowed halls of the Temple of the Twin Oracle, Cassandra awaits, her eyes clouded with visions of past and future. “Theseus,” she intones, “the path you tread is fraught with peril and sacrifice. I can reveal hidden truths to guide you, but knowledge comes at a price.” She offers a cryptic prophecy about the Gifts and the Champions.
+
+This insight could unveil secrets about the Four Champions or reveal shortcuts, but spending time here delays the quest and risks enemies gaining ground.
+
+Current State:
+- Location: Temple of the Twin Oracle
+- Allies: Cassandra of the Twin Oracle present
+- Gifts of Helios: all locked
+- Time progresses; enemies may advance
+
+Available Actions:
+- Accept Cassandra’s prophecy and learn about the Four Champions → Go to Section 9
+- Decline and proceed immediately to confront Periphetes → Go to Section 2
+- Decline and proceed immediately to confront Sinis → Go to Section 3
+
+---
+
+Section 5: [After engaging Periphetes directly in combat]
+Narrative:
+Steel clashes with bronze as Theseus meets Periphetes head-on. The giant swings his club with devastating power, but Theseus’s agility and Athena’s blessing turn the tide. With a final, precise strike, Periphetes falls.
+
+Breathing heavily, Theseus retrieves the first Gift of Helios — Strength — glowing with radiant power. Jason exclaims, “One down, four to go.”
+
+Current State:
+- Location: Forest of Periphetes
+- Periphetes defeated
+- Gift of Strength: acquired
+- Allies: Jason Argeïou present
+
+Available Actions:
+- Continue to the Bandit Wood to face Sinis and claim the Gift of Agility → Go to Section 3
+- Head to the Cliffs to challenge Sciron the Cliff-Kicker → Go to Section 10
+
+---
+
+Section 6: [After attempting to lure Periphetes into a trap]
+Narrative:
+Theseus moves carefully, setting a snare near an ancient tree. Periphetes charges, enraged, but stumbles into the trap, momentarily disarmed. Seizing the moment, Theseus strikes. The giant crashes to the ground, defeated.
+
+Theseus claims the Gift of Strength, feeling it pulse within him. Jason nods approvingly, “Wits and strength combined.”
+
+Current State:
+- Location: Forest of Periphetes
+- Periphetes defeated by trap
+- Gift of Strength: acquired
+- Allies: Jason Argeïou present
+
+Available Actions:
+- Proceed to the Bandit Wood to confront Sinis → Go to Section 3
+- Travel to face Cercyon the Wrestler in the Arena of Trials → Go to Section 11
+
+---
+
+Section 7: [After choosing to dodge and weave against Sinis]
+Narrative:
+Sinis’s trees snap dangerously close as Theseus darts through the wood. Timing each dodge perfectly, he closes in and delivers a decisive blow. Sinis collapses, his control over the trees broken.
+
+The Gift of Agility now shines in Theseus’s grasp. Jason smiles, “Your reflexes will save you yet.”
+
+Current State:
+- Location: Bandit Wood
+- Sinis defeated
+- Gift of Agility: acquired
+- Allies: Jason Argeïou present
+- Gift of Strength already acquired (if from Sections 5 or 6), else locked
+
+Available Actions:
+- Journey to the Mountain Pass to confront Phaea, the Shadow Boar → Go to Section 12
+- Head to the Cliffside to face Sciron the Cliff-Kicker → Go to Section 10
+
+---
+
+Section 8: [After choosing to use fire against Sinis]
+Narrative:
+Theseus ignites a branch, setting the bent trees ablaze. Sinis howls as his control falters under the crackling fire. Seizing the chance, Theseus strikes him down.
+
+With Sinis defeated, the Gift of Agility is secured. Jason warns, “Fire is dangerous, but effective.”
+
+Current State:
+- Location: Bandit Wood
+- Sinis defeated by fire
+- Gift of Agility: acquired
+- Allies: Jason Argeïou present
+
+Available Actions:
+- Proceed to the Mountain Pass for Phaea, the Shadow Boar → Go to Section 12
+- Venture to the Arena of Trials to face Cercyon the Wrestler → Go to Section 11
+
+---
+
+Section 9: [After accepting Cassandra’s prophecy about the Four Champions]
+Narrative:
+Cassandra’s voice lowers to a whisper. “The Four Champions guard the path to the Rift: Deimos, Hector, Medea, and Phobos. Each embodies the trials you must overcome: unraveling, war, enchantment, and deception. The Gifts of Helios will aid you, but beware—their powers test your soul. Remember, sacrifice may be necessary.”
+
+She reveals a secret: the Gifts can be combined to unlock hidden abilities, essential against the Champions.
+
+Current State:
+- Location: Temple of the Twin Oracle
+- Knowledge of Four Champions and Gift combinations gained
+- Gifts of Helios: uncollected
+- Allies: Cassandra of the Twin Oracle present
+
+Available Actions:
+- Proceed to confront Periphetes to acquire the Gift of Strength → Go to Section 2
+- Proceed to face Sinis to acquire the Gift of Agility → Go to Section 3
+- Depart to the Arena of Trials to face Cercyon → Go to Section 11
+
+---
+
+Section 10: [After traveling to face Sciron the Cliff-Kicker]
+Narrative:
+The cliffs rise sharply, wind whipping fiercely. Sciron, a cruel killer, awaits with a grim smile. “One wrong step, and you’ll join the rocks below.” Theseus steels himself; this trial demands balance and courage.
+
+The Gift of Endurance lies beyond, necessary to survive the journey ahead.
+
+Current State:
+- Location: Cliffside path
+- Opponent: Sciron the Cliff-Kicker
+- Gift of Endurance: locked
+- Allies: Jason Argeïou present
+- Gifts of Strength and/or Agility may be acquired or locked depending on prior sections
+
+Available Actions:
+- Try to outmaneuver Sciron and force him off the cliff → Go to Section 13
+- Attempt to parley and distract Sciron to slip past → Go to Section 14
+
+---
+
+Section 11: [After traveling to the Arena of Trials to face Cercyon the Wrestler]
+Narrative:
+The Arena of Trials is a vast circular pit, echoing with the cheers of unseen crowds. Cercyon, a hulking wrestler, challenges Theseus. “Survive my grip, and prove your worth.” The Gift of Fortitude awaits the victor.
+
+This trial is brutal and tests physical and mental stamina.
+
+Current State:
+- Location: Arena of Trials
+- Opponent: Cercyon the Wrestler
+- Gift of Fortitude: locked
+- Allies: Jason Argeïou present
+- Gifts of Strength and/or Agility status depends on prior choices
+
+Available Actions:
+- Engage Cercyon in wrestling combat → Go to Section 15
+- Attempt to use agility to evade and tire Cercyon before striking → Go to Section 16
+
+---
+
+Section 12: [After journeying to the Mountain Pass to confront Phaea, the Shadow Boar]
+Narrative:
+The mountain air grows chill as Theseus enters a rocky pass. Suddenly, Phaea, the Shadow Boar, charges from the shadows, tusks gleaming. This ferocious beast guards the Gift of Courage.
+
+Theseus must rely on his instincts and the blessings he carries.
+
+Current State:
+- Location: Mountain Pass
+- Opponent: Phaea, the Shadow Boar
+- Gift of Courage: locked
+- Allies: Jason Argeïou present
+- Status of previous Gifts varies
+
+Available Actions:
+- Dodge the boar’s charge and counterattack → Go to Section 17
+- Use terrain to trap Phaea and attack → Go to Section 18
+
+---
+
+Section 13: [After choosing to outmaneuver Sciron]
+Narrative:
+Theseus feints left, then darts right, forcing Sciron to lose balance. With a powerful shove, he sends Sciron hurtling down the cliffside. Silence follows. The Gift of Endurance is now his.
+
+Jason breathes a sigh of relief, “That was close. Your balance saved you.”
+
+Current State:
+- Location: Cliffside path
+- Sciron defeated
+- Gift of Endurance: acquired
+- Allies: Jason Argeïou present
+
+Available Actions:
+- Head to the Arena of Trials to face Cercyon → Go to Section 11
+- Proceed to Mountain Pass to face Phaea → Go to Section 12
+
+---
+
+Section 14: [After attempting to parley and distract Sciron]
+Narrative:
+Theseus appeals to Sciron’s pride, distracting him momentarily. Seizing the chance, he slips past the killer. Sciron’s curses echo behind him. While the Gift of Endurance remains unclaimed, Theseus advances.
+
+Jason warns, “You escaped, but the trial remains.”
+
+Current State:
+- Location: Beyond Cliffside path
+- Sciron alive and hostile
+- Gift of Endurance: locked
+- Allies: Jason Argeïou present
+
+Available Actions:
+- Proceed to Arena of Trials to face Cercyon → Go to Section 11
+- Attempt to find another way to claim the Gift of Endurance → Go to Section 19
+
+---
+
+Section 15: [After engaging Cercyon in wrestling combat]
+Narrative:
+Muscles strain and sweat drips as Theseus grapples with Cercyon. The wrestler’s strength is overwhelming, but Theseus’s training and Gifts tip the scales. With a final maneuver, he pins Cercyon.
+
+The Gift of Fortitude is his, glowing with resilience.
+
+Current State:
+- Location: Arena of Trials
+- Cercyon defeated
+- Gift of Fortitude: acquired
+- Allies: Jason Argeïou present
+
+Available Actions:
+- Proceed to face Procrustes, the Torturous Bed → Go to Section 20
+- Travel to Mountain Pass for Phaea → Go to Section 12
+
+---
+
+Section 16: [After choosing agility to evade Cercyon]
+Narrative:
+Theseus dodges Cercyon’s grasp repeatedly, tiring the wrestler. Finally, he strikes a precise blow, toppling his foe. Exhausted but victorious, Theseus claims the Gift of Fortitude.
+
+Jason cheers, “Your speed made the difference.”
+
+Current State:
+- Location: Arena of Trials
+- Cercyon defeated via agility
+- Gift of Fortitude: acquired
+- Allies: Jason Argeïou present
+
+Available Actions:
+- Head to face Procrustes, the Torturous Bed → Go to Section 20
+- Proceed to Mountain Pass to confront Phaea → Go to Section 12
+
+---
+
+Section 17: [After dodging Phaea’s charge and counterattacking]
+Narrative:
+Theseus sidesteps the boar’s furious charge and slashes at its flank. Wounded and enraged, Phaea fights with desperate fury but eventually falls. The Gift of Courage pulses warmly in Theseus’s hand.
+
+Jason nods solemnly, “This courage will be tested further.”
+
+Current State:
+- Location: Mountain Pass
+- Phaea defeated
+- Gift of Courage: acquired
+- Allies: Jason Argeïou present
+
+Available Actions:
+- Proceed to face Procrustes, the Torturous Bed → Go to Section 20
+- Travel to confront Sciron if still alive → Go to Section 10
+
+---
+
+Section 18: [After using terrain to trap Phaea]
+Narrative:
+Theseus leads Phaea toward a narrow ledge. The beast’s charge traps it against the rock wall. Seizing the moment, Theseus strikes decisively, felling Phaea. The Gift of Courage joins his collection.
+
+Jason smiles, “Smart thinking.”
+
+Current State:
+- Location: Mountain Pass
+- Phaea defeated via trap
+- Gift of Courage: acquired
+- Allies: Jason Argeïou present
+
+Available Actions:
+- Move to face Procrustes, the Torturous Bed → Go to Section 20
+- Return to Cliffside for Sciron → Go to Section 10
+
+---
+
+Section 19: [After seeking another way to claim the Gift of Endurance]
+Narrative:
+Theseus searches the cliffside caves and finds ancient glyphs hinting at a hidden trial of endurance. Entering the cave, he faces crushing darkness and echoes of time’s passage. Overcoming this spiritual trial, he claims the Gift of Endurance.
+
+Jason waits outside, anxious but hopeful.
+
+Current State:
+- Location: Cliffside cave
+- Spiritual trial overcome
+- Gift of Endurance: acquired
+- Allies: Jason Argeïou present
+
+Available Actions:
+- Proceed to Arena of Trials to face Cercyon → Go to Section 11
+- Head to Mountain Pass for Phaea → Go to Section 12
+
+---
+
+Section 20: [After facing Procrustes, the Torturous Bed]
+Narrative:
+A grim chamber housing the infamous Procrustes awaits. Theseus lies on the bed, which stretches or shortens victims to fatal lengths. Through sheer will and Athena’s blessing, he resists the bed’s torment.
+
+Emerging victorious, he gains the Gift of Wisdom, the fifth and final Gift of Helios.
+
+Jason breathes, “All five Gifts are now yours. The Four Champions await.”
+
+Current State:
+- Location: Chamber of Procrustes
+- Procrustes overcome
+- Gifts of Helios: Strength, Agility, Fortitude, Endurance, Wisdom acquired
+- Allies: Jason Argeïou present
+
+Available Actions:
+- Enter the Labyrinth to face the Midnight Minotaur → Go to Section 21
+
+---
+
+Section 21: [After entering the Labyrinth to face the Midnight Minotaur]
+Narrative:
+The labyrinth’s twisting corridors confound time and space. Shadows flicker as the Midnight Minotaur stalks its prey. Theseus’s Gifts illuminate the path, guiding him through illusions and traps.
+
+After a harrowing battle blending strength, agility, and wisdom, the Minotaur falls. The path to the Rift of Ner’Adûn opens.
+
+Jason says, “Only the Four Champions stand between you and Cronos.”
+
+Current State:
+- Location: Labyrinth exit
+- Midnight Minotaur defeated
+- Gifts fully active
+- Allies: Jason Argeïou present
+
+Available Actions:
+- Confront Deimos the Unraveler, Champion of the Cult of Aion Aeternus → Go to Section 22
+
+---
+
+Section 22: [After confronting Deimos the Unraveler]
+Narrative:
+Deimos, shrouded in twisting shadows of unraveling time, greets Theseus with a chilling smile. “Your fate is undone.” The battle tests Theseus’s mastery of the Gifts and his resolve.
+
+Victory over Deimos grants passage onward; defeat means oblivion.
+
+Current State:
+- Location: Realm of Deimos
+- Deimos defeated or alive depending on action outcome
+- Gifts active
+- Allies: Jason Argeïou present
+
+Available Actions:
+- If victorious, proceed to face Hector of Tartarus → Go to Section 23
+- If defeated, story ends in failure → Go to Section 25
+
+---
+
+Section 23: [After confronting Hector of Tartarus]
+Narrative:
+Hector, armored in eternal flame, challenges Theseus with the fury of the Order of the Swords of Typhon. His war cries shake the earth. Theseus must balance sacrifice and power to prevail.
+
+Victory means advancing; defeat means the balance is lost.
+
+Current State:
+- Location: Battlefield of Hector
+- Hector defeated or alive depending on outcome
+- Gifts active
+- Allies: Jason Argeïou present
+
+Available Actions:
+- If victorious, proceed to face Medea the Enchantress → Go to Section 24
+- If defeated, story ends in failure → Go to Section 25
+
+---
+
+Section 24: [After confronting Medea the Enchantress]
+Narrative:
+Medea, weaving dark enchantments, tests Theseus’s mind and spirit. Illusions and whispers threaten to break his resolve. Drawing upon the Gift of Wisdom and courage, Theseus confronts her.
+
+Victory dispels her magic; defeat means eternal ensnarement.
+
+Current State:
+- Location: Enchanted Grove
+- Medea defeated or alive depending on outcome
+- Gifts active
+- Allies: Jason Argeïou present
+
+Available Actions:
+- If victorious, proceed to face Phobos the Shapeshifter → Go to Section 26
+- If defeated, story ends in failure → Go to Section 25
+
+---
+
+Section 25: [Failure State - Theseus is defeated]
+Narrative:
+Time fractures as darkness envelops Theseus. The Titan Cronos’s shadow lengthens, the Rift of Ner’Adûn yawning open. The cosmic balance shatters, and Valyria descends into chaos and oblivion.
+
+Jason mourns his fallen friend, vowing to remember the sacrifice.
+
+Current State:
+- Quest failed
+- Cronos’s return imminent
+- Allies lost or scattered
+
+Available Actions:
+- None; story ends in failure
+
+---
+
+Section 26: [After confronting Phobos the Shapeshifter]
+Narrative:
+Phobos, shifting forms in a dance of terror and deception, confronts Theseus in the final trial before the Rift. Each form tests different Gifts and resolve. With unwavering determination and the combined power of the Five Gifts of Helios, Theseus overcomes.
+
+Jason exclaims, “The path to the Rift is clear. Now, face Cronos.”
+
+Current State:
+- Location: Threshold of the Rift
+- Phobos defeated
+- Gifts active
+- Allies: Jason Argeïou present
+
+Available Actions:
+- Enter the Rift to confront and defeat Cronos → Go to Section 27
+
+---
+
+Section 27: [Final Confrontation - Defeat or Fail against Cronos]
+Narrative:
+Within the Rift of Ner’Adûn, time warps and twists. Cronos, the ancient Titan of Time, awakens, his presence a storm of destruction and judgment. Theseus calls upon the full might of the Five Gifts of Helios and the blessings of Athena.
+
+The battle is fierce and tests all Theseus has learned. Victory seals the Rift and restores cosmic balance. Defeat means the end of light and the birth of eternal time’s shadow.
+
+Current State:
+- Location: Rift of Ner’Adûn
+- Cronos defeated or victorious
+- Gifts fully active
+- Allies: Jason Argeïou present
+
+Available Actions:
+- Victory ends story with success
+- Defeat ends story with failure → Go to Section 25
+
+---
+
+Section 28: [Success State - Cronos defeated]
+Narrative:
+With a final radiant strike, Theseus banishes Cronos back into timeless oblivion. The Rift closes, sealing the ancient threat. Valyria breathes free once more, bathed in the light of the Five Gifts of Helios.
+
+Athena’s voice praises, “You have preserved the balance, Heir of Light. Time’s shadow fades.”
+
+Jason embraces Theseus, triumphant. The legend of Theseus Leontos is immortalized.
+
+Current State:
+- Quest complete
+- Cronos defeated
+- Gifts of Helios used to restore balance
+- Allies safe and victorious
+
+Available Actions:
+- None; story ends in success
+
+---
+
+This completes the structured interactive story for "The Shadow of Cronos" with branching choices, distinct world states, and clear preconditions and effects, respecting all lore constraints and story depth.

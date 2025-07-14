@@ -1,0 +1,814 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>L'Ombra di Cronos - Avventura Interattiva</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600&display=swap');
+  * {
+    box-sizing: border-box;
+  }
+  body {
+    margin: 0; padding: 0;
+    font-family: 'Inter', sans-serif;
+    background: #f9f9f9;
+    color: #222;
+    display: flex;
+    min-height: 100vh;
+    align-items: center;
+    justify-content: center;
+    padding: 1rem;
+  }
+  #game-container {
+    max-width: 700px;
+    width: 100%;
+    background: #fff;
+    border-radius: 10px;
+    box-shadow: 0 8px 24px rgba(0,0,0,0.1);
+    padding: 2rem 2.5rem;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    text-align: center;
+    position: relative;
+    overflow: hidden;
+  }
+  h1, h2 {
+    margin: 0 0 1rem 0;
+    font-weight: 600;
+    color: #0a3d62;
+  }
+  p {
+    line-height: 1.5;
+    margin: 0 0 1.5rem 0;
+    font-size: 1.1rem;
+  }
+  .btn-container {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: 1rem;
+    margin-top: auto;
+  }
+  button {
+    background: #0a3d62;
+    color: #fff;
+    border: none;
+    border-radius: 6px;
+    padding: 0.75rem 1.5rem;
+    font-size: 1rem;
+    cursor: pointer;
+    font-weight: 600;
+    transition: background-color 0.3s ease, transform 0.2s ease;
+    min-width: 160px;
+  }
+  button:hover, button:focus {
+    background: #065a9e;
+    outline: none;
+    transform: scale(1.05);
+  }
+  button:disabled {
+    background: #999;
+    cursor: not-allowed;
+    transform: none;
+  }
+  @media (max-width: 480px) {
+    #game-container {
+      padding: 1.5rem 1.5rem;
+    }
+    button {
+      min-width: 100%;
+    }
+  }
+  .fade-enter {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  .fade-enter-active {
+    opacity: 1;
+    transform: translateY(0);
+    transition: opacity 0.5s ease, transform 0.5s ease;
+  }
+</style>
+</head>
+<body>
+<div id="game-container" role="main" aria-live="polite" aria-atomic="true">
+  <!-- Content dynamically inserted here -->
+</div>
+<script>
+(() => {
+  const container = document.getElementById('game-container');
+
+  // Game state
+  const state = {
+    location: 'temple-of-athena',
+    allies: ['jason-argeiou'],
+    enemiesDefeated: new Set(),
+    giftsAcquired: new Set(),
+    blessingActive: true,
+    knowledgeProphecy: false,
+    trialFailed: false,
+    questComplete: false,
+    riftSealed: false,
+    riftOpen: false,
+    timeProgressed: false,
+    currentSection: 'start',
+  };
+
+  // Sections data keyed by section id
+  // Each section has:
+  // - title
+  // - narrative (Italian)
+  // - currentState description (not shown but used internally)
+  // - actions: array of { text, nextSection, condition (optional function) }
+  // Conditions are functions that receive state and return boolean
+  // If no actions, it's an end scene
+
+  const sections = {
+    'start': {
+      title: "L'Ombra di Cronos",
+      narrative: `L'alba si leva sull'antico Tempio di Athena Phrónesis, arroccato sulle scogliere che dominano il mare. Theseus Leontos, l'Erede della Luce, si trova davanti alla statua della dea, l'aria carica di aspettative divine. La voce di Athena riecheggia nella sua mente: "Theseus, l'equilibrio cosmico vacilla. Il Titano Cronos si agita nel Baratro di Ner'Adûn. Devi recuperare i Cinque Doni di Helios sparsi per Valyria. Solo allora potrai affrontare i Quattro Campioni di Cronos e sigillare il Baratro. Il tuo cammino sarà pericoloso, ombreggiato da prove di carne e spirito."
+
+Jason Argeïou, fedele alleato di Theseus, si avvicina con una mappa. Le profezie di Cassandra dell'Oracolo Gemello sono ancora fresche nei pensieri di Theseus — avvertimenti di sacrificio e della marcia incessante del tempo. Il primo passo attende: le foreste dove Periphetes il Clavaio blocca il cammino, un gigante con una clava di bronzo che custodisce il Dono della Forza.`,
+      actions: [
+        { text: "Viaggia nella Foresta di Periphetes per affrontare il gigante e cercare il Dono della Forza", next: "section2" },
+        { text: "Viaggia nel Bosco dei Banditi per affrontare Sinis il Piegatore di Alberi e reclamare il Dono dell'Agilità", next: "section3" },
+        { text: "Visita Cassandra dell'Oracolo Gemello per cercare ulteriori consigli e sbloccare conoscenze nascoste", next: "section4" },
+      ],
+    },
+    'section2': {
+      title: "Foresta di Periphetes",
+      narrative: `La fitta chioma della foresta filtra la luce del mattino in raggi smeraldo sparsi. Il terreno trema sotto i piedi di Theseus mentre Periphetes il Clavaio emerge, imponente e feroce, la sua clava di bronzo scintillante di rune antiche. "Nessuno passerà senza affrontare la mia ira!" tuona. Theseus stringe la spada, ricordando la benedizione di luce di Athena.
+
+Jason sussurra, "La forza da sola non basterà. Devi superare la sua brutalità con l'astuzia." La battaglia è imminente. Sconfiggere Periphetes garantirà il primo Dono di Helios — la Forza, essenziale per le prove a venire. Ma fallire significa ritirarsi o morire.`,
+      actions: [
+        { text: "Affronta Periphetes direttamente in combattimento con spada e scudo", next: "section5" },
+        { text: "Prova a attirare Periphetes in una trappola usando l'ambiente", next: "section6" },
+      ],
+    },
+    'section3': {
+      title: "Bosco dei Banditi",
+      narrative: `Il Bosco dei Banditi è fitto di alberi contorti, i loro rami sembrano osservare e sussurrare. Sinis il Piegatore di Alberi, un bandito snello e letale, si erge tra i tronchi piegati, pronto a schiacciare gli intrusi. "Verrai schiacciato come un giovane albero," ghigna.
+
+Theseus deve muoversi rapidamente e con precisione. Il Dono dell'Agilità si trova da qualche parte in questo bosco insidioso, custodito dal controllo mortale di Sinis sulla natura.`,
+      actions: [
+        { text: "Schiva e danza per superare le trappole di Sinis e colpire", next: "section7" },
+        { text: "Usa il fuoco per bruciare gli alberi piegati e disturbare il controllo di Sinis", next: "section8" },
+      ],
+    },
+    'section4': {
+      title: "Tempio dell'Oracolo Gemello",
+      narrative: `Nelle sale ombrose del Tempio dell'Oracolo Gemello, Cassandra attende, i suoi occhi velati da visioni di passato e futuro. "Theseus," intona, "il cammino che percorri è pieno di pericoli e sacrifici. Posso rivelarti verità nascoste per guidarti, ma la conoscenza ha un prezzo." Offre una profezia criptica sui Doni e i Campioni.
+
+Questa intuizione potrebbe svelare segreti sui Quattro Campioni o rivelare scorciatoie, ma passare tempo qui ritarda la missione e rischia che i nemici avanzino.`,
+      actions: [
+        { text: "Accetta la profezia di Cassandra e apprendi dei Quattro Campioni", next: "section9" },
+        { text: "Rifiuta e procedi immediatamente ad affrontare Periphetes", next: "section2" },
+        { text: "Rifiuta e procedi immediatamente ad affrontare Sinis", next: "section3" },
+      ],
+    },
+    'section5': {
+      title: "Combattimento con Periphetes",
+      narrative: `Acciaio contro bronzo mentre Theseus affronta Periphetes frontalmente. Il gigante brandisce la clava con potenza devastante, ma l'agilità di Theseus e la benedizione di Athena ribaltano le sorti. Con un colpo preciso finale, Periphetes cade.
+
+Ansante, Theseus recupera il primo Dono di Helios — la Forza — che brilla di potere radiante. Jason esclama, "Uno in meno, quattro da conquistare."`,
+      actions: [
+        { text: "Prosegui verso il Bosco dei Banditi per affrontare Sinis e reclamare il Dono dell'Agilità", next: "section3" },
+        { text: "Dirigiti alle Scogliere per sfidare Sciron il Calciatore di Scogliere", next: "section10" },
+      ],
+    },
+    'section6': {
+      title: "Trappola per Periphetes",
+      narrative: `Theseus si muove con cautela, preparando una trappola vicino a un albero antico. Periphetes carica, furioso, ma inciampa nella trappola, momentaneamente disarmato. Colto il momento, Theseus colpisce. Il gigante crolla a terra, sconfitto.
+
+Theseus reclama il Dono della Forza, sentendolo pulsare dentro di sé. Jason annuisce approvando, "Astuzia e forza insieme."`,
+      actions: [
+        { text: "Procedi verso il Bosco dei Banditi per affrontare Sinis", next: "section3" },
+        { text: "Viaggia per affrontare Cercyon il Lottatore nell'Arena delle Prove", next: "section11" },
+      ],
+    },
+    'section7': {
+      title: "Schivare Sinis",
+      narrative: `Gli alberi di Sinis scattano pericolosamente mentre Theseus si muove nel bosco. Tempismo perfetto in ogni schivata, si avvicina e infligge un colpo decisivo. Sinis crolla, il suo controllo sugli alberi spezzato.
+
+Il Dono dell'Agilità ora brilla nelle mani di Theseus. Jason sorride, "I tuoi riflessi ti salveranno ancora."`,
+      actions: [
+        { text: "Viaggia al Passo della Montagna per affrontare Phaea, il Cinghiale d'Ombra", next: "section12" },
+        { text: "Dirigiti alle Scogliere per affrontare Sciron il Calciatore di Scogliere", next: "section10" },
+      ],
+    },
+    'section8': {
+      title: "Fuoco contro Sinis",
+      narrative: `Theseus accende un ramo, incendiando gli alberi piegati. Sinis urla mentre il suo controllo vacilla sotto il crepitio del fuoco. Colto il momento, Theseus lo abbatte.
+
+Con Sinis sconfitto, il Dono dell'Agilità è assicurato. Jason avverte, "Il fuoco è pericoloso, ma efficace."`,
+      actions: [
+        { text: "Procedi al Passo della Montagna per Phaea, il Cinghiale d'Ombra", next: "section12" },
+        { text: "Avventurati nell'Arena delle Prove per affrontare Cercyon il Lottatore", next: "section11" },
+      ],
+    },
+    'section9': {
+      title: "Profezia di Cassandra",
+      narrative: `La voce di Cassandra si abbassa in un sussurro. "I Quattro Campioni custodiscono il cammino verso il Baratro: Deimos, Hector, Medea e Phobos. Ognuno incarna le prove che devi superare: disfacimento, guerra, incantesimi e inganno. I Doni di Helios ti aiuteranno, ma i loro poteri metteranno alla prova la tua anima. Ricorda, il sacrificio potrebbe essere necessario."
+
+Rivela un segreto: i Doni possono essere combinati per sbloccare abilità nascoste, essenziali contro i Campioni.`,
+      actions: [
+        { text: "Procedi ad affrontare Periphetes per acquisire il Dono della Forza", next: "section2" },
+        { text: "Procedi ad affrontare Sinis per acquisire il Dono dell'Agilità", next: "section3" },
+        { text: "Parti per l'Arena delle Prove per affrontare Cercyon", next: "section11" },
+      ],
+    },
+    'section10': {
+      title: "Scogliere di Sciron",
+      narrative: `Le scogliere si ergono ripide, il vento sferza con forza. Sciron, un crudele assassino, attende con un sorriso sinistro. "Un passo falso e finirai tra le rocce sottostanti." Theseus si prepara; questa prova richiede equilibrio e coraggio.
+
+Il Dono della Resistenza giace oltre, necessario per sopravvivere al cammino.`,
+      actions: [
+        { text: "Prova a superare Sciron e spingerlo giù dalla scogliera", next: "section13" },
+        { text: "Prova a parlare e distrarre Sciron per passare inosservato", next: "section14" },
+      ],
+    },
+    'section11': {
+      title: "Arena delle Prove",
+      narrative: `L'Arena delle Prove è una vasta fossa circolare, echeggiante dei cori di folle invisibili. Cercyon, un lottatore massiccio, sfida Theseus. "Sopravvivi alla mia presa e dimostra il tuo valore." Il Dono della Tenacia attende il vincitore.
+
+Questa prova è brutale e mette alla prova resistenza fisica e mentale.`,
+      actions: [
+        { text: "Affronta Cercyon in combattimento di lotta", next: "section15" },
+        { text: "Usa l'agilità per evitare e stancare Cercyon prima di colpire", next: "section16" },
+      ],
+    },
+    'section12': {
+      title: "Passo della Montagna",
+      narrative: `L'aria di montagna si fa fredda mentre Theseus entra in un passaggio roccioso. Improvvisamente, Phaea, il Cinghiale d'Ombra, carica dalle ombre, le zanne scintillanti. Questa bestia feroce custodisce il Dono del Coraggio.
+
+Theseus deve affidarsi ai suoi istinti e alle benedizioni che porta.`,
+      actions: [
+        { text: "Schiva la carica del cinghiale e contrattacca", next: "section17" },
+        { text: "Usa il terreno per intrappolare Phaea e attaccare", next: "section18" },
+      ],
+    },
+    'section13': {
+      title: "Superare Sciron",
+      narrative: `Theseus finge a sinistra, poi scatta a destra, costringendo Sciron a perdere l'equilibrio. Con una spinta potente, lo manda a precipitare giù dalla scogliera. Silenzio segue. Il Dono della Resistenza è ora suo.
+
+Jason sospira di sollievo, "È stato vicino. Il tuo equilibrio ti ha salvato."`,
+      actions: [
+        { text: "Dirigiti all'Arena delle Prove per affrontare Cercyon", next: "section11" },
+        { text: "Prosegui al Passo della Montagna per affrontare Phaea", next: "section12" },
+      ],
+    },
+    'section14': {
+      title: "Parlare con Sciron",
+      narrative: `Theseus appella all'orgoglio di Sciron, distrandolo momentaneamente. Colto il momento, passa inosservato. Le maledizioni di Sciron echeggiano dietro di lui. Pur senza il Dono della Resistenza, Theseus avanza.
+
+Jason avverte, "Sei scappato, ma la prova rimane."`,
+      actions: [
+        { text: "Procedi all'Arena delle Prove per affrontare Cercyon", next: "section11" },
+        { text: "Cerca un altro modo per ottenere il Dono della Resistenza", next: "section19" },
+      ],
+    },
+    'section15': {
+      title: "Lotta con Cercyon",
+      narrative: `I muscoli si tendono e il sudore scende mentre Theseus lotta con Cercyon. La forza del lottatore è travolgente, ma l'addestramento e i Doni di Theseus ribaltano la situazione. Con una mossa finale, lo immobilizza.
+
+Il Dono della Tenacia è suo, che brilla di resilienza.`,
+      actions: [
+        { text: "Procedi ad affrontare Procruste, il Letto Torturatore", next: "section20" },
+        { text: "Viaggia al Passo della Montagna per Phaea", next: "section12" },
+      ],
+    },
+    'section16': {
+      title: "Evitare Cercyon con agilità",
+      narrative: `Theseus schiva ripetutamente la presa di Cercyon, stancando il lottatore. Infine, infligge un colpo preciso, abbattendo il nemico. Esausto ma vittorioso, Theseus reclama il Dono della Tenacia.
+
+Jason esulta, "La tua velocità ha fatto la differenza."`,
+      actions: [
+        { text: "Dirigiti ad affrontare Procruste, il Letto Torturatore", next: "section20" },
+        { text: "Prosegui al Passo della Montagna per affrontare Phaea", next: "section12" },
+      ],
+    },
+    'section17': {
+      title: "Schivare la carica di Phaea",
+      narrative: `Theseus evita la furiosa carica del cinghiale e lo colpisce al fianco. Ferito e furioso, Phaea combatte con disperazione ma alla fine cade. Il Dono del Coraggio pulsa caldo nella mano di Theseus.
+
+Jason annuisce solenne, "Questo coraggio sarà messo alla prova ancora."`,
+      actions: [
+        { text: "Procedi ad affrontare Procruste, il Letto Torturatore", next: "section20" },
+        { text: "Viaggia per affrontare Sciron se ancora vivo", next: "section10" },
+      ],
+    },
+    'section18': {
+      title: "Intrappolare Phaea",
+      narrative: `Theseus conduce Phaea verso una stretta sporgenza. La carica della bestia la intrappola contro la parete rocciosa. Colto il momento, Theseus colpisce decisamente, abbattendo Phaea. Il Dono del Coraggio si unisce alla sua collezione.
+
+Jason sorride, "Pensiero intelligente."`,
+      actions: [
+        { text: "Muoviti per affrontare Procruste, il Letto Torturatore", next: "section20" },
+        { text: "Torna alle Scogliere per Sciron", next: "section10" },
+      ],
+    },
+    'section19': {
+      title: "Prova spirituale per il Dono della Resistenza",
+      narrative: `Theseus cerca nelle grotte delle scogliere e trova antichi glifi che suggeriscono una prova nascosta di resistenza. Entrando nella caverna, affronta l'oscurità schiacciante e gli echi del passaggio del tempo. Superando questa prova spirituale, reclama il Dono della Resistenza.
+
+Jason aspetta fuori, ansioso ma speranzoso.`,
+      actions: [
+        { text: "Procedi all'Arena delle Prove per affrontare Cercyon", next: "section11" },
+        { text: "Dirigiti al Passo della Montagna per Phaea", next: "section12" },
+      ],
+    },
+    'section20': {
+      title: "Prova di Procruste",
+      narrative: `Una camera cupa ospita il famigerato Procruste. Theseus giace sul letto, che allunga o accorcia le vittime a lunghezze fatali. Con pura volontà e la benedizione di Athena, resiste al tormento del letto.
+
+Emergendo vittorioso, ottiene il Dono della Saggezza, il quinto e ultimo Dono di Helios.
+
+Jason respira, "Ora possiedi tutti e cinque i Doni. I Quattro Campioni ti attendono."`,
+      actions: [
+        { text: "Entra nel Labirinto per affrontare il Minotauro di Mezzanotte", next: "section21" },
+      ],
+    },
+    'section21': {
+      title: "Labirinto e Minotauro di Mezzanotte",
+      narrative: `I corridoi tortuosi del labirinto confondono tempo e spazio. Le ombre tremolano mentre il Minotauro di Mezzanotte dà la caccia alla sua preda. I Doni di Theseus illuminano il cammino, guidandolo tra illusioni e trappole.
+
+Dopo una battaglia estenuante che unisce forza, agilità e saggezza, il Minotauro cade. La via verso il Baratro di Ner'Adûn si apre.
+
+Jason dice, "Solo i Quattro Campioni stanno tra te e Cronos."`,
+      actions: [
+        { text: "Affronta Deimos lo Svelatore, Campione del Culto di Aion Aeternus", next: "section22" },
+      ],
+    },
+    'section22': {
+      title: "Confronto con Deimos lo Svelatore",
+      narrative: `Deimos, avvolto in ombre contorte del tempo che si disfa, accoglie Theseus con un sorriso gelido. "Il tuo destino è disfatto." La battaglia mette alla prova la padronanza dei Doni e la risolutezza di Theseus.
+
+La vittoria su Deimos concede il passaggio avanti; la sconfitta significa oblio.`,
+      actions: [
+        { text: "Se vittorioso, procedi ad affrontare Hector di Tartaro", next: "section23" },
+        { text: "Se sconfitto, la storia termina in fallimento", next: "section25" },
+      ],
+    },
+    'section23': {
+      title: "Confronto con Hector di Tartaro",
+      narrative: `Hector, armato di fiamme eterne, sfida Theseus con la furia dell'Ordine delle Spade di Tifone. I suoi gridi di guerra scuotono la terra. Theseus deve bilanciare sacrificio e potere per prevalere.
+
+La vittoria significa avanzare; la sconfitta significa la perdita dell'equilibrio.`,
+      actions: [
+        { text: "Se vittorioso, procedi ad affrontare Medea l'Incantatrice", next: "section24" },
+        { text: "Se sconfitto, la storia termina in fallimento", next: "section25" },
+      ],
+    },
+    'section24': {
+      title: "Confronto con Medea l'Incantatrice",
+      narrative: `Medea, tessendo incantesimi oscuri, mette alla prova mente e spirito di Theseus. Illusioni e sussurri minacciano di spezzare la sua risolutezza. Attraendo forza dal Dono della Saggezza e dal coraggio, Theseus la affronta.
+
+La vittoria dissolve la sua magia; la sconfitta significa incatenamento eterno.`,
+      actions: [
+        { text: "Se vittorioso, procedi ad affrontare Phobos il Mutante", next: "section26" },
+        { text: "Se sconfitto, la storia termina in fallimento", next: "section25" },
+      ],
+    },
+    'section25': {
+      title: "Sconfitta - Il ritorno di Cronos",
+      narrative: `Il tempo si frantuma mentre l'oscurità avvolge Theseus. L'ombra del Titano Cronos si allunga, il Baratro di Ner'Adûn si spalanca. L'equilibrio cosmico si spezza e Valyria precipita nel caos e nell'oblio.
+
+Jason piange il suo amico caduto, promettendo di ricordare il sacrificio.`,
+      actions: [],
+    },
+    'section26': {
+      title: "Confronto con Phobos il Mutante",
+      narrative: `Phobos, mutando forma in una danza di terrore e inganno, affronta Theseus nell'ultima prova prima del Baratro. Ogni forma mette alla prova diversi Doni e la risolutezza. Con determinazione incrollabile e il potere combinato dei Cinque Doni di Helios, Theseus prevale.
+
+Jason esclama, "La via verso il Baratro è libera. Ora affronta Cronos."`,
+      actions: [
+        { text: "Entra nel Baratro per affrontare e sconfiggere Cronos", next: "section27" },
+      ],
+    },
+    'section27': {
+      title: "Confronto Finale con Cronos",
+      narrative: `Nel Baratro di Ner'Adûn, il tempo si contorce e si piega. Cronos, l'antico Titano del Tempo, si risveglia, la sua presenza una tempesta di distruzione e giudizio. Theseus invoca tutta la potenza dei Cinque Doni di Helios e la benedizione di Athena.
+
+La battaglia è feroce e mette alla prova tutto ciò che Theseus ha imparato. La vittoria sigilla il Baratro e ristabilisce l'equilibrio cosmico. La sconfitta significa la fine della luce e la nascita dell'eterna ombra del tempo.`,
+      actions: [
+        { text: "Vinci la battaglia contro Cronos", next: "section28" },
+        { text: "Perdi la battaglia contro Cronos", next: "section25" },
+      ],
+    },
+    'section28': {
+      title: "Vittoria - Cronos sconfitto",
+      narrative: `Con un ultimo colpo radiante, Theseus bandisce Cronos nell'oblio senza tempo. Il Baratro si chiude, sigillando l'antica minaccia. Valyria respira libera ancora una volta, immersa nella luce dei Cinque Doni di Helios.
+
+La voce di Athena loda, "Hai preservato l'equilibrio, Erede della Luce. L'ombra del tempo svanisce."
+
+Jason abbraccia Theseus, trionfante. La leggenda di Theseus Leontos è immortale.`,
+      actions: [],
+    },
+  };
+
+  // Helper: fade transition for content changes
+  function fadeContent(newContentFunc) {
+    return new Promise(resolve => {
+      container.classList.add('fade-enter');
+      container.style.opacity = '0';
+      container.style.transform = 'translateY(10px)';
+      setTimeout(() => {
+        newContentFunc();
+        container.style.opacity = '1';
+        container.style.transform = 'translateY(0)';
+        container.classList.remove('fade-enter');
+        setTimeout(resolve, 500);
+      }, 300);
+    });
+  }
+
+  // Render a section by id
+  async function renderSection(id) {
+    if (!(id in sections)) return;
+    state.currentSection = id;
+    const section = sections[id];
+
+    await fadeContent(() => {
+      container.innerHTML = '';
+      const title = document.createElement('h1');
+      title.textContent = section.title;
+      container.appendChild(title);
+
+      const narrative = document.createElement('p');
+      narrative.textContent = section.narrative;
+      container.appendChild(narrative);
+
+      if (section.actions.length === 0) {
+        // End scene
+        const endMsg = document.createElement('p');
+        if (id === 'section25') {
+          endMsg.textContent = "La tua missione è fallita. Vuoi riprovare?";
+        } else if (id === 'section28') {
+          endMsg.textContent = "Congratulazioni! Hai completato la missione con successo.";
+        } else {
+          endMsg.textContent = "Fine della storia.";
+        }
+        container.appendChild(endMsg);
+
+        const btnRestart = document.createElement('button');
+        btnRestart.textContent = "Gioca di nuovo";
+        btnRestart.addEventListener('click', () => {
+          resetGame();
+          renderSection('start');
+        });
+        container.appendChild(btnRestart);
+        return;
+      }
+
+      const btnContainer = document.createElement('div');
+      btnContainer.className = 'btn-container';
+
+      section.actions.forEach(action => {
+        // Check condition if any
+        if (action.condition && !action.condition(state)) return;
+        const btn = document.createElement('button');
+        btn.textContent = action.text;
+        btn.type = 'button';
+        btn.addEventListener('click', () => {
+          processAction(id, action.next);
+        });
+        btnContainer.appendChild(btn);
+      });
+
+      container.appendChild(btnContainer);
+    });
+  }
+
+  // Process action transitions and update state accordingly
+  function processAction(currentId, nextId) {
+    // Update state based on current and next section following the plan steps and lore logic
+
+    // Helper to add gift
+    function acquireGift(gift) {
+      if (!state.giftsAcquired.has(gift)) {
+        state.giftsAcquired.add(gift);
+      }
+    }
+    // Helper to mark enemy defeated
+    function defeatEnemy(enemy) {
+      if (!state.enemiesDefeated.has(enemy)) {
+        state.enemiesDefeated.add(enemy);
+      }
+    }
+
+    switch (currentId) {
+      case 'start':
+        // From start, update location and allies accordingly
+        if (nextId === 'section2') {
+          state.location = 'forest-of-periphetes';
+          // Jason moves with Theseus
+          if (!state.allies.includes('jason-argeiou')) state.allies.push('jason-argeiou');
+        } else if (nextId === 'section3') {
+          state.location = 'bandit-wood';
+          if (!state.allies.includes('jason-argeiou')) state.allies.push('jason-argeiou');
+        } else if (nextId === 'section4') {
+          state.location = 'temple-of-twin-oracle';
+          if (!state.allies.includes('jason-argeiou')) state.allies.push('jason-argeiou');
+          if (!state.allies.includes('cassandra')) state.allies.push('cassandra');
+          state.timeProgressed = true;
+        }
+        break;
+
+      case 'section2':
+        if (nextId === 'section5' || nextId === 'section6') {
+          state.location = 'forest-of-periphetes';
+          if (!state.allies.includes('jason-argeiou')) state.allies.push('jason-argeiou');
+        }
+        break;
+
+      case 'section3':
+        if (nextId === 'section7' || nextId === 'section8') {
+          state.location = 'bandit-wood';
+          if (!state.allies.includes('jason-argeiou')) state.allies.push('jason-argeiou');
+        }
+        break;
+
+      case 'section4':
+        if (nextId === 'section9') {
+          state.location = 'temple-of-twin-oracle';
+          if (!state.allies.includes('cassandra')) state.allies.push('cassandra');
+          state.knowledgeProphecy = true;
+          state.timeProgressed = true;
+        } else if (nextId === 'section2') {
+          state.location = 'forest-of-periphetes';
+          // Cassandra leaves
+          state.allies = state.allies.filter(a => a !== 'cassandra');
+        } else if (nextId === 'section3') {
+          state.location = 'bandit-wood';
+          state.allies = state.allies.filter(a => a !== 'cassandra');
+        }
+        break;
+
+      case 'section5':
+        if (nextId === 'section3') {
+          state.location = 'bandit-wood';
+          acquireGift('gift-of-strength');
+          defeatEnemy('periphetes');
+        } else if (nextId === 'section10') {
+          state.location = 'cliffside-path';
+          acquireGift('gift-of-strength');
+          defeatEnemy('periphetes');
+        }
+        break;
+
+      case 'section6':
+        if (nextId === 'section3') {
+          state.location = 'bandit-wood';
+          acquireGift('gift-of-strength');
+          defeatEnemy('periphetes');
+        } else if (nextId === 'section11') {
+          state.location = 'arena-of-trials';
+          acquireGift('gift-of-strength');
+          defeatEnemy('periphetes');
+        }
+        break;
+
+      case 'section7':
+        if (nextId === 'section12') {
+          state.location = 'mountain-pass';
+          acquireGift('gift-of-agility');
+          defeatEnemy('sinis');
+        } else if (nextId === 'section10') {
+          state.location = 'cliffside-path';
+          acquireGift('gift-of-agility');
+          defeatEnemy('sinis');
+        }
+        break;
+
+      case 'section8':
+        if (nextId === 'section12') {
+          state.location = 'mountain-pass';
+          acquireGift('gift-of-agility');
+          defeatEnemy('sinis');
+        } else if (nextId === 'section11') {
+          state.location = 'arena-of-trials';
+          acquireGift('gift-of-agility');
+          defeatEnemy('sinis');
+        }
+        break;
+
+      case 'section9':
+        if (nextId === 'section2') {
+          state.location = 'forest-of-periphetes';
+          // Cassandra leaves
+          state.allies = state.allies.filter(a => a !== 'cassandra');
+        } else if (nextId === 'section3') {
+          state.location = 'bandit-wood';
+          state.allies = state.allies.filter(a => a !== 'cassandra');
+        } else if (nextId === 'section11') {
+          state.location = 'arena-of-trials';
+          state.allies = state.allies.filter(a => a !== 'cassandra');
+        }
+        break;
+
+      case 'section10':
+        if (nextId === 'section13') {
+          state.location = 'cliffside-path';
+          defeatEnemy('sciron');
+          acquireGift('gift-of-endurance');
+        } else if (nextId === 'section14') {
+          state.location = 'beyond-cliffside-path';
+          // Sciron alive and hostile
+        }
+        break;
+
+      case 'section11':
+        if (nextId === 'section15') {
+          state.location = 'arena-of-trials';
+          defeatEnemy('cercyon');
+          acquireGift('gift-of-fortitude');
+        } else if (nextId === 'section16') {
+          state.location = 'arena-of-trials';
+          defeatEnemy('cercyon');
+          acquireGift('gift-of-fortitude');
+        }
+        break;
+
+      case 'section12':
+        if (nextId === 'section17') {
+          state.location = 'mountain-pass';
+          defeatEnemy('phaea');
+          acquireGift('gift-of-courage');
+        } else if (nextId === 'section18') {
+          state.location = 'mountain-pass';
+          defeatEnemy('phaea');
+          acquireGift('gift-of-courage');
+        }
+        break;
+
+      case 'section13':
+        if (nextId === 'section11') {
+          state.location = 'arena-of-trials';
+          // Sciron defeated
+        } else if (nextId === 'section12') {
+          state.location = 'mountain-pass';
+          // Sciron defeated
+        }
+        break;
+
+      case 'section14':
+        if (nextId === 'section11') {
+          state.location = 'arena-of-trials';
+          // Sciron alive and hostile
+        } else if (nextId === 'section19') {
+          state.location = 'beyond-cliffside-path';
+          // Sciron alive and hostile
+        }
+        break;
+
+      case 'section15':
+        if (nextId === 'section20') {
+          state.location = 'chamber-of-procrustes';
+          // Cercyon defeated
+        } else if (nextId === 'section12') {
+          state.location = 'mountain-pass';
+          // Cercyon defeated
+        }
+        break;
+
+      case 'section16':
+        if (nextId === 'section20') {
+          state.location = 'chamber-of-procrustes';
+          // Cercyon defeated
+        } else if (nextId === 'section12') {
+          state.location = 'mountain-pass';
+          // Cercyon defeated
+        }
+        break;
+
+      case 'section17':
+        if (nextId === 'section20') {
+          state.location = 'chamber-of-procrustes';
+          // Phaea defeated
+        } else if (nextId === 'section10') {
+          state.location = 'cliffside-path';
+          // Phaea defeated
+        }
+        break;
+
+      case 'section18':
+        if (nextId === 'section20') {
+          state.location = 'chamber-of-procrustes';
+          // Phaea defeated
+        } else if (nextId === 'section10') {
+          state.location = 'cliffside-path';
+          // Phaea defeated
+        }
+        break;
+
+      case 'section19':
+        if (nextId === 'section11') {
+          state.location = 'arena-of-trials';
+          acquireGift('gift-of-endurance');
+          // Spiritual trial overcome
+        } else if (nextId === 'section12') {
+          state.location = 'mountain-pass';
+          acquireGift('gift-of-endurance');
+          // Spiritual trial overcome
+        }
+        break;
+
+      case 'section20':
+        if (nextId === 'section21') {
+          state.location = 'labyrinth-exit';
+          defeatEnemy('procrustes');
+          acquireGift('gift-of-wisdom');
+        }
+        break;
+
+      case 'section21':
+        if (nextId === 'section22') {
+          state.location = 'realm-of-deimos';
+          defeatEnemy('midnight-minotaur');
+        }
+        break;
+
+      case 'section22':
+        if (nextId === 'section23') {
+          state.location = 'battlefield-of-hector';
+          defeatEnemy('deimos');
+        } else if (nextId === 'section25') {
+          state.trialFailed = true;
+        }
+        break;
+
+      case 'section23':
+        if (nextId === 'section24') {
+          state.location = 'enchanted-grove';
+          defeatEnemy('hector');
+        } else if (nextId === 'section25') {
+          state.trialFailed = true;
+        }
+        break;
+
+      case 'section24':
+        if (nextId === 'section26') {
+          state.location = 'threshold-of-rift';
+          defeatEnemy('medea');
+        } else if (nextId === 'section25') {
+          state.trialFailed = true;
+        }
+        break;
+
+      case 'section25':
+        // Failure end, no state change
+        break;
+
+      case 'section26':
+        if (nextId === 'section27') {
+          state.location = 'rift-of-neradun';
+          defeatEnemy('phobos');
+        }
+        break;
+
+      case 'section27':
+        if (nextId === 'section28') {
+          state.location = 'rift-of-neradun';
+          defeatEnemy('cronos');
+          state.riftSealed = true;
+          state.questComplete = true;
+          state.riftOpen = false;
+        } else if (nextId === 'section25') {
+          state.trialFailed = true;
+        }
+        break;
+
+      case 'section28':
+        // Success end, no state change
+        break;
+    }
+
+    // After state update, render next section
+    renderSection(nextId);
+  }
+
+  // Reset game state to initial
+  function resetGame() {
+    state.location = 'temple-of-athena';
+    state.allies = ['jason-argeiou'];
+    state.enemiesDefeated.clear();
+    state.giftsAcquired.clear();
+    state.blessingActive = true;
+    state.knowledgeProphecy = false;
+    state.trialFailed = false;
+    state.questComplete = false;
+    state.riftSealed = false;
+    state.riftOpen = false;
+    state.timeProgressed = false;
+    state.currentSection = 'start';
+  }
+
+  // Initialize game
+  resetGame();
+  renderSection('start');
+})();
+</script>
+</body>
+</html>

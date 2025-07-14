@@ -1,0 +1,43 @@
+Lore Document – “The Shadow of Cronos”
+ 
+Quest Description:
+-Title: The Shadow of Cronos
+-World Context: In the continent of Valyria, a land steeped in myth and divine memory, the cosmic balance is threatened by the awakening of Cronos, the ancient Titan of Time. His followers are freeing his essence from the Rift of Ner'Adûn, and only the hero Theseus Leontos, chosen by the goddess Athena Phrónesis, can stop him.
+-Objective: Recover the Five Gifts of Helios, face divine trials, and defeat the Four Champions of Cronos to access the Rift and prevent the Titan's return.
+ 
+-Main Characters:
+1. Protagonist: Theseus Leontos, the Heir of Light.
+2. Antagonist: Cronos, the Titan of Time.
+3. Allies: Athena Phrónesis, Jason Argeïou, Cassandra of the Twin Oracle.
+4. Main Enemies: Deimos the Unraveler, Hector of Tartarus, Medea the Enchantress, Phobos the Shapeshifter.
+ 
+-Enemy Factions:
+1. Cult of Aion Aeternus (Deimos)
+2. Order of the Swords of Typhon (Hector)
+3. Daughters of Nyx (Medea)
+4. Followers of Erebus (Phobos)
+ 
+Obstacles:
+1. Periphetes the Clubman – a giant wielding a bronze club.
+2. Sinis the Tree-Bender – a bandit who kills by bending trees.
+3. Phaea, the Shadow Boar – a ferocious beast.
+4. Sciron the Cliff-Kicker – a killer who throws victims from a cliff.
+5. Cercyon the Wrestler – a deadly wrestling challenge.
+6. Procrustes, the Torturous Bed – mutilation and death.
+7. The Midnight Minotaur – deadly labyrinth encounter.
+8. The Four Champions – final bosses before Cronos.
+ 
+Narrative Themes:
+- Sacrifice vs Power
+- Memory and Oblivion
+- Time as a destroyer and judge
+ 
+Branching Factor:
+- Minimum: 2 
+- Maximum: 4 
+ 
+Depth Constraints:
+- Minimum: 12 narrative steps (main obstacles and bosses)
+- Maximum: 25
+ 
+End of Lore Document.
