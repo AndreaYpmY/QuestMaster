@@ -1,0 +1,235 @@
+Section 1: [INITIAL STATE - Nova arrives at Olympus Station]
+Narrative: Nova Racket steps off the shuttle onto the bustling Olympus Station, the gleaming hub of Martian zero-gravity sports. The red dust of Mars glows faintly through the station’s observation windows, casting an otherworldly hue over the futuristic architecture. Nova clutches an outdated tennis racket, feeling the weight of unfamiliar gravity and the cold stares of local players who cluster in tight groups, whispering about the new Earth-born challenger. The Martian champion, Vega Stratos, looms large in the media feeds everywhere—her reputation as undefeated in Olympus Trials is legendary. Without sponsorship, ranking, or proper equipment, Nova’s path to the Intergalactic Tennis League feels daunting. The first step is clear: break into the local scene, find allies, and upgrade gear to stand a chance in the Trials.
+Current State:
+- Location: Olympus Station entrance
+- Nova has outdated racket and no suit
+- No sponsor, no ranking
+- Rival cliques present, blocking tournament entries
+- Vega Stratos is reigning Martian champion
+Available Actions:
+- Visit the local sports gear market to seek equipment upgrades → Go to Section 2
+- Approach a nearby training facility to find a coach or mentor → Go to Section 3
+- Attempt to talk to a sponsor representative at the station’s corporate lounge → Go to Section 4
+
+Section 2: [After visiting the sports gear market]
+Narrative: The sports gear market bustles with vendors showcasing the latest in zero-g tennis technology: sleek rackets with magnetic strings, adaptive suits regulating body movement in low gravity. Nova examines several options but quickly realizes that without sponsorship or ranking, most top-tier gear is prohibitively expensive. A vendor named Rix, a former player turned trader, notices Nova’s interest and offers a discounted prototype racket if Nova agrees to test it in a local exhibition match. This could be a chance to both upgrade equipment and gain some exposure.
+Current State:
+- Location: Sports gear market
+- Nova offered prototype racket by Rix
+- No sponsor yet
+- Rival cliques still skeptical
+Available Actions:
+- Accept Rix’s offer and agree to play the exhibition match → Go to Section 5
+- Decline and try to negotiate for a sponsorship instead → Go to Section 4
+- Leave the market to explore training facilities for skill improvement → Go to Section 3
+
+Section 3: [After approaching the training facility]
+Narrative: Inside the sleek training complex, Nova watches players moving effortlessly in simulated zero-g chambers. A grizzled coach named Juno approaches, intrigued by the determination in Nova’s eyes. Juno warns that the Martian Trials demand not only skill but strategic alliances. She offers to train Nova but insists on a trial period where Nova must prove commitment and show improvement. Juno also hints that gaining a sponsor would ease access to better training tech. Meanwhile, rival players watch warily, their cliques ready to challenge any newcomer.
+Current State:
+- Location: Training facility
+- Juno offers training with trial period
+- No equipment upgrade yet
+- No sponsor yet
+Available Actions:
+- Accept Juno’s training offer and begin rigorous practice → Go to Section 6
+- Decline and try to secure sponsorship first → Go to Section 4
+- Challenge a local player to a friendly match to prove skill → Go to Section 7
+
+Section 4: [After attempting to talk to a sponsor representative]
+Narrative: The corporate lounge gleams with holo-ads and elite sponsors mingling with athletes. Nova approaches a representative from NovaCorp, a leading Martian sports sponsor. The representative is skeptical, noting Nova’s lack of ranking and recent arrival. However, they mention that a promising athlete who wins the Olympus Trials might earn sponsorship. They suggest finding ways to enter official matches and prove potential. Nova leaves the lounge with a clear message: sponsorship requires results.
+Current State:
+- Location: Corporate lounge
+- Sponsor representative uncommitted, sets condition to win Trials
+- No equipment upgrade yet
+- No ranking yet
+Available Actions:
+- Return to market to accept Rix’s racket offer and play exhibition → Go to Section 5
+- Go to training facility to improve skills with Juno → Go to Section 6
+- Attempt to find underground tournaments to gain ranking → Go to Section 8
+
+Section 5: [After accepting Rix’s offer and agreeing to play exhibition match]
+Narrative: The exhibition arena buzzes with anticipation as Nova steps onto the zero-g court, clutching the prototype racket. The match is against a mid-tier local player from a rival clique. The crowd is divided; some cheer for the newcomer, others jeer protectively for the locals. Nova’s new racket feels responsive, the magnetic strings humming with energy. The match tests Nova’s adaptability to Martian physics and the advanced equipment. Winning could earn respect and open doors; losing might close them permanently.
+Current State:
+- Location: Exhibition arena
+- Nova has prototype racket
+- Rival players watching closely
+- No sponsor yet
+Available Actions:
+- Play aggressively to try to win the match → Go to Section 9
+- Play defensively to learn opponent’s style → Go to Section 10
+
+Section 6: [After accepting Juno’s training offer]
+Narrative: Weeks pass in grueling zero-g training sessions under Juno’s watchful eye. Nova learns to master the nuances of Martian gravity, adjusting swing and footwork. The suit provided is a modest upgrade but insufficient compared to top players. Juno pushes Nova to enter qualifying matches for the official Martian league. The rivals’ cliques still pose challenges, but Nova’s improving skills begin to earn wary respect. Juno warns that winning the Olympus Trials will be the true test.
+Current State:
+- Location: Training facility
+- Nova undergoing training with modest suit upgrade
+- No sponsor yet
+- Preparing for qualifying matches
+Available Actions:
+- Enter Martian league qualifiers → Go to Section 11
+- Seek sponsorship during training breaks → Go to Section 4
+- Challenge a rival clique member to a practice match → Go to Section 7
+
+Section 7: [After challenging a local player to a friendly match]
+Narrative: Nova approaches a local player from one of the rival cliques and challenges them to a friendly zero-g match in a nearby practice arena. The rival accepts, intrigued by Nova’s boldness. The match is tense, with both players testing each other’s techniques and equipment. Nova’s outdated racket hampers performance slightly, but determination shines through. Winning could earn entry into the clique and access to their tournament channels; losing could reinforce barriers.
+Current State:
+- Location: Practice arena
+- Match outcome pending
+- No sponsor yet
+Available Actions:
+- Play aggressively to win and gain clique acceptance → Go to Section 9
+- Play cautiously to avoid injury and observe → Go to Section 10
+
+Section 8: [After attempting to find underground tournaments]
+Narrative: Nova seeks out underground zero-g tennis tournaments rumored to be less regulated and more accessible. In the shadowy corners of Olympus Station, Nova meets a contact named Kira who offers entry to a secret tournament if Nova can pay an entry fee or impress another sponsor. The risk is high — these matches are not officially sanctioned, and failure could damage reputation. However, success might yield ranking points and sponsor interest.
+Current State:
+- Location: Underground tournament hub
+- No equipment upgrade yet
+- No ranking yet
+Available Actions:
+- Attempt to find a sponsor willing to pay the fee → Go to Section 4
+- Enter the underground tournament by paying the fee → Go to Section 12
+- Return to training to improve chances → Go to Section 6
+
+Section 9: [After playing aggressively in match (from Sections 5 or 7)]
+Narrative: Nova’s aggressive play style pays off; swift volleys and daring smashes overwhelm the opponent. The crowd’s cheers rise, a mix of surprise and admiration. Nova wins the match decisively, earning respect from some rival clique members and a small boost in local ranking. Rix is pleased and offers further support with next-gen gear. Juno contacts Nova, encouraging entry into the official Martian league qualifiers. The path to Olympus Trials begins to crystallize.
+Current State:
+- Location: Match arena
+- Nova won exhibition or practice match
+- Prototype racket retained, potential upgrade offered
+- Slight increase in ranking and reputation
+Available Actions:
+- Accept Rix’s offer for further gear upgrade → Go to Section 13
+- Enter official Martian league qualifiers → Go to Section 11
+- Seek sponsorship with improved reputation → Go to Section 4
+
+Section 10: [After playing defensively in match (from Sections 5 or 7)]
+Narrative: Nova plays cautiously, focusing on defense and learning the opponent’s tactics. The match is close, ending in a narrow loss or draw. While the outcome is not a win, Nova gains valuable insight into local play styles and earns a grudging nod from some rival players. However, without a victory, opportunities for ranking or sponsorship remain limited. Juno suggests focusing on training to prepare for qualifiers.
+Current State:
+- Location: Match arena
+- Nova lost or drew the match
+- No ranking increase
+- Gained tactical knowledge
+Available Actions:
+- Return to training with Juno → Go to Section 6
+- Seek sponsorship despite lack of wins → Go to Section 4
+- Try underground tournaments for experience → Go to Section 8
+
+Section 11: [After entering Martian league qualifiers]
+Narrative: The qualifiers are fierce, with numerous hopefuls vying for limited slots in the Olympus Trials. Nova’s improved skills and equipment are tested under pressure. Rival cliques still present obstacles, sometimes attempting to block entry or intimidate. However, a combination of perseverance, strategic play, and growing support from some locals helps Nova secure a spot in the Olympus Trials. Sponsorship prospects brighten as Nova’s ranking begins to rise.
+Current State:
+- Location: Martian league qualifiers
+- Nova qualified for Olympus Trials
+- Improved racket and suit
+- Modest sponsorship interest
+Available Actions:
+- Begin preparation and training for Olympus Trials → Go to Section 14
+- Seek to secure a formal sponsorship deal before Trials → Go to Section 4
+- Attempt to negotiate friendly matches with rivals for practice → Go to Section 7
+
+Section 12: [After entering underground tournament]
+Narrative: The underground tournament arena is raw and chaotic, a stark contrast to the polished official venues. Nova faces unpredictable opponents and unconventional rules. The matches push Nova’s adaptability to the limit. Success here could yield unexpected ranking points and attract sponsors looking for bold talent. However, the risk of injury or disqualification looms. Nova must balance aggression with caution.
+Current State:
+- Location: Underground tournament arena
+- No official ranking yet
+- Risk of injury or reputation damage
+Available Actions:
+- Play aggressively to win the underground tournament → Go to Section 15
+- Play defensively to survive and learn → Go to Section 10
+
+Section 13: [After accepting Rix’s gear upgrade offer]
+Narrative: Rix outfits Nova with a cutting-edge racket and an adaptive suit optimized for Martian gravity. The new gear enhances control, power, and agility. Nova feels a surge of confidence. With equipment no longer a limitation, focus shifts to skill refinement and strategy. Juno intensifies training sessions, honing Nova’s unique play style. The Olympus Trials loom ahead as the ultimate proving ground.
+Current State:
+- Location: Training facility
+- Nova equipped with next-gen racket and suit
+- Increased confidence and skill potential
+- Preparing for Olympus Trials
+Available Actions:
+- Enter Martian league qualifiers immediately → Go to Section 11
+- Seek sponsorship to fund further training → Go to Section 4
+- Challenge rival clique members to friendly matches → Go to Section 7
+
+Section 14: [After qualifying for Olympus Trials]
+Narrative: The Olympus Trials gather the best Martian tennis talent in zero gravity. Nova’s heart pounds as the first match is announced. The crowd is large, the stakes higher than ever. Every point won or lost could influence future sponsorships and the chance to face Vega Stratos. Nova must balance boldness with precision, knowing that a single mistake could end the championship dream.
+Current State:
+- Location: Olympus Trials arena
+- Nova qualified and prepared for Trials matches
+- Improved gear and training
+- Growing sponsor and fan interest
+Available Actions:
+- Play to aggressively defeat early opponents → Go to Section 16
+- Play cautiously to conserve energy for later matches → Go to Section 17
+
+Section 15: [After playing aggressively in underground tournament]
+Narrative: Nova’s aggressive tactics dominate the underground matches, culminating in a hard-won tournament victory. Word spreads quickly through Olympus Station, attracting sponsor attention and some official recognition despite the unofficial status. The risky choice paid off, boosting Nova’s confidence and reputation. However, official rankings remain pending, and the Olympus Trials still stand as the next challenge.
+Current State:
+- Location: Olympus Station public areas
+- Won underground tournament
+- Increased sponsor interest
+- No official ranking yet
+Available Actions:
+- Seek official ranking through Martian league qualifiers → Go to Section 11
+- Attempt to secure sponsorship with newfound fame → Go to Section 4
+- Begin training intensively for Olympus Trials → Go to Section 14
+
+Section 16: [After playing aggressively in Olympus Trials early matches]
+Narrative: Nova’s aggressive style surprises opponents, winning early matches with spectacular zero-g smashes and swift volleys. The crowd cheers, and sponsors take notice. However, fatigue begins to set in, and the grueling pace risks injury or mistakes in later rounds. Vega Stratos watches from afar, a faint smile betraying respect. Nova must decide whether to maintain this pace or adapt strategy.
+Current State:
+- Location: Olympus Trials later rounds
+- Nova winning early matches aggressively
+- High energy expenditure
+- Sponsor interest strong
+Available Actions:
+- Continue aggressive play to aim for the final → Go to Section 18
+- Shift to a defensive strategy to conserve energy → Go to Section 17
+
+Section 17: [After playing cautiously in Olympus Trials early matches]
+Narrative: Nova opts for a defensive approach, conserving energy and studying opponents. Matches are close but won through strategic play and endurance. This approach keeps Nova fresh for later rounds but risks losing momentum and crowd enthusiasm. Vega Stratos remains the looming final opponent, her reputation as fierce as ever. Nova’s path to the championship depends on balancing stamina with skill.
+Current State:
+- Location: Olympus Trials later rounds
+- Nova winning early matches defensively
+- Conserved energy
+- Sponsor interest steady
+Available Actions:
+- Increase aggression to secure final spot → Go to Section 18
+- Maintain defensive play and wait for opponent mistakes → Go to Section 19
+
+Section 18: [After advancing to Olympus Trials final aggressively]
+Narrative: The final match against Vega Stratos is set in the grand zero-g arena, a spectacle broadcast across the solar system. The crowd holds its breath as Nova and Vega face off. Nova’s aggressive style challenges Vega’s dominance, trading powerful shots in a breathtaking display. The match is grueling, each point hard-fought. In the closing moments, Nova sees an opening to deliver a decisive smash.
+Current State:
+- Location: Europa Grand Arena (final match)
+- Nova vs. Vega Stratos in final
+- Both players at peak condition
+- High tension and audience anticipation
+Available Actions:
+- Attempt the decisive smash to win the championship → Go to Section 20 (Success)
+- Play safe and try to force Vega into errors → Go to Section 21 (Risk of failure)
+
+Section 19: [After advancing to Olympus Trials final defensively]
+Narrative: Nova reaches the final match against Vega Stratos by outlasting opponents with strategic defense. In the zero-g arena on Europa, the two titans circle each other carefully. Nova’s cautious play frustrates Vega, but the lack of aggression puts pressure on Nova to capitalize on rare mistakes. The match could go either way. Nova must decide whether to break out of the defensive shell or continue waiting.
+Current State:
+- Location: Europa Grand Arena (final match)
+- Nova vs. Vega Stratos in final
+- Both players cautious and calculating
+Available Actions:
+- Increase aggression to seize control → Go to Section 20 (Success)
+- Continue defensive play and wait for mistake → Go to Section 21 (Risk of failure)
+
+Section 20: [Final match successful conclusion]
+Narrative: Nova summons every ounce of strength and precision to execute the decisive smash. The ball rockets through the zero-g arena, catching Vega off guard. The crowd erupts as the shot lands perfectly, securing Nova’s victory. Nova Racket is crowned Intergalactic Tennis Champion, a new legend born on Mars and celebrated across the solar system. Sponsors flood in, and Nova’s journey from Earth newcomer to champion inspires countless aspiring players.
+Current State:
+- Nova crowned Intergalactic Tennis Champion
+- Equipped with top gear and strong sponsorship
+- Rival cliques respect and support Nova
+- Vega Stratos congratulates Nova with sportsmanship
+Available Actions:
+- Celebrate victory and plan future defense of the title → End of story
+
+Section 21: [Final match failure conclusion]
+Narrative: Nova’s cautious strategy backfires as Vega Stratos seizes the moment, delivering a stunning counterattack that wins the match. The crowd is stunned into silence before erupting in applause for the fierce contest. Though defeated, Nova’s performance earns respect and promises of future sponsorships. Vega approaches Nova with a nod, acknowledging the worthy opponent. The championship slips away for now, but the journey is far from over.
+Current State:
+- Nova loses final match to Vega Stratos
+- Gains respect and sponsorship prospects
+- Determined to return stronger next season
+Available Actions:
+- Reflect on defeat and train for next championship → End of story

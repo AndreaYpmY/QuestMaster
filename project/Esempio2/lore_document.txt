@@ -1,0 +1,29 @@
+#Quest Description
+
+-Title: Martian Grand Slam
+
+-Setting: The story is set in the futuristic colony of Olympus Station on Mars, home to the most advanced zero-gravity sports arenas in the solar system. Tennis has evolved into a high-tech spectacle, played not only on Mars but across various planetary stations. Olympus Station is the birthplace of the Intergalactic Tennis League (ITL), where champions rise — and fall — in gravity-defying matches. The protagonist is Nova Racket, a young Earth-born tennis prodigy that has recently moved to Mars. Determined to become the Intergalactic Tennis Champion, Nova must overcome local rivals, adapt to Martian physics, and win the grueling planetary tournaments that lead up to the final championship on Jupiter's moon, Europa.
+
+#Goal State: Nova Racket is crowned Intergalactic Tennis Champion after defeating the reigning champion in the Grand Arena of Europa.
+
+#Initial State:
+- Nova has just arrived at Olympus Station.
+- Nova has no sponsor and no ranking.
+- The current Martian champion is Vega Stratos that is very strong.
+- Rival players form cliques that block Nova’s entry to tournaments.
+- Nova’s equipment is outdated.
+
+#Obstacles:
+- Qualify for official Martian league matches.
+- Acquire a high-tech racket and suit adapted to low gravity.
+- Win the Olympus Trials tournament.
+- Earn support from one planetary sponsors.
+- Face Vega Stratos in a final zero-gravity match.
+
+#Branching Factor
+- Minimum: 2 
+- Maximum: 4 
+
+#Depth Constraints
+- Minimum: 8 
+- Maximum: 16

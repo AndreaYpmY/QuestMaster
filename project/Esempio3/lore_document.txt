@@ -1,0 +1,33 @@
+Quest Description:
+
+#Title: The Rise of Dusty Bill
+
+#Setting: The story takes place in the dusty town of Redstone Gulch, a remote settlement in the Wild West. Ruled with an iron fist by the corrupt sheriff Frank Mallory, the town teeters on the brink of chaos. Outlaws roam freely, the townsfolk are weary, and the nearby gold mines attract greedy eyes.
+
+#Protagonist: Dusty Bill, a former bounty hunter with a mysterious past, returns to Redstone Gulch with a single goal: to become the leader of the town and restore justice — on his own terms.
+
+#Goal State:
+Dusty Bill is recognized as the legitimate leader of the town by its citizens and local factions.
+
+#Initial State:
+- Dusty Bill has just arrived in town.
+- Frank Mallory is the sheriff.
+- The saloon is controlled by a local gang.
+- The bank is under siege by outlaws.
+- The townspeople trust no one.
+- There are 3 main factions: Miners, Settlers, and Reformist Outlaws.
+
+Obstacles:
+- Remove the corrupt sheriff from power.
+- Gain the trust of at least 2 out of the 3 factions.
+- Retrieve compromising documents from the town hall.
+- Face a final duel against Frank or one of his lieutenants.
+- Avoid becoming a tyrant himself.
+
+Branching Factor
+- Minimum: 2 actions available per narrative state.
+- Maximum: 4 actions available per narrative state.
+
+Depth Constraints
+- Minimum: 6 actions to complete the quest.
+- Maximum: 10 actions to complete the quest.

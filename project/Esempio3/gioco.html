@@ -1,0 +1,467 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>L'ascesa di Dusty Bill</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Roboto&display=swap');
+  html, body {
+    margin: 0; padding: 0; height: 100%;
+    font-family: 'Roboto', sans-serif;
+    background: #f9f9f9;
+    color: #222;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    min-height: 100vh;
+  }
+  #game-container {
+    max-width: 600px;
+    width: 90vw;
+    background: #fff;
+    border-radius: 8px;
+    box-shadow: 0 8px 24px rgba(0,0,0,0.12);
+    padding: 24px 32px;
+    box-sizing: border-box;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    opacity: 0;
+    transition: opacity 0.5s ease;
+  }
+  #game-container.visible {
+    opacity: 1;
+  }
+  h1, h2 {
+    margin: 0 0 16px 0;
+    font-weight: 700;
+    text-align: center;
+    color: #333;
+  }
+  p {
+    line-height: 1.5;
+    margin-bottom: 24px;
+    font-size: 1rem;
+    text-align: justify;
+  }
+  #choices {
+    width: 100%;
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+  }
+  button {
+    background: #1976d2;
+    border: none;
+    color: white;
+    padding: 14px 20px;
+    font-size: 1rem;
+    border-radius: 6px;
+    cursor: pointer;
+    transition: background-color 0.3s ease;
+    width: 100%;
+    box-sizing: border-box;
+  }
+  button:hover, button:focus {
+    background: #1565c0;
+    outline: none;
+  }
+  #start-summary {
+    font-size: 1rem;
+    margin-bottom: 32px;
+    text-align: justify;
+  }
+  @media (max-width: 480px) {
+    #game-container {
+      padding: 16px 20px;
+    }
+    button {
+      font-size: 0.9rem;
+      padding: 12px 16px;
+    }
+  }
+</style>
+</head>
+<body>
+<div id="game-container" role="main" aria-live="polite" aria-atomic="true">
+  <!-- Content dynamically inserted here -->
+</div>
+<script>
+(() => {
+  const container = document.getElementById('game-container');
+
+  // Game state variables
+  let state = {
+    location: 'saloon', // Dusty Bill starts at saloon per PDDL init
+    alliedFactions: new Set(),
+    partialAlliances: new Set(),
+    trusts: new Set(),
+    documentsHeld: false,
+    sheriffAware: false,
+    sheriffAlerted: false,
+    wounded: false,
+    townDefended: false,
+    truceEstablished: false,
+    duelInitiated: false,
+    reformerLeader: false,
+    tyrantAvoided: false,
+    sheriffRemoved: false,
+    finalOutcome: null, // 'success' or 'failure'
+  };
+
+  // Sections data keyed by section number
+  const sections = {
+    1: {
+      title: "Arrivo a Redstone Gulch",
+      narrative: `Il sole brucia sulle strade polverose di Redstone Gulch mentre Dusty Bill arriva sul suo cavallo stanco. La città appare dura e logora: finestre sbarrate, volti diffidenti e una tensione palpabile nell'aria. La presa di ferro dello sceriffo Frank Mallory è evidente; i suoi vice si aggirano vicino al saloon, controllato da una banda di fuorilegge. Le finestre della banca sono state chiuse frettolosamente dopo un recente assedio. Bill scende da cavallo, sentendo il peso del suo passato e il grave fardello del futuro della città.`,
+      choices: [
+        { text: "Visita il Saloon per affrontare la banda e raccogliere informazioni", next: 2 },
+        { text: "Dirigiti alla Banca per aiutare nella difesa o indagare sull'assedio", next: 3 },
+        { text: "Incontra i Minatori all'ingresso della miniera per cercare la loro fiducia", next: 4 }
+      ]
+    },
+    2: {
+      title: "Al Saloon con la banda",
+      narrative: `Dusty Bill spinge le porte a battente del saloon. Il capo della banda, un uomo robusto di nome Gage, lo guarda freddamente dal suo tavolo. "Non sei il benvenuto qui, straniero," ringhia Gage. La calma di Bill e la sua reputazione lo precedono. Propone un patto: aiutare a prendere il controllo della legge o essere cacciato. La banda è scettica ma accenna a una possibile alleanza se Bill dimostra forza e integrità.
+
+Il barista sussurra di incontri segreti dello sceriffo Mallory nella casa comunale, dove nasconde documenti compromettenti. L'atmosfera è tesa, ma Bill sente un'opportunità: se riesce a convincere la banda, potrebbe ottenere leva contro Mallory.`,
+      choices: [
+        { text: "Sfida Gage a un duello per dimostrare la tua forza", next: 5 },
+        { text: "Negozia con la banda per informazioni e alleanza", next: 6 },
+        { text: "Fuggi di nascosto verso la casa comunale per cercare i documenti", next: 7 }
+      ]
+    },
+    3: {
+      title: "Alla Banca dopo l'assedio",
+      narrative: `Dusty Bill si avvicina alla banca danneggiata, dove un piccolo gruppo di coloni cerca di ricostruire dopo l'assalto dei fuorilegge. Sono diffidenti ma disperati per protezione. Bill offre il suo aiuto, promettendo di mantenere la banca e la città al sicuro da ulteriori attacchi. I coloni discutono tra loro, ma sembrano propensi a fidarsi di un uomo disposto a rischiare per loro.
+
+Una colona di nome Clara condivide voci sulla corruzione dello sceriffo Mallory e suggerisce che i Fuorilegge Riformisti potrebbero essere più moderati di quanto si pensi. Bill capisce che guadagnare la fiducia dei coloni potrebbe essere decisivo per unire la città.`,
+      choices: [
+        { text: "Raduna i coloni per mettere in sicurezza banca e città", next: 8 },
+        { text: "Cerca i Fuorilegge Riformisti per valutarne le intenzioni", next: 9 },
+        { text: "Prova a trovare indizi sui documenti dello sceriffo nella casa comunale", next: 7 }
+      ]
+    },
+    4: {
+      title: "Incontro con i Minatori",
+      narrative: `Dusty Bill si avvicina ai robusti minatori che lavorano nella vicina miniera d'oro. Si fermano e lo osservano con curiosità. Il loro capo, Jed, è burbero ma disposto ad ascoltare. Bill parla con sincerità di riportare giustizia a Redstone Gulch e proteggere i loro mezzi di sussistenza da funzionari corrotti e fuorilegge avidi.
+
+Jed avverte che i minatori odiano Mallory ma diffidano di chiunque sia nuovo. Tuttavia, se Bill aiuta a smascherare la corruzione dello sceriffo e protegge le miniere dalle razzie, potrebbero sostenerlo. L'aria è densa di polvere e determinazione; l'alleanza con i minatori potrebbe cambiare le sorti.`,
+      choices: [
+        { text: "Offriti di proteggere la miniera dagli assalti dei fuorilegge", next: 8 },
+        { text: "Proponi un piano congiunto per smascherare Mallory", next: 6 },
+        { text: "Fuggi di nascosto verso la casa comunale per recuperare i documenti", next: 7 }
+      ]
+    },
+    5: {
+      title: "Duello con Gage",
+      narrative: `Il saloon si fa silenzioso mentre Dusty Bill e Gage escono sotto il sole cocente. Il duello è teso e rapido. L'abilità di Bill prevale e Gage annuisce con rispetto riluttante. "Non sei un uomo qualunque," ammette. Offre un'alleanza provvisoria, promettendo il sostegno della banda, ma avverte che gli uomini di Mallory reagiranno duramente.
+
+Con il supporto della banda, Bill guadagna potere, ma il rischio di ritorsioni cresce. Ora deve scegliere con attenzione la prossima mossa.`,
+      choices: [
+        { text: "Usa l'influenza della banda per assaltare la casa comunale e prendere i documenti", next: 10 },
+        { text: "Cerca i minatori per costruire una coalizione", next: 8 },
+        { text: "Preparati per il duello finale con Mallory o il suo luogotenente", next: 11 }
+      ],
+      effects: () => {
+        state.alliedFactions.add('gang');
+        state.sheriffAware = true;
+      }
+    },
+    6: {
+      title: "Negoziazione con la banda o piano con i minatori",
+      narrative: `Dusty Bill si siede con il capo della banda Gage, o con il capo dei minatori Jed, a seconda della scelta precedente. Espone un piano: smascherare la corruzione di Mallory recuperando i documenti nascosti, poi unire le fazioni sotto la sua guida per ristabilire l'ordine. Entrambe le parti sembrano interessate ma diffidenti: la fiducia si guadagna con i fatti, non con le parole.
+
+La banda offre una distrazione mentre Bill si intrufola nella casa comunale. I minatori offrono protezione durante la missione. Bill sente i primi segni di una coalizione, ma l'ombra dello sceriffo incombe.`,
+      choices: [
+        { text: "Fuggi nella casa comunale durante la distrazione della banda", next: 7 },
+        { text: "Raduna minatori e banda per un assalto congiunto alla casa comunale", next: 10 },
+        { text: "Cerca i Fuorilegge Riformisti per un supporto aggiuntivo", next: 9 }
+      ],
+      effects: (prevSection) => {
+        // Partial alliance with gang or miners depending on previous section
+        if (prevSection === 2) {
+          state.partialAlliances.add('gang');
+        } else if (prevSection === 4) {
+          state.partialAlliances.add('miners');
+        }
+      }
+    },
+    7: {
+      title: "Furto dei documenti nella casa comunale",
+      narrative: `Coperto dall'oscurità o dalla distrazione, Dusty Bill si intrufola nella casa comunale. L'edificio è silenzioso, ma gli uomini dello sceriffo pattugliano i corridoi. Il cuore di Bill batte forte mentre trova un ufficio chiuso a chiave dove si suppone siano i documenti. Con abilità e fortuna apre il cassetto e trova carte che rivelano gli affari corrotti di Mallory e i suoi piani per stringere ulteriormente la presa sulla città.
+
+Improvvisamente si avvicinano dei passi. Bill deve decidere se nascondersi, affrontare o fuggire con i documenti. Questa missione potrebbe decidere il suo destino.`,
+      choices: [
+        { text: "Nasconditi e aspetta che la pattuglia passi", next: 12 },
+        { text: "Affronta gli uomini dello sceriffo per fuggire", next: 13 },
+        { text: "Fuggi rapidamente dalla casa comunale per radunare le fazioni", next: 8 }
+      ],
+      effects: () => {
+        state.documentsHeld = true;
+      }
+    },
+    8: {
+      title: "Raduno in piazza",
+      narrative: `Con i documenti in mano o la fiducia dei coloni e dei minatori, Dusty Bill convoca una riunione nella piazza della città. Rivela la corruzione di Mallory e promette una nuova era di giustizia. La folla mormora, alcuni scettici, altri speranzosi. I Fuorilegge Riformisti osservano silenziosi da lontano, la loro alleanza incerta.
+
+Bill sente che il destino della città dipende dal guadagnare la fiducia di un'altra fazione e prepararsi allo scontro finale con Mallory o il suo luogotenente.`,
+      choices: [
+        { text: "Avvicina i Fuorilegge Riformisti per guadagnare la loro fiducia", next: 9 },
+        { text: "Preparati per il duello finale contro Mallory o il luogotenente", next: 11 },
+        { text: "Rafforza le alleanze proteggendo la città dagli assalti dei fuorilegge", next: 14 }
+      ],
+      effects: () => {
+        if (state.documentsHeld) {
+          // Documents revealed
+        }
+        if (state.truceEstablished) {
+          // Already truce
+        }
+      }
+    },
+    9: {
+      title: "Incontro con i Fuorilegge Riformisti",
+      narrative: `Dusty Bill trova i Fuorilegge Riformisti in un vicolo ombroso. La loro leader, una donna dagli occhi acuti di nome Lila, ascolta attentamente mentre Bill parla di unità e giustizia. Avverte che i fuorilegge non si lasciano facilmente convincere, ma sono stanchi della tirannia di Mallory.
+
+Lila propone una prova: se Bill può prevenire un imminente assalto dei fuorilegge alla città, considereranno di unirsi alla sua causa. La posta in gioco è alta, ma guadagnare il loro sostegno assicurerebbe la leadership di Bill.`,
+      choices: [
+        { text: "Difendi la città dall'assalto dei fuorilegge", next: 14 },
+        { text: "Prova a negoziare la pace con i fuorilegge", next: 15 },
+        { text: "Preparati per il duello finale ignorando i fuorilegge", next: 11 }
+      ]
+    },
+    10: {
+      title: "Assalto congiunto alla casa comunale",
+      narrative: `Con i membri della banda che creano caos fuori e i minatori a guardia, Dusty Bill guida l'assalto nella casa comunale. Gli uomini di Mallory sono colti di sorpresa. Bill trova l'ufficio con i documenti incriminanti e li prende. Mallory stesso appare, affiancato dal suo luogotenente.
+
+Segue uno stallo teso, chiaro segno che il duello finale è imminente. Gli abitanti osservano ansiosi, riponendo le speranze su Bill.`,
+      choices: [
+        { text: "Chiedi a Mallory di arrendersi pacificamente", next: 16 },
+        { text: "Sfida Mallory o il luogotenente a un duello", next: 11 },
+        { text: "Usa i documenti per radunare i Fuorilegge Riformisti", next: 9 }
+      ],
+      effects: () => {
+        state.documentsHeld = true;
+        state.alliedFactions.add('gang');
+        state.alliedFactions.add('miners');
+      }
+    },
+    11: {
+      title: "Preparazione al duello finale",
+      narrative: `Il sole tramonta mentre Dusty Bill affronta lo sceriffo Mallory o il suo luogotenente nella strada principale polverosa. Gli abitanti si raccolgono in silenzio, la tensione nell'aria è palpabile. Bill ricorda il suo viaggio: le alleanze forgiate, le battaglie vinte e la fragile speranza di giustizia.
+
+Il duello inizia. Riflessi pronti, mira ferma e determinazione decideranno l'esito. Se Bill vince, conquisterà la leadership e ristabilirà l'ordine. Se cade, la città rimarrà sotto l'ombra oscura di Mallory. Il futuro di Redstone Gulch dipende da questo momento.`,
+      choices: [
+        { text: "Inizia il duello", next: 17 }
+      ],
+      effects: () => {
+        state.duelInitiated = true;
+      }
+    },
+    12: {
+      title: "Nascondersi nella casa comunale",
+      narrative: `Dusty Bill trattiene il respiro nel corridoio buio mentre la pattuglia passa. I passi si allontanano e lui esce con i documenti al sicuro. La tensione si allenta un po', ma il tempo stringe. Tornare in piazza per rivelare la verità e radunare le fazioni è fondamentale prima che Mallory si riorganizzi.`,
+      choices: [
+        { text: "Torna a radunare le fazioni", next: 8 },
+        { text: "Cerca i Fuorilegge Riformisti", next: 9 }
+      ],
+      effects: () => {
+        state.documentsHeld = true;
+      }
+    },
+    13: {
+      title: "Confronto con gli uomini dello sceriffo",
+      narrative: `Dusty Bill si fa avanti mentre gli uomini dello sceriffo bloccano la fuga. Ne segue una breve ma feroce colluttazione. L'abilità di Bill prevale, ma riporta una ferita lieve. Scappa nella notte con i documenti, ma la notizia della sua intrusione si diffonderà rapidamente.
+
+L'urgenza di radunare la città cresce, così come il rischio di una dura reazione di Mallory.`,
+      choices: [
+        { text: "Vai a radunare le fazioni nonostante la ferita", next: 8 },
+        { text: "Nasconditi e riprenditi mentre pianifichi la prossima mossa", next: 14 }
+      ],
+      effects: () => {
+        state.documentsHeld = true;
+        state.wounded = true;
+        state.sheriffAlerted = true;
+      }
+    },
+    14: {
+      title: "Difesa della città dall'assalto",
+      narrative: `Dusty Bill guida una difesa coordinata mentre i fuorilegge assaltano la città. Con coloni, minatori e forse i Fuorilegge Riformisti al suo fianco, l'assalto viene respinto. La fiducia degli abitanti in Bill cresce mentre dimostra il suo impegno per la loro sicurezza.
+
+Con almeno due fazioni ora alleate, la strada per sfidare Mallory è chiara. Ma il duello finale incombe e Bill deve evitare di diventare il tiranno che vuole sostituire.`,
+      choices: [
+        { text: "Sfida Mallory o il luogotenente al duello finale", next: 11 },
+        { text: "Negozia la pace con i Fuorilegge Riformisti", next: 15 }
+      ],
+      effects: () => {
+        state.townDefended = true;
+        // Add trust for factions if not already
+        if (state.alliedFactions.has('miners')) state.trusts.add('miners');
+        if (state.alliedFactions.has('gang')) state.trusts.add('gang');
+        if (state.truceEstablished) state.trusts.add('reformist-outlaws');
+      }
+    },
+    15: {
+      title: "Negoziazione di pace con i Fuorilegge Riformisti",
+      narrative: `Dusty Bill incontra Lila e i suoi seguaci in una negoziazione tesa. Pur diffidenti, i fuorilegge riconoscono che il caos continuo non giova a nessuno. Accettano una fragile tregua sotto la guida di Bill, a condizione che rispetti la loro autonomia e eviti una regola dura.
+
+Questa alleanza rafforza la posizione di Bill ma lo sfida a governare con giustizia, bilanciando potere e libertà.`,
+      choices: [
+        { text: "Preparati per il duello finale", next: 11 },
+        { text: "Usa l'alleanza per riformare il governo della città", next: 18 }
+      ],
+      effects: () => {
+        state.truceEstablished = true;
+        state.alliedFactions.add('reformist-outlaws');
+        state.trusts.add('reformist-outlaws');
+      }
+    },
+    16: {
+      title: "Richiesta di resa a Mallory",
+      narrative: `Dusty Bill si fa avanti, mostrando i documenti compromettenti. "Il tuo tempo è finito, Mallory. Arrenditi o affronta le conseguenze." Mallory ride, rifiutando di cedere. Il suo luogotenente estrae una pistola, costringendo Bill a prepararsi al duello inevitabile.
+
+La folla osserva, trattenendo il respiro, consapevole che la violenza potrebbe essere l'unica via per la giustizia a Redstone Gulch.`,
+      choices: [
+        { text: "Procedi al duello", next: 11 },
+        { text: "Prova a radunare un ultimo supporto prima del duello", next: 8 }
+      ]
+    },
+    17: {
+      title: "Esito del duello finale",
+      narrativeSuccess: `Lo sparo di Bill è preciso. Mallory o il suo luogotenente crolla, e la città esplode in un misto di sollievo e speranza. Dusty Bill avanza, non come tiranno, ma come leader dedicato a giustizia e unità. Le fazioni giurano lealtà e Redstone Gulch inizia la lenta risalita dall'oscurità.`,
+      narrativeFailure: `Bill cade per la superiorità o il tradimento di Mallory. La presa dello sceriffo si rafforza e la città sprofonda nella disperazione. Il sogno di giustizia svanisce mentre l'eredità di Dusty Bill finisce nella polvere.`,
+      choices: [],
+      effects: () => {
+        // Determine success or failure randomly for demo
+        // But per plan, Bill wins peacefully, so success
+        state.finalOutcome = 'success';
+        if (state.finalOutcome === 'success') {
+          state.reformerLeader = true;
+          state.tyrantAvoided = true;
+          state.sheriffRemoved = true;
+        }
+      }
+    },
+    18: {
+      title: "Riforma pacifica della città",
+      narrative: `Con le fazioni unite sotto la guida di Dusty Bill, iniziano le riforme per garantire giustizia e equità. I fuorilegge mantengono la loro autonomia in cambio della pace, minatori e coloni condividono risorse, e la casa comunale diventa un luogo di trasparenza.
+
+Nonostante le sfide, l'equilibrio di Bill impedisce che diventi un tiranno. Redstone Gulch risorge dalle ceneri, simbolo di speranza e unità conquistata con fatica.`,
+      choices: []
+    }
+  };
+
+  // Start page content
+  const startSummary = `Dusty Bill, un ex cacciatore di taglie dal passato misterioso, torna a Redstone Gulch, una città polverosa del selvaggio West dominata dal corrotto sceriffo Frank Mallory. Bill vuole diventare il legittimo leader della città e riportare la giustizia, ma dovrà affrontare bande, fazioni divise e un duello finale per liberare la città dalla tirannia senza diventare lui stesso un tiranno.`;
+
+  // Helper to fade content in/out
+  function fadeOutIn(newContentFunc) {
+    container.classList.remove('visible');
+    setTimeout(() => {
+      newContentFunc();
+      container.classList.add('visible');
+    }, 500);
+  }
+
+  // Render start page
+  function renderStartPage() {
+    fadeOutIn(() => {
+      container.innerHTML = `
+        <h1>L'ascesa di Dusty Bill</h1>
+        <p id="start-summary">${startSummary}</p>
+        <button id="start-btn" aria-label="Inizia il gioco">Inizia il gioco</button>
+      `;
+      document.getElementById('start-btn').focus();
+      document.getElementById('start-btn').onclick = () => {
+        renderSection(1);
+      };
+    });
+  }
+
+  // Render a section by number
+  function renderSection(num, prevNum = null) {
+    const sec = sections[num];
+    if (!sec) return;
+
+    // Apply effects if any
+    if (sec.effects) sec.effects(prevNum);
+
+    // Compose narrative text (handle duel outcome special case)
+    let narrativeText = sec.narrative || '';
+    if (num === 17) {
+      // Duel outcome
+      sec.effects();
+      if (state.finalOutcome === 'success') {
+        narrativeText = sec.narrativeSuccess;
+      } else {
+        narrativeText = sec.narrativeFailure;
+      }
+    }
+
+    // Compose choices buttons
+    let choicesHtml = '';
+    if (sec.choices && sec.choices.length > 0) {
+      choicesHtml = sec.choices.map((choice, i) =>
+        `<button data-next="${choice.next}" aria-label="Scegli: ${choice.text}">${choice.text}</button>`
+      ).join('');
+    } else {
+      // End state, show play again button
+      choicesHtml = `<button id="play-again-btn" aria-label="Gioca di nuovo">Gioca di nuovo</button>`;
+    }
+
+    fadeOutIn(() => {
+      container.innerHTML = `
+        <h2>${sec.title}</h2>
+        <p>${narrativeText}</p>
+        <div id="choices">${choicesHtml}</div>
+      `;
+
+      // Attach event listeners to choice buttons
+      const buttons = container.querySelectorAll('#choices button');
+      buttons.forEach(btn => {
+        btn.onclick = () => {
+          const nextSection = btn.getAttribute('data-next');
+          if (nextSection) {
+            renderSection(Number(nextSection), num);
+          } else if (btn.id === 'play-again-btn') {
+            resetGame();
+          }
+        };
+      });
+
+      // Focus first button for accessibility
+      if (buttons.length > 0) buttons[0].focus();
+    });
+  }
+
+  // Reset game state and return to start
+  function resetGame() {
+    state = {
+      location: 'saloon',
+      alliedFactions: new Set(),
+      partialAlliances: new Set(),
+      trusts: new Set(),
+      documentsHeld: false,
+      sheriffAware: false,
+      sheriffAlerted: false,
+      wounded: false,
+      townDefended: false,
+      truceEstablished: false,
+      duelInitiated: false,
+      reformerLeader: false,
+      tyrantAvoided: false,
+      sheriffRemoved: false,
+      finalOutcome: null,
+    };
+    renderStartPage();
+  }
+
+  // Initialize game
+  renderStartPage();
+  container.classList.add('visible');
+})();
+</script>
+</body>
+</html>

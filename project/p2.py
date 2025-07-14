@@ -300,13 +300,16 @@ class QuestMasterState(TypedDict):
 def get_model(temp: float, top_p: float | None = None):
     print(f"> Utilizzo il modello {MODEL} con temperatura {temp} e top_p {top_p}\n")
 
-    if MODEL == "gpt-4.1-mini":
-        kwargs = {"model": MODEL, "temperature": temp, "openai_api_key": OPENAI_API_KEY}
-        if top_p is not None:
-            kwargs["top_p"] = top_p
-        return ChatOpenAI(**kwargs)
-    else:
-        return ChatOllama(model=MODEL, temperature=temp)
+    try:
+        if MODEL == "gpt-4.1-mini":
+            kwargs = {"model": MODEL, "temperature": temp, "openai_api_key": OPENAI_API_KEY}
+            if top_p is not None:
+                kwargs["top_p"] = top_p
+            return ChatOpenAI(**kwargs)
+        else:
+            return ChatOllama(model=MODEL, temperature=temp)
+    except Exception as e:
+        return e
 
 
 
@@ -484,7 +487,8 @@ def GeneraPDDLdomain_node(state: QuestMasterState):
                     14. OBSTACLES: Model obstacles with predicates like (trap-active ?t ?l) and (trap-triggered ?t ?l).
                     15. DO COMMENTS: Each line must have a comment explaining what it does
                                     
-                        
+                **MAKE SURE THE GOAL IS REACHABLE within the min/max depth constraint**    
+                
                 Standard domain PDDL structure to follow:
                 (define (domain quest-domain)
                     (:requirements :strips :typing :negative-preconditions)
@@ -558,6 +562,7 @@ def GeneraPDDLproblem_node(state: QuestMasterState):
                 13. Every object used in the goal must appear in init or be the result of a reachable action.
                 14. Do not include predicates in init or goal that refer to undefined constants or omit required parameters.
                 15. Each line must have a comment explaining what it does
+                16. Ensure consistency with the provided domain file
 
             STEPS TO FOLLOW:
                 1. Extract all objects and assign them types based on the domain and narrative, EXCLUDING any constants already declared in the domain as fixed constants.
@@ -757,18 +762,23 @@ def human_in_the_loop_node(state: QuestMasterState):
 
 def fix_pddl_node(state: QuestMasterState):
     print("6# Generazione nuovi PDDL \n")
+    domain_pddl = state["domain_pddl"]
+    problem_pddl = state["problem_pddl"]
 
     llm= get_model(TEMPERATURE_PDDL)
 
     prompt_domain = ChatPromptTemplate.from_messages([("system", f"""You are a PDDL expert generator agent and repair assistant.
                 Use the domain-related suggestions to fix all detected problems, including syntax errors and logical inconsistencies.
                 Generate a new PDDL domain file accordingly to fix the issues, focus on preserving the original structure and content as much as possible, making minimal necessary changes for correctness and solvability.
-                
+                Please consider that the problem PDDL file related issues have been resolved according to the suggested fix.
+                                                       
                 Pay attention to:
                     - DO NOT incluede Undefined object
                     - Expected logical operator or predicate name. Use *=* as logical operator
                     - DO NOT include Duplicate objects
-                                                       
+                
+                MAKE SURE THE GOAL IS REACHABLE within the min/max depth constraint
+                                                    
                 To prevent "Undefined object" errors in the problem file:
                     - Declare all objects in :objects with their types, matching the narrative.
                     - Ensure object names in the problem file match the kebab-case identifiers in the domain.
@@ -776,12 +786,12 @@ def fix_pddl_node(state: QuestMasterState):
                     - Check that goal conditions in :goal only reference declared objects and valid predicates.
             
                 Return ONLY the PDDL domain code, which begins with "(define (domain...", no other text at begin or end of the PDDL file."""),
-            ("user", "Apply the following FIXES one by one to the given PDDL domain, in ordert to correct the issue and make the PDDL solvable by a classical planner. \n FIXES: {suggestion}. \n Domain PDDL: {domain_pddl}. \n")])
+            ("user", "Apply the following FIXES one by one to the given PDDL domain, in ordert to correct the issue and make the PDDL solvable by a classical planner. \n Doamain Issue and FIXES: {suggestion}. \n Domain PDDL: {domain_pddl}. \n Problem PDDL: {problem_pddl}. \n Problem Issue and fixes: {sugg_problem}.")])
     
     prompt_problem = ChatPromptTemplate.from_messages([("system", f"""You are a PDDL expert generator agent and repair assistant.
                 Use the problem-related suggestions to fix all detected problems, including syntax errors and logical inconsistencies.
                 Generate a new PDDL problem file accordingly to fix the issues, focus on preserving the original structure and content as much as possible, making minimal necessary changes for correctness and solvability.                   
-
+                                                    
                 Pay attention to:
                     - Ensure consistency with the provided domain file 
                     - Use only predicates and types declared in the domain.
@@ -796,17 +806,17 @@ def fix_pddl_node(state: QuestMasterState):
                     - Do not include predicates in init or goal that refer to undefined constants or omit required parameters. 
                 
                 Return ONLY the PDDL problem code, which begins with "(define (problem...", no other text at begin or end of the PDDL file."""),
-            ("user", "Apply the following FIXES one by one to the given PDDL problem, in ordert to correct the issue and make the PDDLs solvable by a classical planner. Generate the new corresponding PDDL problem file accordingly to the PDDL new domain file. \n FIXES: {suggestion}. \n New Domain PDDL: {domain_pddl}. \n Problem PDDL: {problem_pddl}.")])
+            ("user", "Apply the following FIXES one by one to the given PDDL problem, in ordert to correct the issue and make the PDDLs solvable by a classical planner. Generate the new corresponding PDDL problem file accordingly to the PDDL new domain file. \n FIXES: {suggestion}. \n New Domain PDDL: {domain_pddl}. \n Old Problem PDDL: {problem_pddl}.")])
     
-    formatted_prompt_domain = prompt_domain.invoke({"domain_pddl": state["domain_pddl"], "suggestion": state["acepted_suggestion_domain"]})
-    response_domain = llm.invoke(formatted_prompt_domain)
+    if len(state["acepted_suggestion_domain"])>0:
+        formatted_prompt_domain = prompt_domain.invoke({"domain_pddl": domain_pddl, "suggestion": state["acepted_suggestion_domain"], "problem_pddl": problem_pddl, "sugg_problem": state["acepted_suggestion_problem"]})
+        response_domain = llm.invoke(formatted_prompt_domain)
+        domain_pddl = response_domain.content.strip()
     
-    
-    formatted_prompt_problem = prompt_problem.invoke({"domain_pddl": response_domain, "problem_pddl": state["problem_pddl"], "suggestion": state["acepted_suggestion_problem"]})
-    response_problem = llm.invoke(formatted_prompt_problem)
-    
-    domain_pddl = response_domain.content.strip()
-    problem_pddl = response_problem.content.strip()
+    if len(state["acepted_suggestion_problem"])>0:
+        formatted_prompt_problem = prompt_problem.invoke({"domain_pddl": domain_pddl, "problem_pddl": problem_pddl, "suggestion": state["acepted_suggestion_problem"]})
+        response_problem = llm.invoke(formatted_prompt_problem)
+        problem_pddl = response_problem.content.strip()
 
 
     problem_file = open("problem.pddl", "w")
@@ -857,6 +867,7 @@ def generate_HTML_node(state: QuestMasterState):
                     - A "Start Game" button to begin
                 3. Interactive Gameplay:
                     - Each story segment or plan step must appear sequentially
+                    - Include all narrative text from the story and a section title
                     - Use interactive buttons to let the player proceed
                     - When multiple story paths or options exist, display one button for each choice
                     - After each choice, the next scene or plan step should reflect the selected path
@@ -888,6 +899,7 @@ def generate_HTML_node(state: QuestMasterState):
             - All visible text wrapped in HTML tags
             - All interactive logic and story implemented in vanilla JavaScript inside the HTML file
             - All narrative parts written in Italian, including UI elements
+            - All paths are reachable by clicking the buttons
                                                 
             Please generate the full interactive HTML adventure game based on the PDDLs, the story and the plan."""),
             ("user", "Please generate the FULL interactive HTML game, playable entirely in the frontend, with CSS and Javascript given the following input: Here is the Lore document describing the story world and quest:{lore} \n Here is the story describing the narrative: {story} \n Here is the PDDL Domain file: {domain} \n Here is the PDDL Problem file: {problem} \n Here is the ordered list of plan steps generated by the classical planner: {plan}.")])

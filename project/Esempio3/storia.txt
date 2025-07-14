@@ -1,0 +1,302 @@
+Section 1: [INITIAL STATE - Dusty Bill arrives in Redstone Gulch]
+Narrative:
+The sun blazes down on the dusty streets of Redstone Gulch as Dusty Bill rides in on his weary horse. The town looks rough and worn—windows shuttered, faces wary, and a palpable tension hanging in the air. Sheriff Frank Mallory’s iron grip is evident; his deputies lurk near the saloon, which is overrun by a rough gang known for their lawlessness. The bank’s windows are boarded up hastily after a recent outlaw siege. Bill dismounts, feeling the weight of his past and the heavy burden of this town’s future.
+
+A miner scrapes nearby, nodding briefly but not trusting enough to speak. Settlers eye Bill with suspicion, while a few shadowy figures linger in the alleyways—the Reformist Outlaws, a faction that claims to want peace but keeps their own secrets. Bill knows the path ahead: remove Frank Mallory, gain the trust of at least two factions, retrieve the compromising documents from the town hall, and face the final duel. But above all, he must not become another tyrant.
+
+Current State:
+- Dusty Bill has arrived in Redstone Gulch.
+- Frank Mallory is sheriff.
+- Saloon controlled by local gang.
+- Bank under siege.
+- Townspeople trust no one.
+- Factions: Miners, Settlers, Reformist Outlaws.
+- Dusty Bill not allied with any faction.
+- Compromising documents still in town hall.
+- Final duel not yet initiated.
+
+Available Actions:
+- Visit the Saloon to confront the gang and gather information → Go to Section 2
+- Head to the Bank to assist in its defense or investigate the siege → Go to Section 3
+- Meet with Miners at the mine entrance to seek their trust → Go to Section 4
+
+Section 2: [After visiting Saloon and confronting gang]
+Narrative:
+Dusty Bill pushes open the swinging doors of the saloon. The gang leader, a burly man named Gage, eyes him coldly from his corner table. “You ain’t welcome here, stranger,” Gage sneers. Bill’s calm demeanor and reputation precede him. He offers a proposition: help take control of the town’s lawlessness or be driven out. The gang is skeptical but hints at a possible alliance if Bill can prove his strength and integrity.
+
+The bartender whispers about Sheriff Mallory’s secret meetings in the town hall, where the sheriff hides documents that could ruin him. The saloon’s atmosphere is thick with tension, but Dusty Bill senses opportunity—if he can sway the gang, he might gain leverage against Mallory.
+
+Current State:
+- Dusty Bill in Saloon.
+- Gang leader Gage skeptical but open to alliance.
+- Bartender hints about secret documents in town hall.
+- No faction trust gained yet.
+- Sheriff Mallory’s documents still in town hall.
+
+Available Actions:
+- Challenge Gage to a duel to prove strength → Go to Section 5
+- Negotiate with the gang for information and alliance → Go to Section 6
+- Sneak out to the town hall to search for compromising documents → Go to Section 7
+
+Section 3: [After heading to Bank to investigate siege]
+Narrative:
+Dusty Bill approaches the battered bank, where a small group of settlers are trying to rebuild after the outlaw siege. They are wary but desperate for protection. Bill offers his help, promising to keep the bank and town safe from further attacks. The settlers debate among themselves but seem inclined to trust a man willing to risk himself for their cause.
+
+A settler named Clara shares rumors of Sheriff Mallory’s corruption and mentions that the Reformist Outlaws might be more moderate than believed. Bill realizes gaining settlers’ trust could be pivotal in uniting the town.
+
+Current State:
+- Dusty Bill at Bank.
+- Settlers cautiously trusting Dusty Bill.
+- Bank still recovering from siege.
+- Sheriff Mallory’s corruption rumored.
+- No gang alliance.
+- Compromising documents in town hall.
+
+Available Actions:
+- Rally settlers to secure the bank and town → Go to Section 8
+- Seek out Reformist Outlaws to gauge their intentions → Go to Section 9
+- Attempt to find clues about sheriff’s documents in town hall → Go to Section 7
+
+Section 4: [After meeting Miners at mine entrance]
+Narrative:
+Dusty Bill approaches the rugged miners working the nearby gold mine. They stop their work and eye him curiously. Their leader, Jed, is gruff but willing to listen. Bill speaks earnestly about returning justice to Redstone Gulch and protecting their livelihoods from corrupt officials and greedy outlaws.
+
+Jed warns that the miners hate Mallory but distrust anyone new. However, if Bill helps expose the sheriff’s corruption and protects the mines from raids, the miners might back him. The air is thick with dust and determination; the choice to ally with the miners could tip the scales.
+
+Current State:
+- Dusty Bill at mine entrance.
+- Miners cautiously receptive.
+- Sheriff Mallory’s corruption suspected by miners.
+- No alliances yet.
+- Compromising documents in town hall.
+
+Available Actions:
+- Offer to protect the mine from outlaws → Go to Section 8
+- Propose a joint plan to expose Sheriff Mallory → Go to Section 6
+- Sneak into town hall to retrieve documents → Go to Section 7
+
+Section 5: [After challenging Gage to a duel]
+Narrative:
+The saloon quiets as Dusty Bill and Gage step outside into the blazing sun. The duel is tense and swift. Bill’s skill wins the day, and Gage nods with reluctant respect. “You’re no ordinary man,” he admits. He offers a tentative alliance, promising to pull the gang’s support behind Bill’s cause—but warns that Mallory’s men will retaliate fiercely.
+
+With the gang’s backing, Bill gains significant power, but the risk of violent backlash grows. He must now decide his next move carefully.
+
+Current State:
+- Dusty Bill allied with gang led by Gage.
+- Sheriff Mallory aware of threat.
+- Compromising documents still in town hall.
+- No other faction allied yet.
+
+Available Actions:
+- Use gang influence to storm the town hall for documents → Go to Section 10
+- Reach out to miners to build a coalition → Go to Section 8
+- Prepare for the final duel with Mallory or his lieutenant → Go to Section 11
+
+Section 6: [After negotiating with gang or proposing plan with miners]
+Narrative:
+Dusty Bill sits down with the gang leader Gage, or with miner leader Jed, depending on prior choice. He outlines a plan: expose Sheriff Mallory’s corruption by retrieving the hidden documents, then unite the factions under his leadership to restore order. Both parties appear intrigued but wary—trust must be earned through action, not words.
+
+The gang offers to provide distraction while Bill sneaks into the town hall. The miners offer manpower to protect Bill during the mission. Bill feels the first stirrings of a coalition, but the sheriff’s shadow looms large.
+
+Current State:
+- Partial alliance forming with gang or miners.
+- Plan to retrieve documents underway.
+- Sheriff Mallory becoming suspicious.
+- Other factions still neutral.
+
+Available Actions:
+- Sneak into town hall during gang distraction → Go to Section 7
+- Rally miners and gang for joint assault on town hall → Go to Section 10
+- Seek out Reformist Outlaws for additional support → Go to Section 9
+
+Section 7: [After sneaking into town hall to retrieve documents]
+Narrative:
+Under cover of dusk or distraction, Dusty Bill slips into the town hall. The building is dim and quiet, but the sheriff’s men patrol the halls. Bill’s heart pounds as he locates a locked office rumored to contain the documents. Using skill and luck, he opens the drawer and finds papers revealing Mallory’s corrupt deals and plans to tighten his grip on the town.
+
+Suddenly, footsteps approach. Bill must decide whether to hide, confront, or flee with the documents. This mission could make or break his bid for leadership.
+
+Current State:
+- Dusty Bill possesses compromising documents.
+- Sheriff’s men searching town hall.
+- Partial alliances may exist.
+- Sheriff Mallory unaware of document theft.
+
+Available Actions:
+- Hide and wait for patrol to pass → Go to Section 12
+- Confront sheriff’s men to escape → Go to Section 13
+- Flee town hall quickly to rally factions → Go to Section 8
+
+Section 8: [After rallying settlers/miners or escaping town hall]
+Narrative:
+With documents in hand or newfound trust from settlers and miners, Dusty Bill calls a meeting in the town square. He reveals Mallory’s corruption and promises a new era of justice. The crowd murmurs, some skeptical, others hopeful. The Reformist Outlaws watch silently from a distance, their allegiance uncertain.
+
+Bill senses the town’s fate hangs on securing one more faction’s trust and preparing for the inevitable showdown with Mallory or his lieutenant.
+
+Current State:
+- Dusty Bill trusted by settlers and/or miners.
+- Compromising documents revealed or in hand.
+- Reformist Outlaws undecided.
+- Sheriff Mallory preparing countermeasures.
+
+Available Actions:
+- Approach Reformist Outlaws to gain their trust → Go to Section 9
+- Prepare for final duel against Mallory or lieutenant → Go to Section 11
+- Strengthen alliances by protecting town from outlaw raids → Go to Section 14
+
+Section 9: [After seeking out Reformist Outlaws]
+Narrative:
+Dusty Bill finds the Reformist Outlaws in a shadowed alley. Their leader, a sharp-eyed woman named Lila, listens intently as Bill speaks of unity and justice. She warns that outlaws are not easily swayed but weary of Mallory’s tyranny.
+
+Lila proposes a test: if Bill can prevent an imminent outlaw raid on the town, they will consider joining his cause. The stakes are high, but gaining their support would secure Dusty Bill’s leadership.
+
+Current State:
+- Reformist Outlaws undecided but open.
+- Imminent outlaw raid threat present.
+- Dusty Bill trusted by at least one faction.
+- Documents either revealed or in hand.
+
+Available Actions:
+- Defend town from outlaw raid → Go to Section 14
+- Attempt to negotiate peace with outlaws → Go to Section 15
+- Prepare for final duel ignoring outlaws → Go to Section 11
+
+Section 10: [After joint assault or gang storm on town hall]
+Narrative:
+With gang members creating chaos outside, and miners standing guard, Dusty Bill leads an assault into the town hall. Sheriff Mallory’s men are caught off guard. Bill locates the office with the incriminating documents and seizes them. Mallory himself appears, flanked by his lieutenant.
+
+A tense standoff ensues, making it clear the final duel is imminent. The townsfolk watch anxiously, their hopes resting on Bill’s shoulders.
+
+Current State:
+- Dusty Bill holds compromising documents.
+- Sheriff Mallory confronted.
+- Gang and miners allied.
+- Reformist Outlaws neutral.
+
+Available Actions:
+- Demand Mallory stand down peacefully → Go to Section 16
+- Challenge Mallory or lieutenant to duel → Go to Section 11
+- Use documents to rally Reformist Outlaws → Go to Section 9
+
+Section 11: [Final duel preparation or duel]
+Narrative:
+The sun sets as Dusty Bill faces Sheriff Mallory or his lieutenant in the dusty main street. Townsfolk gather silently, tension crackling in the air like static. Bill recalls his journey—the alliances forged, the battles won, and the fragile hope for justice.
+
+The duel begins. Quick reflexes, steady aim, and resolve determine the outcome. If Bill wins, he will claim leadership and restore order. If he falls, the town will remain under Mallory’s dark shadow. The future of Redstone Gulch depends on this moment.
+
+Current State:
+- Duel in progress or about to begin.
+- Dusty Bill allied with at least two factions.
+- Compromising documents revealed.
+
+Available Actions:
+- Engage in duel → Go to Section 17
+
+Section 12: [After hiding from sheriff’s patrol in town hall]
+Narrative:
+Dusty Bill holds his breath in the darkened hallway as the patrol passes by. Their footsteps fade, and he slips out with the documents safely tucked away. The tension eases slightly, but time is short. Returning to the town square to reveal the truth and rally factions is critical before Mallory regroups.
+
+Current State:
+- Dusty Bill holds documents.
+- Sheriff patrols unaware of theft.
+- Alliances partial or forming.
+
+Available Actions:
+- Return to rally factions → Go to Section 8
+- Seek out Reformist Outlaws → Go to Section 9
+
+Section 13: [After confronting sheriff’s men in town hall]
+Narrative:
+Dusty Bill steps into the dim light as sheriff’s men block his escape. A brief but fierce scuffle ensues. Bill’s skill prevails, but he suffers a minor wound. He escapes into the night with the documents, but word of the breach will spread quickly.
+
+His urgency to rally the town grows, but so does the risk of Mallory striking back harder.
+
+Current State:
+- Dusty Bill wounded but holds documents.
+- Sheriff’s men alerted.
+- Alliances partial.
+
+Available Actions:
+- Go to rally factions despite injury → Go to Section 8
+- Hide and recover while planning next move → Go to Section 14
+
+Section 14: [After defending town from outlaw raid or strengthening alliances]
+Narrative:
+Dusty Bill leads a coordinated defense as outlaws surge toward the town. With settlers, miners, and possibly Reformist Outlaws fighting alongside him, the assault is repelled. The townsfolk’s trust in Bill deepens as he proves his commitment to their safety.
+
+With two factions now firmly allied, the path to challenging Mallory is clear. Yet the final duel still looms, and Bill must remain vigilant not to become the very tyrant he seeks to replace.
+
+Current State:
+- Dusty Bill trusted by at least two factions.
+- Town defended from outlaw raid.
+- Compromising documents revealed or in hand.
+- Sheriff Mallory weakened but still a threat.
+
+Available Actions:
+- Challenge Mallory or lieutenant to final duel → Go to Section 11
+- Negotiate peace with Reformist Outlaws → Go to Section 15
+
+Section 15: [After attempting to negotiate peace with Reformist Outlaws]
+Narrative:
+Dusty Bill meets with Lila and her followers in a tense negotiation. While wary, the outlaws recognize that continued chaos benefits no one. They agree to a fragile truce with Bill’s leadership, on condition that he respects their autonomy and avoids harsh rule.
+
+This alliance strengthens Bill’s claim but also challenges him to rule justly, balancing power and freedom.
+
+Current State:
+- Dusty Bill allied with Reformist Outlaws and at least one other faction.
+- Truce with outlaws established.
+- Sheriff Mallory’s power waning.
+
+Available Actions:
+- Prepare for final duel → Go to Section 11
+- Use alliance to reform town governance → Go to Section 18
+
+Section 16: [After demanding Mallory stand down peacefully]
+Narrative:
+Dusty Bill steps forward, holding the damning documents aloft. “Your time’s up, Mallory. Step down, or face the consequences.” Mallory laughs, refusing to yield. His lieutenant draws a gun, forcing Bill to prepare for the inevitable duel.
+
+The crowd watches, breath held, knowing that violence may be the only path to justice in Redstone Gulch.
+
+Current State:
+- Sheriff Mallory refuses to step down.
+- Duel imminent.
+- Dusty Bill holds documents.
+- Partial alliances formed.
+
+Available Actions:
+- Proceed to duel → Go to Section 11
+- Attempt to rally last-minute support before duel → Go to Section 8
+
+Section 17: [After final duel outcome]
+Narrative (Success):
+Bill’s shot rings true. Mallory or his lieutenant collapses, the town erupting in a mix of relief and hope. Dusty Bill steps forward, not as a tyrant but as a leader dedicated to justice and unity. The factions pledge their loyalty, and Redstone Gulch begins its slow climb out of darkness.
+
+Narrative (Failure):
+Bill falls to Mallory’s superior skill or treachery. The sheriff’s grip tightens, and the town sinks further into despair. The dream of justice fades as Dusty Bill’s legacy ends in the dust.
+
+Current State (Success):
+- Dusty Bill recognized as legitimate leader by townsfolk and factions.
+- Sheriff Mallory defeated.
+- Town beginning to heal.
+
+Current State (Failure):
+- Sheriff Mallory remains in power.
+- Dusty Bill defeated.
+- Town under continued tyranny.
+
+Available Actions:
+- None (End State)
+
+Section 18: [After using alliance to reform town governance]
+Narrative:
+With the factions united under Dusty Bill’s leadership, he initiates reforms to ensure justice and fairness. The outlaws keep their autonomy in exchange for peace, miners and settlers share resources, and the town hall becomes a place of transparency.
+
+Though challenges remain, Dusty Bill’s careful balance prevents him from becoming a tyrant. Redstone Gulch rises from the ashes, a testament to hope and hard-won unity.
+
+Current State:
+- Dusty Bill leader and reformer.
+- All three factions allied.
+- Town governance reformed peacefully.
+- Sheriff Mallory removed from power.
+
+Available Actions:
+- None (Successful peaceful resolution, End State)

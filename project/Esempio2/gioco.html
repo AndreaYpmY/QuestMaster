@@ -1,0 +1,408 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Martian Grand Slam - Avventura Interattiva</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Roboto:wght@400;700&display=swap');
+  html, body {
+    margin: 0; padding: 0; height: 100%;
+    font-family: 'Roboto', sans-serif;
+    background: #f9f9f9;
+    color: #222;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    min-height: 100vh;
+  }
+  #game-container {
+    max-width: 600px;
+    width: 90%;
+    background: #fff;
+    border-radius: 8px;
+    box-shadow: 0 8px 24px rgba(0,0,0,0.1);
+    padding: 24px 32px;
+    box-sizing: border-box;
+    display: flex;
+    flex-direction: column;
+    min-height: 400px;
+    opacity: 0;
+    transform: translateY(10px);
+    transition: opacity 0.5s ease, transform 0.5s ease;
+  }
+  #game-container.visible {
+    opacity: 1;
+    transform: translateY(0);
+  }
+  h1, h2 {
+    text-align: center;
+    margin-bottom: 16px;
+    font-weight: 700;
+    color: #1a1a1a;
+  }
+  p {
+    line-height: 1.5;
+    margin-bottom: 24px;
+    font-size: 1rem;
+  }
+  #choices {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+  }
+  button {
+    background: #1976d2;
+    border: none;
+    color: white;
+    padding: 14px 20px;
+    font-size: 1rem;
+    border-radius: 6px;
+    cursor: pointer;
+    transition: background-color 0.3s ease;
+    box-shadow: 0 3px 6px rgba(25, 118, 210, 0.4);
+  }
+  button:hover, button:focus {
+    background: #1565c0;
+    outline: none;
+  }
+  button:active {
+    background: #0d47a1;
+  }
+  @media (max-width: 480px) {
+    #game-container {
+      padding: 20px 24px;
+    }
+    button {
+      font-size: 0.9rem;
+      padding: 12px 16px;
+    }
+  }
+</style>
+</head>
+<body>
+<div id="game-container" role="main" aria-live="polite" aria-atomic="true">
+  <!-- Content dynamically injected here -->
+</div>
+<script>
+(() => {
+  const container = document.getElementById('game-container');
+
+  // Game state variables
+  let state = {
+    location: 'olympus-entrance',
+    hasPrototypeRacket: false,
+    hasNextGenGear: false,
+    hasModestSuit: false,
+    hasSponsor: false,
+    sponsorUncommitted: true,
+    hasRanking: false,
+    improvedRanking: false,
+    hasReputation: false,
+    trainingAccepted: false,
+    challengedRival: false,
+    undergroundAccess: false,
+    playedExhibition: false,
+    playedUnderground: false,
+    playedQualifiers: false,
+    qualifiedTrials: false,
+    playedTrials: false,
+    playedFinal: false,
+    wonLastMatch: false,
+    lostDrewLastMatch: false,
+    champion: false,
+    defeated: false,
+    increasedConfidence: false,
+    tacticalKnowledge: false,
+    sponsorInterest: false,
+    currentSection: 'start',
+  };
+
+  // Sections narrative and choices in Italian
+  const sections = {
+    start: {
+      title: 'Martian Grand Slam',
+      summary: `<p><strong>Ambientazione:</strong> La storia si svolge nella futuristica colonia di Olympus Station su Marte, epicentro degli sport a gravità zero più avanzati del sistema solare. Nova Racket, giovane prodigio terrestre del tennis, è determinata a diventare Campionessa Intergalattica di Tennis. Per riuscirci, dovrà superare rivali locali, adattarsi alla fisica marziana e vincere i tornei planetari fino alla finale sulla luna di Giove, Europa.</p>
+      <p><strong>Obiettivo:</strong> Nova deve essere incoronata Campionessa Intergalattica dopo aver sconfitto la campionessa in carica, Vega Stratos, nell’arena finale di Europa.</p>`,
+      choices: [
+        { text: 'Inizia l\'avventura', action: () => goToSection('1') }
+      ]
+    },
+    '1': {
+      title: 'Arrivo a Olympus Station',
+      narrative: `Nova Racket scende dalla navetta e si trova nell'affollata Olympus Station, fulcro degli sport a gravità zero marziani. La polvere rossa di Marte illumina l'architettura futuristica. Nova stringe una racchetta obsoleta, sentendo il peso della gravità insolita e gli sguardi freddi dei giocatori locali, che formano gruppi chiusi. Vega Stratos, campionessa marziana imbattuta, domina i media. Senza sponsor, ranking o attrezzatura adeguata, il cammino di Nova sembra arduo. Il primo passo è farsi strada nella scena locale, trovare alleati e migliorare l’equipaggiamento.`,
+      choices: [
+        { text: 'Visita il mercato dell\'attrezzatura sportiva', action: () => goToSection('2') },
+        { text: 'Avvicinati al centro di allenamento per trovare un allenatore', action: () => goToSection('3') },
+        { text: 'Prova a parlare con un rappresentante sponsor nel lounge aziendale', action: () => goToSection('4') }
+      ]
+    },
+    '2': {
+      title: 'Mercato dell\'attrezzatura sportiva',
+      narrative: `Il mercato è animato da venditori che mostrano le ultime tecnologie per il tennis a gravità zero: racchette con corde magnetiche, tute adattive per il movimento in bassa gravità. Nova valuta le opzioni ma capisce presto che senza sponsor o ranking, l’attrezzatura top è troppo costosa. Un venditore, Rix, ex giocatore diventato commerciante, nota l’interesse di Nova e offre una racchetta prototipo a prezzo scontato se Nova accetta di testarla in una partita esibizione. Un’occasione per migliorare l’equipaggiamento e farsi notare.`,
+      choices: [
+        { text: 'Accetta l\'offerta di Rix e gioca la partita esibizione', action: () => { state.hasPrototypeRacket = true; goToSection('5'); } },
+        { text: 'Rifiuta e prova a negoziare uno sponsor', action: () => goToSection('4') },
+        { text: 'Lascia il mercato e vai al centro di allenamento', action: () => goToSection('3') }
+      ]
+    },
+    '3': {
+      title: 'Centro di allenamento',
+      narrative: `Nel moderno centro di allenamento, Nova osserva giocatori muoversi agilmente nelle camere a gravità zero simulate. Juno, un allenatore esperto, si avvicina, colpito dalla determinazione di Nova. Avverte che le Olympus Trials richiedono abilità e alleanze strategiche. Offre di allenare Nova, ma chiede un periodo di prova per dimostrare impegno e miglioramento. Suggerisce inoltre che uno sponsor faciliterebbe l’accesso a tecnologie migliori. I rivali osservano con diffidenza, pronti a sfidare i nuovi arrivati.`,
+      choices: [
+        { text: 'Accetta l\'offerta di allenamento di Juno', action: () => { state.trainingAccepted = true; goToSection('6'); } },
+        { text: 'Rifiuta e cerca prima uno sponsor', action: () => goToSection('4') },
+        { text: 'Sfida un giocatore locale a una partita amichevole', action: () => goToSection('7') }
+      ]
+    },
+    '4': {
+      title: 'Lounge aziendale',
+      narrative: `Il lounge aziendale è illuminato da ologrammi pubblicitari e frequentato da sponsor d’élite. Nova si avvicina a un rappresentante di NovaCorp, principale sponsor marziano. Il rappresentante è scettico, nota la mancanza di ranking e la recente arrivata. Tuttavia, suggerisce che un atleta promettente che vinca le Olympus Trials potrebbe ottenere sponsorizzazione. Consiglia di trovare modi per entrare nei tornei ufficiali e dimostrare il proprio valore. Nova lascia il lounge con un messaggio chiaro: servono risultati.`,
+      choices: [
+        { text: 'Torna al mercato per accettare l\'offerta di Rix e giocare l\'esibizione', action: () => goToSection('5') },
+        { text: 'Vai al centro di allenamento per migliorare le abilità con Juno', action: () => goToSection('6') },
+        { text: 'Cerca tornei sotterranei per guadagnare ranking', action: () => goToSection('8') }
+      ]
+    },
+    '5': {
+      title: 'Partita esibizione',
+      narrative: `L’arena esibizione è carica di attesa mentre Nova entra in campo con la racchetta prototipo. L’avversario è un giocatore locale di medio livello, appartenente a una delle clique rivali. Il pubblico è diviso: alcuni tifano per la novità, altri proteggono i locali. La racchetta risponde bene, le corde magnetiche vibrano di energia. La partita mette alla prova l’adattabilità di Nova alla fisica marziana e all’attrezzatura avanzata. Vincere aprirebbe molte porte; perdere potrebbe chiuderle definitivamente.`,
+      choices: [
+        { text: 'Gioca aggressivamente per vincere', action: () => { state.wonLastMatch = true; goToSection('9'); } },
+        { text: 'Gioca in difesa per studiare l\'avversario', action: () => { state.lostDrewLastMatch = true; goToSection('10'); } }
+      ]
+    },
+    '6': {
+      title: 'Allenamento con Juno',
+      narrative: `Settimane di allenamenti duri a gravità zero sotto l’occhio vigile di Juno. Nova impara a padroneggiare le sfumature della gravità marziana, adattando colpi e movimenti. La tuta fornita è un miglioramento modesto, ma non al livello dei migliori. Juno spinge Nova a partecipare alle qualificazioni per la lega marziana. Le clique rivali restano un ostacolo, ma le abilità crescenti di Nova iniziano a guadagnare rispetto. Juno avverte che vincere le Olympus Trials sarà la vera prova.`,
+      choices: [
+        { text: 'Partecipa alle qualificazioni della lega marziana', action: () => { state.playedQualifiers = true; goToSection('11'); } },
+        { text: 'Cerca sponsorizzazioni durante le pause di allenamento', action: () => goToSection('4') },
+        { text: 'Sfida un membro di una clique rivale a una partita di allenamento', action: () => goToSection('7') }
+      ]
+    },
+    '7': {
+      title: 'Partita amichevole in arena di pratica',
+      narrative: `Nova sfida un giocatore locale di una clique rivale in una partita amichevole nell’arena di pratica vicina. L’avversario accetta, incuriosito dall’audacia di Nova. La partita è tesa, entrambi testano tecniche e attrezzature. La racchetta obsoleta di Nova limita leggermente le prestazioni, ma la determinazione è evidente. Vincere potrebbe garantire l’accesso alla clique e ai loro canali tornei; perdere rafforzerebbe le barriere.`,
+      choices: [
+        { text: 'Gioca aggressivamente per vincere e guadagnare accettazione', action: () => { state.wonLastMatch = true; goToSection('9'); } },
+        { text: 'Gioca con cautela per evitare infortuni e osservare', action: () => { state.lostDrewLastMatch = true; goToSection('10'); } }
+      ]
+    },
+    '8': {
+      title: 'Tornei sotterranei',
+      narrative: `Nova cerca tornei sotterranei di tennis a gravità zero, meno regolamentati e più accessibili. Nei quartieri ombrosi di Olympus Station, incontra Kira, che offre l’ingresso a un torneo segreto se Nova paga una quota o impressiona uno sponsor. Il rischio è alto: queste partite non sono ufficiali e una sconfitta potrebbe danneggiare la reputazione. Il successo potrebbe portare punti ranking e interesse degli sponsor.`,
+      choices: [
+        { text: 'Prova a trovare uno sponsor disposto a pagare la quota', action: () => goToSection('4') },
+        { text: 'Partecipa al torneo sotterraneo pagando la quota', action: () => { state.undergroundAccess = true; goToSection('12'); } },
+        { text: 'Torna ad allenarti per migliorare le possibilità', action: () => goToSection('6') }
+      ]
+    },
+    '9': {
+      title: 'Vittoria nella partita esibizione o amichevole',
+      narrative: `Lo stile aggressivo di Nova paga: colpi rapidi e schiacciate audaci sopraffanno l’avversario. Il pubblico applaude, tra sorpresa e ammirazione. Nova vince decisamente, guadagnando rispetto e un piccolo aumento di ranking locale. Rix è soddisfatto e offre supporto con attrezzature di nuova generazione. Juno incoraggia Nova a partecipare alle qualificazioni ufficiali della lega marziana. Il cammino verso le Olympus Trials si fa più chiaro.`,
+      choices: [
+        { text: 'Accetta l\'offerta di Rix per un upgrade dell\'attrezzatura', action: () => { state.hasNextGenGear = true; goToSection('13'); } },
+        { text: 'Partecipa alle qualificazioni ufficiali della lega marziana', action: () => { state.playedQualifiers = true; goToSection('11'); } },
+        { text: 'Cerca sponsorizzazioni con la reputazione migliorata', action: () => goToSection('4') }
+      ]
+    },
+    '10': {
+      title: 'Sconfitta o pareggio nella partita',
+      narrative: `Nova gioca con cautela, concentrandosi sulla difesa e studiando le tattiche dell’avversario. La partita è equilibrata, finendo con una sconfitta o un pareggio stretto. Pur senza vittoria, Nova acquisisce preziose informazioni sui modi di giocare locali e ottiene un rispettoso cenno da alcuni rivali. Tuttavia, senza vittorie, le opportunità di ranking o sponsorizzazioni restano limitate. Juno suggerisce di concentrarsi sull’allenamento per prepararsi alle qualificazioni.`,
+      choices: [
+        { text: 'Torna ad allenarti con Juno', action: () => goToSection('6') },
+        { text: 'Cerca sponsorizzazioni nonostante la mancanza di vittorie', action: () => goToSection('4') },
+        { text: 'Prova i tornei sotterranei per fare esperienza', action: () => { state.undergroundAccess = true; goToSection('8'); } }
+      ]
+    },
+    '11': {
+      title: 'Qualificazioni della lega marziana',
+      narrative: `Le qualificazioni sono dure, con molti contendenti per pochi posti alle Olympus Trials. Le abilità e l’attrezzatura migliorate di Nova sono messe alla prova sotto pressione. Le clique rivali cercano di ostacolare o intimidire, ma la perseveranza, il gioco strategico e il supporto crescente di alcuni locali permettono a Nova di assicurarsi un posto alle Olympus Trials. Le prospettive di sponsorizzazione migliorano con il ranking in crescita.`,
+      choices: [
+        { text: 'Inizia la preparazione e l\'allenamento per le Olympus Trials', action: () => { state.qualifiedTrials = true; goToSection('14'); } },
+        { text: 'Cerca di assicurarti una sponsorizzazione formale prima delle Trials', action: () => goToSection('4') },
+        { text: 'Prova a negoziare partite amichevoli con i rivali per allenarti', action: () => goToSection('7') }
+      ]
+    },
+    '12': {
+      title: 'Torneo sotterraneo',
+      narrative: `L’arena del torneo sotterraneo è grezza e caotica, in netto contrasto con i luoghi ufficiali. Nova affronta avversari imprevedibili e regole non convenzionali. Le partite mettono alla prova l’adattabilità di Nova. Il successo potrebbe portare punti ranking inaspettati e attirare sponsor per talenti audaci. Tuttavia, il rischio di infortuni o squalifiche è alto. Nova deve bilanciare aggressività e cautela.`,
+      choices: [
+        { text: 'Gioca aggressivamente per vincere il torneo sotterraneo', action: () => { state.wonLastMatch = true; state.sponsorInterest = true; goToSection('15'); } },
+        { text: 'Gioca in difesa per sopravvivere e imparare', action: () => { state.lostDrewLastMatch = true; goToSection('10'); } }
+      ]
+    },
+    '13': {
+      title: 'Upgrade attrezzatura con Rix',
+      narrative: `Rix fornisce a Nova una racchetta all’avanguardia e una tuta adattiva ottimizzata per la gravità marziana. L’attrezzatura migliora controllo, potenza e agilità. Nova sente una nuova fiducia. Con l’attrezzatura non più un limite, l’attenzione si sposta su affinare abilità e strategia. Juno intensifica gli allenamenti, perfezionando lo stile unico di Nova. Le Olympus Trials si avvicinano come prova suprema.`,
+      choices: [
+        { text: 'Partecipa subito alle qualificazioni della lega marziana', action: () => { state.playedQualifiers = true; goToSection('11'); } },
+        { text: 'Cerca sponsorizzazioni per finanziare ulteriori allenamenti', action: () => goToSection('4') },
+        { text: 'Sfida membri delle clique rivali a partite amichevoli', action: () => goToSection('7') }
+      ]
+    },
+    '14': {
+      title: 'Olympus Trials',
+      narrative: `Le Olympus Trials radunano i migliori talenti marziani in zero-g. Il cuore di Nova batte forte mentre viene annunciata la prima partita. Il pubblico è numeroso, la posta in gioco altissima. Ogni punto può influenzare sponsorizzazioni e la possibilità di affrontare Vega Stratos. Nova deve bilanciare audacia e precisione, sapendo che un errore può compromettere il sogno di campionato.`,
+      choices: [
+        { text: 'Gioca aggressivamente per sconfiggere gli avversari iniziali', action: () => { state.playedTrials = true; goToSection('16'); } },
+        { text: 'Gioca con cautela per conservare energie per le partite successive', action: () => { state.playedTrials = true; goToSection('17'); } }
+      ]
+    },
+    '15': {
+      title: 'Vittoria nel torneo sotterraneo',
+      narrative: `Le tattiche aggressive di Nova dominano le partite sotterranee, culminando in una vittoria faticosa. La voce si diffonde rapidamente su Olympus Station, attirando l’attenzione degli sponsor e un certo riconoscimento ufficiale nonostante lo status non ufficiale. La scelta rischiosa ha pagato, aumentando fiducia e reputazione. Tuttavia, il ranking ufficiale resta da conquistare e le Olympus Trials sono ancora la sfida successiva.`,
+      choices: [
+        { text: 'Cerca ranking ufficiale tramite qualificazioni della lega marziana', action: () => { state.playedQualifiers = true; goToSection('11'); } },
+        { text: 'Prova a ottenere sponsorizzazioni con la nuova fama', action: () => goToSection('4') },
+        { text: 'Inizia allenamenti intensivi per le Olympus Trials', action: () => { state.trainingAccepted = true; goToSection('14'); } }
+      ]
+    },
+    '16': {
+      title: 'Partite iniziali Olympus Trials - gioco aggressivo',
+      narrative: `Lo stile aggressivo di Nova sorprende gli avversari, vincendo le prime partite con schiacciate spettacolari e colpi rapidi. Il pubblico acclama e gli sponsor si interessano. Ma la fatica si fa sentire e il ritmo intenso rischia infortuni o errori nelle fasi successive. Vega Stratos osserva da lontano, con un sorriso di rispetto. Nova deve decidere se mantenere questo ritmo o adattare la strategia.`,
+      choices: [
+        { text: 'Continua a giocare aggressivamente per puntare alla finale', action: () => { state.playedFinal = true; goToSection('18'); } },
+        { text: 'Passa a una strategia difensiva per conservare energie', action: () => { state.playedFinal = true; goToSection('17'); } }
+      ]
+    },
+    '17': {
+      title: 'Partite iniziali Olympus Trials - gioco difensivo',
+      narrative: `Nova sceglie un approccio difensivo, conservando energie e studiando gli avversari. Le partite sono combattute ma vinte con gioco strategico e resistenza. Questo mantiene Nova fresca per i turni successivi ma rischia di perdere slancio e entusiasmo del pubblico. Vega Stratos è la minaccia finale, con reputazione temibile. Il cammino di Nova dipende dall’equilibrio tra resistenza e abilità.`,
+      choices: [
+        { text: 'Aumenta l\'aggressività per assicurarti un posto in finale', action: () => { state.playedFinal = true; goToSection('18'); } },
+        { text: 'Mantieni il gioco difensivo e aspetta un errore dell\'avversario', action: () => { state.playedFinal = true; goToSection('19'); } }
+      ]
+    },
+    '18': {
+      title: 'Finale Olympus Trials - gioco aggressivo',
+      narrative: `La finale contro Vega Stratos si svolge nella grandiosa arena zero-g, uno spettacolo trasmesso in tutto il sistema solare. Il pubblico trattiene il respiro mentre Nova e Vega si affrontano. Lo stile aggressivo di Nova sfida il dominio di Vega, scambiando colpi potenti in una gara mozzafiato. La partita è estenuante, ogni punto combattuto. Negli ultimi momenti, Nova vede un’apertura per un colpo decisivo.`,
+      choices: [
+        { text: 'Tenta la schiacciata decisiva per vincere il campionato', action: () => { state.champion = true; goToSection('20'); } },
+        { text: 'Gioca in sicurezza e cerca di far commettere errori a Vega', action: () => { state.defeated = true; goToSection('21'); } }
+      ]
+    },
+    '19': {
+      title: 'Finale Olympus Trials - gioco difensivo',
+      narrative: `Nova arriva alla finale contro Vega Stratos con una strategia difensiva, frustrando Vega ma rischiando di perdere slancio. Nell’arena zero-g su Europa, le due titane si studiano con cautela. La mancanza di aggressività mette pressione su Nova per sfruttare gli errori rari. La partita può andare in entrambi i modi. Nova deve decidere se rompere la difesa o continuare ad aspettare.`,
+      choices: [
+        { text: 'Aumenta l\'aggressività per prendere il controllo', action: () => { state.champion = true; goToSection('20'); } },
+        { text: 'Continua a giocare difensivamente e aspetta un errore', action: () => { state.defeated = true; goToSection('21'); } }
+      ]
+    },
+    '20': {
+      title: 'Vittoria al campionato',
+      narrative: `Nova concentra ogni energia e precisione per eseguire la schiacciata decisiva. La palla sfreccia nell’arena zero-g, cogliendo Vega di sorpresa. Il pubblico esplode in applausi mentre il colpo segna la vittoria. Nova Racket è incoronata Campionessa Intergalattica, una nuova leggenda nata su Marte e celebrata in tutto il sistema solare. Gli sponsor arrivano in massa e il viaggio da nuova arrivata a campionessa ispira molti aspiranti giocatori.`,
+      choices: [
+        { text: 'Festeggia la vittoria e pianifica la difesa del titolo', action: () => goToSection('end-success') }
+      ]
+    },
+    '21': {
+      title: 'Sconfitta nella finale',
+      narrative: `La strategia prudente di Nova si ritorce contro: Vega Stratos coglie l’attimo e con un contrattacco sorprendente vince la partita. Il pubblico rimane in silenzio per un attimo, poi esplode in applausi per il combattimento feroce. Nonostante la sconfitta, la prestazione di Nova guadagna rispetto e promette sponsorizzazioni future. Vega si avvicina a Nova con un cenno di riconoscimento. Il campionato sfugge per ora, ma il viaggio è solo all’inizio.`,
+      choices: [
+        { text: 'Rifletti sulla sconfitta e allenati per il prossimo campionato', action: () => goToSection('end-failure') }
+      ]
+    },
+    'end-success': {
+      title: 'Fine della storia - Vittoria',
+      narrative: `Complimenti! Hai guidato Nova Racket alla vittoria del Campionato Intergalattico di Tennis. La tua determinazione, strategia e coraggio hanno creato una leggenda su Marte e oltre. Vuoi giocare di nuovo e scoprire altre strade?`,
+      choices: [
+        { text: 'Gioca di nuovo', action: () => resetGame() }
+      ]
+    },
+    'end-failure': {
+      title: 'Fine della storia - Sconfitta',
+      narrative: `Anche se Nova non ha vinto questa volta, la sua performance ha guadagnato rispetto e nuove opportunità. La strada per diventare campionessa è ancora aperta. Vuoi provare di nuovo e cambiare il destino?`,
+      choices: [
+        { text: 'Gioca di nuovo', action: () => resetGame() }
+      ]
+    }
+  };
+
+  // Function to render a section
+  function renderSection(id) {
+    const section = sections[id];
+    if (!section) return;
+    container.classList.remove('visible');
+    setTimeout(() => {
+      container.innerHTML = '';
+      const title = document.createElement('h1');
+      title.textContent = section.title;
+      container.appendChild(title);
+
+      if (section.summary) {
+        const summaryDiv = document.createElement('div');
+        summaryDiv.innerHTML = section.summary;
+        container.appendChild(summaryDiv);
+      }
+
+      if (section.narrative) {
+        const p = document.createElement('p');
+        p.textContent = section.narrative;
+        container.appendChild(p);
+      }
+
+      const choicesDiv = document.createElement('div');
+      choicesDiv.id = 'choices';
+      section.choices.forEach(choice => {
+        const btn = document.createElement('button');
+        btn.textContent = choice.text;
+        btn.type = 'button';
+        btn.addEventListener('click', () => {
+          choice.action();
+        });
+        choicesDiv.appendChild(btn);
+      });
+      container.appendChild(choicesDiv);
+      container.classList.add('visible');
+      container.querySelector('button').focus();
+    }, 300);
+  }
+
+  // Navigation helper
+  function goToSection(id) {
+    state.currentSection = id;
+    renderSection(id);
+  }
+
+  // Reset game state
+  function resetGame() {
+    state = {
+      location: 'olympus-entrance',
+      hasPrototypeRacket: false,
+      hasNextGenGear: false,
+      hasModestSuit: false,
+      hasSponsor: false,
+      sponsorUncommitted: true,
+      hasRanking: false,
+      improvedRanking: false,
+      hasReputation: false,
+      trainingAccepted: false,
+      challengedRival: false,
+      undergroundAccess: false,
+      playedExhibition: false,
+      playedUnderground: false,
+      playedQualifiers: false,
+      qualifiedTrials: false,
+      playedTrials: false,
+      playedFinal: false,
+      wonLastMatch: false,
+      lostDrewLastMatch: false,
+      champion: false,
+      defeated: false,
+      increasedConfidence: false,
+      tacticalKnowledge: false,
+      sponsorInterest: false,
+      currentSection: 'start',
+    };
+    goToSection('start');
+  }
+
+  // Initialize game
+  resetGame();
+})();
+</script>
+</body>
+</html>

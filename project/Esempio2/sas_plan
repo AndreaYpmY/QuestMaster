@@ -1,0 +1,8 @@
+(visit-sports-gear-market nova olympus-entrance europa-grand-arena)
+(accept-training-offer nova juno europa-grand-arena)
+(enter-league-qualifiers nova europa-grand-arena juno)
+(prepare-for-olympus-trials nova europa-grand-arena)
+(play-aggressively-trials nova europa-grand-arena)
+(continue-aggressive-play nova europa-grand-arena)
+(attempt-decisive-smash nova europa-grand-arena)
+; cost = 7 (unit cost)
