@@ -1,0 +1,785 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>L'Ombra del Drago - Avventura Interattiva</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600&display=swap');
+  html, body {
+    margin: 0; padding: 0; height: 100%;
+    font-family: 'Inter', sans-serif;
+    background: #f9fafb;
+    color: #222;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    min-height: 100vh;
+  }
+  #game-container {
+    max-width: 600px;
+    width: 90%;
+    background: #fff;
+    border-radius: 10px;
+    box-shadow: 0 8px 24px rgba(0,0,0,0.1);
+    padding: 2rem 2.5rem;
+    box-sizing: border-box;
+    display: flex;
+    flex-direction: column;
+    min-height: 480px;
+    position: relative;
+    overflow: hidden;
+  }
+  h1, h2 {
+    margin: 0 0 1rem 0;
+    font-weight: 600;
+    color: #111;
+    text-align: center;
+  }
+  p {
+    line-height: 1.5;
+    margin: 0 0 1.5rem 0;
+    font-size: 1rem;
+  }
+  #choices {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 1rem;
+    justify-content: center;
+  }
+  button.choice-btn {
+    background: #2563eb;
+    border: none;
+    color: white;
+    padding: 0.75rem 1.5rem;
+    border-radius: 6px;
+    font-weight: 600;
+    font-size: 1rem;
+    cursor: pointer;
+    flex: 1 1 45%;
+    max-width: 280px;
+    transition: background-color 0.3s ease, transform 0.2s ease;
+    user-select: none;
+  }
+  button.choice-btn:hover,
+  button.choice-btn:focus {
+    background: #1e40af;
+    outline: none;
+    transform: scale(1.05);
+  }
+  #summary {
+    font-size: 1rem;
+    line-height: 1.6;
+    margin-bottom: 2rem;
+    color: #444;
+  }
+  #start-btn, #restart-btn {
+    background: #10b981;
+    border: none;
+    color: white;
+    padding: 0.85rem 2rem;
+    border-radius: 8px;
+    font-weight: 700;
+    font-size: 1.1rem;
+    cursor: pointer;
+    transition: background-color 0.3s ease, transform 0.2s ease;
+    user-select: none;
+    align-self: center;
+  }
+  #start-btn:hover, #start-btn:focus,
+  #restart-btn:hover, #restart-btn:focus {
+    background: #047857;
+    outline: none;
+    transform: scale(1.1);
+  }
+  /* Fade animations */
+  .fade-enter {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  .fade-enter-active {
+    opacity: 1;
+    transform: translateY(0);
+    transition: opacity 0.5s ease, transform 0.5s ease;
+  }
+  .fade-exit {
+    opacity: 1;
+    transform: translateY(0);
+  }
+  .fade-exit-active {
+    opacity: 0;
+    transform: translateY(-10px);
+    transition: opacity 0.5s ease, transform 0.5s ease;
+  }
+  @media (max-width: 480px) {
+    button.choice-btn {
+      flex: 1 1 100%;
+      max-width: 100%;
+    }
+  }
+</style>
+</head>
+<body>
+<div id="game-container" role="main" aria-live="polite" aria-atomic="true">
+  <!-- Content dynamically inserted here -->
+</div>
+<script>
+(() => {
+  const container = document.getElementById('game-container');
+
+  // Game state variables
+  let state = {
+    location: 'village-of-ardent',
+    inventory: ['common-sword', 'pouch-of-coins'],
+    allies: [],
+    knowledge: [],
+    magicalItems: [],
+    coins: true,
+    wounded: false,
+    injured: false,
+    merchantTrustworthy: null, // null=unknown, true, false
+    wolvesActive: false,
+    wolvesDefeated: false,
+    trapActive: false,
+    trapTriggered: false,
+    templeSealed: true,
+    templeUnsealed: false,
+    templeTrapsActive: false,
+    hasAncientKey: false,
+    hasSpearOfLight: false,
+    hamletHelped: false,
+    dragonActive: true,
+    dragonDefeated: false,
+    questComplete: false,
+    playerIncapacitated: false,
+    protectiveEnchantment: false,
+    magicalAmulet: false,
+    magicalTalisman: false,
+    healingPotion: false,
+    smokeBomb: false,
+    forestMageAlly: false,
+    mercenaryAlly: false,
+    map: false,
+    // Track current section id for navigation
+    currentSection: 'start',
+  };
+
+  // Utility: fade out old content and fade in new content
+  function fadeContent(newContentHtml) {
+    return new Promise(resolve => {
+      // Fade out
+      container.style.opacity = '0';
+      setTimeout(() => {
+        container.innerHTML = newContentHtml;
+        container.style.opacity = '1';
+        resolve();
+      }, 400);
+    });
+  }
+
+  // Translate inventory and allies to Italian readable text
+  function inventoryText() {
+    const items = [];
+    if (state.inventory.includes('common-sword')) items.push('Spada comune');
+    if (state.inventory.includes('pouch-of-coins')) items.push('Sacco di monete');
+    if (state.healingPotion) items.push('Pozione curativa');
+    if (state.smokeBomb) items.push('Bomba fumogena');
+    if (state.magicalAmulet) items.push('Amuleto magico');
+    if (state.magicalTalisman) items.push('Talismano magico');
+    if (state.protectiveEnchantment) items.push('Incantesimo protettivo');
+    if (state.hasAncientKey) items.push('Chiave antica');
+    if (state.hasSpearOfLight) items.push('Lancia di Luce');
+    return items.length ? items.join(', ') : 'Nessun oggetto';
+  }
+  function alliesText() {
+    const allies = [];
+    if (state.mercenaryAlly) allies.push('Mercenario');
+    if (state.forestMageAlly) allies.push('Mago della foresta');
+    return allies.length ? allies.join(', ') : 'Nessun alleato';
+  }
+
+  // Sections data: narrative text and choices in Italian
+  // Each section: id, title, narrative, choices [{text, action:function}]
+  // Actions update state and move to next section
+  const sections = {
+    start: {
+      title: 'Villaggio di Ardent',
+      narrative: `Ti trovi nella vivace piazza del villaggio di Ardent, l'ultimo baluardo di sicurezza prima che le terre selvagge di Eldoria si estendano all'orizzonte. L'aria è carica di sussurri di paura e speranza: il temuto drago Vharax si è risvegliato dal suo antico sonno, lasciando dietro di sé devastazione. I villaggi si affrettano, stringendo i loro averi e scambiandosi sguardi preoccupati. In un angolo, un vecchio saggio si appoggia al suo bastone, con occhi pieni di conoscenza criptica. Hai solo la tua spada comune e un sacco di monete, sentendo il peso del destino sulle spalle. La Lancia di Luce, la tua unica speranza contro Vharax, giace nascosta nel Tempio del Sole sigillato, accessibile solo tramite una chiave antica nascosta nella vicina Foresta Sussurrante. Gli alleati scarseggiano e i pericoli si nascondono in ogni ombra.`,
+      choices: [
+        { text: 'Parla con il vecchio saggio per avere indicazioni', action: () => goToSection('section2') },
+        { text: 'Visita il mercante del villaggio per acquistare provviste', action: () => goToSection('section3') },
+        { text: 'Esplora il villaggio per raccogliere informazioni o aiutare i paesani', action: () => goToSection('section4') },
+      ],
+    },
+    section2: {
+      title: 'Dopo aver parlato con il vecchio saggio',
+      narrative: `Lo sguardo del vecchio saggio ti trapassa mentre parla a bassa voce: "Il cammino verso la Lancia di Luce è pieno di pericoli. La Foresta Sussurrante custodisce la chiave antica, ma attento: la foresta inganna con sussurri di verità e menzogne. Potresti trovare alleati o nemici travestiti da amici. Cerca il mago della foresta di cui si vocifera e ascolta le parole degli alberi." Ti porge una mappa sbiadita, segnata con simboli criptici.`,
+      choices: [
+        { text: 'Dirigiti verso la Foresta Sussurrante per cercare la chiave', action: () => goToSection('section5') },
+        { text: 'Visita il mercante per prepararti al viaggio', action: () => goToSection('section3') },
+        { text: 'Esplora il villaggio per ulteriori informazioni o aiuti', action: () => goToSection('section4') },
+      ],
+    },
+    section3: {
+      title: 'Dopo aver visitato il mercante del villaggio',
+      narrative: `Il mercante ti osserva con occhi astuti mentre entri nel suo negozio angusto. "Cerchi qualcosa di speciale? Ho pozioni, armi e gingilli che potrebbero aiutarti nella tua missione," dice con un sorriso furbo. Puoi acquistare un oggetto magico minore — una pozione curativa o una bomba fumogena — oppure tentare di ottenere informazioni. Tuttavia, alcuni mercanti sono noti per le loro inganni. Devi decidere se fidarti o essere cauto.`,
+      choices: [
+        { text: 'Compra una pozione curativa (costa monete)', action: () => buyItem('healingPotion') },
+        { text: 'Compra una bomba fumogena (costa monete)', action: () => buyItem('smokeBomb') },
+        { text: 'Cerca di ottenere informazioni dal mercante', action: () => goToSection('section7') },
+        { text: 'Rifiuta e lascia il negozio', action: () => goToSection('section2') },
+      ],
+    },
+    section4: {
+      title: 'Esplorando il villaggio per informazioni o aiuti',
+      narrative: `Mentre vaghi per il villaggio, senti i paesani parlare di un vicino villaggio assalito dai goblin. Aiutarli potrebbe guadagnarti la loro fiducia e forse un prezioso alleato o oggetto. Ignorare la loro situazione potrebbe farti risparmiare tempo, ma chiuderebbe la porta a possibili aiuti futuri. Senti anche voci di un mercenario di passaggio che potrebbe unirsi alla tua missione — a un prezzo.`,
+      choices: [
+        { text: 'Cerca e assumi il mercenario', action: () => goToSection('section8') },
+        { text: 'Parti subito per aiutare il villaggio assediato', action: () => goToSection('section9') },
+        { text: 'Ignora le missioni secondarie e preparati per la Foresta Sussurrante', action: () => goToSection('section5') },
+      ],
+    },
+    section5: {
+      title: 'Entrando nella Foresta Sussurrante per trovare la chiave',
+      narrative: `Gli alberi della Foresta Sussurrante si ergono sopra di te, le loro foglie mormorano segreti mentre il vento passa. I sussurri si intrecciano tra verità e menzogne, rendendo difficile discernere la realtà. Addentrandoti, scorgi una figura incappucciata di verde — forse il mago della foresta di cui parlava il saggio. Improvvisamente, un branco di lupi magici emerge, occhi che brillano di luce innaturale, bloccando il tuo cammino. Il cuore ti batte forte; devi decidere come procedere.`,
+      choices: [
+        { text: 'Prova a parlare con il mago della foresta per chiedere aiuto', action: () => goToSection('section10') },
+        { text: 'Combatti i lupi magici', action: () => goToSection('section11') },
+        { text: 'Prova a sgattaiolare intorno ai lupi per trovare la chiave', action: () => goToSection('section12') },
+      ],
+    },
+    section6: {
+      title: 'Dopo aver acquistato oggetti magici minori',
+      narrative: `Hai acquistato l'oggetto scelto e lo hai riposto al sicuro. Gli occhi del mercante brillano in modo strano: "Usalo con saggezza. Non tutto è come sembra là fuori." Ti senti meglio preparato, ma ti chiedi se hai speso bene le monete. Il cammino avanti resta arduo, con la Foresta Sussurrante che ti attende.`,
+      choices: [
+        { text: 'Dirigiti verso la Foresta Sussurrante per trovare la chiave', action: () => goToSection('section5') },
+        { text: 'Esplora il villaggio per missioni secondarie o alleati', action: () => goToSection('section4') },
+      ],
+    },
+    section7: {
+      title: 'Dopo aver tentato di ottenere informazioni dal mercante',
+      narrative: `Il mercante si avvicina, sussurrando di falsi sentieri e trappole nascoste nel Tempio del Sole. "Attento ai puzzle — custodiscono gelosamente la Lancia. Inoltre, un falso alleato potrebbe cercare di ingannarti. Fidati solo di chi dimostra lealtà." Il suo avvertimento ti gelò il sangue, ma ottieni preziose informazioni sui pericoli futuri.`,
+      choices: [
+        { text: 'Dirigiti verso la Foresta Sussurrante per trovare la chiave', action: () => goToSection('section5') },
+        { text: 'Esplora il villaggio per missioni secondarie o alleati', action: () => goToSection('section4') },
+      ],
+    },
+    section8: {
+      title: 'Assumendo il mercenario',
+      narrative: `Trovi il mercenario che affila la sua lama ai margini del villaggio. "Mi unirò alla tua lotta — per abbastanza monete," dice bruscamente. Negozia i termini e accetta di accompagnarti, promettendo forza in battaglia e conoscenza delle Montagne Oscure. Questa alleanza potrebbe essere preziosa — se si dimostrerà affidabile.`,
+      choices: [
+        { text: 'Dirigiti verso la Foresta Sussurrante per trovare la chiave', action: () => goToSection('section5') },
+        { text: 'Esplora il villaggio per missioni secondarie (aiutare il villaggio)', action: () => goToSection('section9') },
+      ],
+    },
+    section9: {
+      title: 'Aiutando il villaggio sotto attacco dei goblin',
+      narrative: `Corri in aiuto del villaggio, affrontando goblin in un combattimento feroce. La tua spada brilla mentre respingi gli assalitori, salvando i paesani che ti offrono con gratitudine un amuleto magico come ringraziamento. L'amuleto vibra di energia protettiva. Senti il peso della responsabilità, ma anche la ricompensa della compassione.`,
+      choices: [
+        { text: 'Torna ad Ardent e preparati per il viaggio', action: () => goToSection('section4') },
+        { text: 'Dirigiti verso la Foresta Sussurrante per trovare la chiave', action: () => goToSection('section5') },
+      ],
+    },
+    section10: {
+      title: 'Parlando con il mago della foresta',
+      narrative: `Il mago della foresta ti osserva con occhi acuti. "La foresta mette alla prova chiunque entri. Posso aiutarti con i lupi e guidarti alla chiave, ma il mio aiuto ha un prezzo — aiutami a recuperare un reliquiario rubato da un druido oscuro che si aggira nei paraggi." Valuti se fidarti di questa figura enigmatica contro l'urgenza della tua missione.`,
+      choices: [
+        { text: 'Accetta di aiutare il mago della foresta a recuperare il reliquiario', action: () => goToSection('section13') },
+        { text: 'Rifiuta e tenta di trovare la chiave da solo', action: () => goToSection('section12') },
+        { text: 'Prova a combattere i lupi magici da solo', action: () => goToSection('section11') },
+      ],
+    },
+    section11: {
+      title: 'Combattendo i lupi magici',
+      narrative: () => {
+        let base = `Ti prepari e carichi contro i lupi magici ringhianti. La battaglia è feroce; i loro occhi luminosi e attacchi rapidi mettono alla prova la tua abilità e coraggio.`;
+        if (state.healingPotion || state.smokeBomb || state.mercenaryAlly || state.forestMageAlly) {
+          base += ` Grazie ai tuoi oggetti magici o agli alleati, hai un vantaggio. Dopo un combattimento estenuante, esci vittorioso.`;
+          return base;
+        } else {
+          base += ` Senza aiuti, la battaglia ti lascia ferito. Riesci a sconfiggerli, ma le ferite ti rallentano.`;
+          return base;
+        }
+      },
+      choices: () => {
+        if (state.healingPotion || state.smokeBomb || state.mercenaryAlly || state.forestMageAlly) {
+          return [
+            { text: 'Cerca la chiave nell\'area', action: () => goToSection('section14') },
+            { text: 'Cerca il mago della foresta', action: () => goToSection('section10') },
+          ];
+        } else {
+          return [
+            { text: 'Ritirati a Ardent per guarire', action: () => goToSection('section1R') },
+          ];
+        }
+      },
+    },
+    section12: {
+      title: 'Sgattaiolando intorno ai lupi per trovare la chiave',
+      narrative: () => {
+        let base = `Ti muovi silenziosamente, il cuore che batte mentre gli occhi dei lupi ti seguono. Usando ombre e silenzio, ti fai strada oltre il branco. In una radura trovi un antico altare con la chiave sopra. Ma mentre la tocchi, una trappola si attiva: dardi avvelenati scoccano dagli alberi!`;
+        if (state.healingPotion || state.protectiveEnchantment || state.magicalTalisman) {
+          base += ` Grazie ai tuoi oggetti magici, riesci a schivare o attenuare il veleno e sopravvivi alla trappola.`;
+          return base;
+        } else {
+          base += ` Non riesci a evitare i dardi e cadi ferito gravemente.`;
+          return base;
+        }
+      },
+      choices: () => {
+        if (state.healingPotion || state.protectiveEnchantment || state.magicalTalisman) {
+          return [
+            { text: 'Fuggi rapidamente dalla foresta con la chiave', action: () => goToSection('section15') },
+            { text: 'Cerca il mago della foresta per chiedere aiuto', action: () => goToSection('section10') },
+          ];
+        } else {
+          return [
+            { text: 'Chiedi aiuto mentre svieni', action: () => goToSection('section1F') },
+          ];
+        }
+      },
+    },
+    section13: {
+      title: 'Aiutando il mago della foresta a recuperare il reliquiario',
+      narrative: `Accetti di aiutare il mago della foresta. Insieme rintracciate il druido oscuro in una radura ombrosa. Dopo una tensione, recuperate il reliquiario, guadagnando la gratitudine e la lealtà del mago. In cambio, ti concede passaggio sicuro nella foresta, ti guida alla chiave antica e ti offre un incantesimo protettivo per il viaggio.`,
+      choices: [
+        { text: 'Esci dalla foresta e dirigiti al Tempio del Sole', action: () => goToSection('section16') },
+        { text: 'Riposa e preparati con gli alleati', action: () => goToSection('section17') },
+      ],
+    },
+    section14: {
+      title: 'Cercando nell\'area dopo aver sconfitto i lupi',
+      narrative: `Con i lupi sconfitti, perlustri la radura e trovi la chiave antica su un altare coperto di muschio. L'aria è carica di magia. Tenendo la chiave, senti aprirsi il cammino verso il Tempio del Sole, anche se molte insidie ti attendono.`,
+      choices: [
+        { text: 'Dirigiti al Tempio del Sole e prova ad aprirlo', action: () => goToSection('section16') },
+        { text: 'Esplora più a fondo la foresta per trovare oggetti magici minori', action: () => goToSection('section18') },
+      ],
+    },
+    section15: {
+      title: 'Fuggendo con la chiave dopo la trappola',
+      narrative: `Con la chiave stretta in mano, corri attraverso la foresta, schivando altre trappole e gli ululati lontani dei lupi. Le ferite pulsano, ma la tua determinazione si rafforza. Il villaggio di Ardent e il Tempio sigillato ti attendono. Le prove più dure devono ancora venire.`,
+      choices: [
+        { text: 'Torna al villaggio di Ardent per riposare e prepararti', action: () => goToSection('section17') },
+        { text: 'Procedi direttamente al Tempio del Sole', action: () => goToSection('section16') },
+      ],
+    },
+    section16: {
+      title: 'Al Tempio del Sole con la chiave',
+      narrative: `Le grandi porte del Tempio del Sole si ergono davanti a te, antichi glifi che brillano debolmente mentre inserisci la chiave. Le porte si aprono cigolando, rivelando corridoi oscuri pieni di trappole e enigmi antichi progettati per mettere alla prova ingegno e coraggio. La Lancia di Luce si trova da qualche parte oltre, ma il tempio custodisce gelosamente i suoi segreti.`,
+      choices: [
+        { text: 'Prova a risolvere gli enigmi antichi per avanzare', action: () => goToSection('section19') },
+        { text: 'Esplora con cautela per evitare le trappole', action: () => goToSection('section20') },
+        { text: 'Chiama gli alleati per assistenza', action: () => goToSection('section21') },
+      ],
+    },
+    section17: {
+      title: 'Riposo e preparazione nel villaggio o al limite della foresta',
+      narrative: `Prendi tempo per guarire e prepararti. Gli alleati condividono storie e conoscenze, affili la spada e prepari gli oggetti magici. Il peso della missione si fa più leggero con compagni fidati al tuo fianco. Presto affronterai le sfide del tempio e la furia del drago.`,
+      choices: [
+        { text: 'Procedi al Tempio del Sole', action: () => goToSection('section16') },
+        { text: 'Esplora il villaggio per preparativi dell\'ultimo minuto', action: () => goToSection('section4') },
+      ],
+    },
+    section18: {
+      title: 'Esplorando più a fondo la foresta per oggetti magici minori',
+      narrative: `Ti addentri nel cuore della foresta, scoprendo una radura nascosta dove antichi rune brillano debolmente. Tra le radici trovi un talismano magico minore che promette protezione da una trappola mortale. La foresta sembra osservarti, approvando il tuo coraggio.`,
+      choices: [
+        { text: 'Torna al Tempio del Sole', action: () => goToSection('section16') },
+        { text: 'Riposa vicino al limite della foresta', action: () => goToSection('section17') },
+      ],
+    },
+    section19: {
+      title: 'Risolvendo gli enigmi antichi',
+      narrative: `Gli enigmi del tempio richiedono mente acuta e pazienza. Manipoli antichi meccanismi, allineando simboli di sole e luce. Ogni successo apre un'altra porta, ma un errore attiva trappole. I tuoi oggetti magici e alleati sono preziosi. Dopo momenti tesi, una camera rivela la Lancia di Luce, il suo bagliore radioso riempie la stanza.`,
+      choices: [
+        { text: 'Prendi la Lancia di Luce e preparati ad affrontare il drago', action: () => goToSection('section22') },
+        { text: 'Cerca altri oggetti o indizi nel tempio', action: () => goToSection('section20') },
+      ],
+    },
+    section20: {
+      title: 'Esplorando con cautela per evitare trappole',
+      narrative: `Ti muovi con attenzione nei corridoi del tempio, individuando e disinnescando trappole con occhio attento. Trovi iscrizioni che raccontano la storia del tempio e le debolezze del drago. La Lancia di Luce ti aspetta, ma il tempo stringe.`,
+      choices: [
+        { text: 'Prova a risolvere gli enigmi per raggiungere la Lancia di Luce', action: () => goToSection('section19') },
+        { text: 'Cerca indizi sulla debolezza del drago', action: () => goToSection('section21') },
+      ],
+    },
+    section21: {
+      title: 'Chiamando gli alleati per assistenza',
+      narrative: `I tuoi alleati aiutano i progressi; il mercenario disinnesca trappole con abilità, e il mago della foresta percepisce pericoli magici prima che colpiscano. Insieme superate le sfide del tempio più rapidamente, costruendo fiducia. La Lancia di Luce è a portata di mano.`,
+      choices: [
+        { text: 'Risolvete insieme gli enigmi per ottenere la Lancia', action: () => goToSection('section19') },
+        { text: 'Cerca informazioni strategiche sul drago', action: () => goToSection('section20') },
+      ],
+    },
+    section22: {
+      title: 'Con la Lancia di Luce, preparandoti ad affrontare il drago',
+      narrative: `Con la Lancia di Luce in mano, lasci l'ombra del tempio e fissi le Montagne Oscure. Vharax ti attende, un'ombra colossale contro cieli tempestosi. I tuoi alleati sono pronti, e il cuore batte tra paura e determinazione. Il destino di Eldoria riposa su questo ultimo confronto.`,
+      choices: [
+        { text: 'Sali le montagne per affrontare Vharax', action: () => goToSection('section23') },
+        { text: 'Riposa e preparati prima della battaglia', action: () => goToSection('section17') },
+      ],
+    },
+    section23: {
+      title: 'Battaglia finale con il drago Vharax',
+      narrative: () => {
+        let base = `La caverna trema mentre Vharax emerge, le scaglie che brillano di antico potere. La battaglia è feroce e lunga, il respiro infuocato e gli artigli mortali. Con la Lancia di Luce colpisci vero, trafiggendo il cuore della bestia. Gli alleati combattono al tuo fianco e, con coraggio e abilità, la minaccia antica di Eldoria cade. La vittoria è tua, ma il prezzo pesa sul cuore.`;
+        if (state.mercenaryAlly && state.forestMageAlly) {
+          base += ` I tuoi alleati hanno giocato un ruolo cruciale, dimostrando il valore della fiducia e della collaborazione.`;
+        } else if (state.mercenaryAlly || state.forestMageAlly) {
+          base += ` Un alleato fedele ti ha sostenuto nella battaglia, rendendo la vittoria possibile.`;
+        } else {
+          base += ` Hai combattuto da solo, dimostrando un coraggio straordinario.`;
+        }
+        return base;
+      },
+      choices: [
+        { text: 'Celebra la vittoria e torna ad Ardent', action: () => goToSection('section24') },
+      ],
+    },
+    section24: {
+      title: 'Vittoria e restaurazione di Eldoria',
+      narrative: `Con Vharax sconfitto, la pace ritorna a Eldoria. I paesani gioiscono mentre torni ad Ardent, acclamato come eroe. Il vecchio saggio sorride con saggezza: "L'equilibrio è stato ristabilito, grazie al tuo coraggio e alle tue scelte." Il tuo viaggio finisce qui, ma le storie delle tue gesta riecheggeranno nei secoli.`,
+      choices: [
+        { text: 'Gioco terminato. Premi per ricominciare.', action: () => restartGame() },
+      ],
+    },
+    section1F: {
+      title: 'Sconfitta: incapacità nella Foresta Sussurrante',
+      narrative: `I dardi avvelenati colpiscono il bersaglio. La tua vista si annebbia e la debolezza ti sopraffà. I sussurri della foresta svaniscono nel silenzio mentre crolli sotto gli antichi alberi. La missione per salvare Eldoria finisce qui, vittima tragica delle ombre che cercavi di conquistare.`,
+      choices: [
+        { text: 'Gioco terminato. Premi per ricominciare.', action: () => restartGame() },
+      ],
+    },
+    section1R: {
+      title: 'Sconfitta: ritirata ferito senza la chiave',
+      narrative: `Ferito e stanco, ti ritiri ad Ardent, la chiave persa nelle profondità della foresta. Senza la chiave, il tempio resta sigillato e l'ombra di Vharax si fa sempre più oscura. La speranza di Eldoria si affievolisce con il fallimento della tua missione.`,
+      choices: [
+        { text: 'Gioco terminato. Premi per ricominciare.', action: () => restartGame() },
+      ],
+    },
+  };
+
+  // Helper to go to a section and update state accordingly
+  function goToSection(id) {
+    state.currentSection = id;
+    // Update state based on section transitions and logic
+    switch(id) {
+      case 'section2':
+        // Talking to old sage: gain map and knowledge
+        if (!state.map) {
+          state.map = true;
+          if (!state.knowledge.includes('knows-key-location')) state.knowledge.push('knows-key-location');
+          if (!state.inventory.includes('faded-map')) state.inventory.push('faded-map');
+        }
+        break;
+      case 'section3':
+        // Visiting merchant: no immediate state change
+        break;
+      case 'section4':
+        // Exploring village: no immediate state change
+        break;
+      case 'section5':
+        // Entering Whispering Forest: player moves location, wolves active
+        state.location = 'whispering-forest';
+        state.wolvesActive = true;
+        state.wolvesDefeated = false;
+        break;
+      case 'section6':
+        // After buying items: no location change
+        break;
+      case 'section7':
+        // After info from merchant: gain knowledge and merchant deceptive
+        if (!state.knowledge.includes('knows-temple-traps')) state.knowledge.push('knows-temple-traps');
+        if (!state.knowledge.includes('knows-false-allies-warning')) state.knowledge.push('knows-false-allies-warning');
+        state.merchantTrustworthy = false;
+        break;
+      case 'section8':
+        // Hiring mercenary: add ally, spend coins
+        if (!state.mercenaryAlly) {
+          state.mercenaryAlly = true;
+          state.allies.push('mercenary');
+          state.coins = false;
+          // Remove coins from inventory if present
+          const idx = state.inventory.indexOf('pouch-of-coins');
+          if (idx !== -1) state.inventory.splice(idx,1);
+        }
+        break;
+      case 'section9':
+        // Helping hamlet: gain amulet, mark helped, move location
+        if (!state.hamletHelped) {
+          state.hamletHelped = true;
+          state.magicalAmulet = true;
+          if (!state.inventory.includes('magical-amulet')) state.inventory.push('magical-amulet');
+        }
+        state.location = 'hamlet';
+        break;
+      case 'section10':
+        // Talking to forest mage: no immediate state change
+        break;
+      case 'section11':
+        // Fighting wolves: resolve victory or defeat
+        if (state.healingPotion || state.smokeBomb || state.mercenaryAlly || state.forestMageAlly) {
+          state.wolvesDefeated = true;
+          state.wolvesActive = false;
+        } else {
+          // Defeat: wounded and retreat
+          state.wounded = true;
+          state.wolvesDefeated = true;
+          state.wolvesActive = false;
+        }
+        break;
+      case 'section12':
+        // Sneaking around wolves: trap triggered or fail trap
+        if (state.healingPotion || state.protectiveEnchantment || state.magicalTalisman) {
+          state.trapTriggered = true;
+          state.wolvesDefeated = true;
+          state.wolvesActive = false;
+          state.hasAncientKey = true;
+          if (!state.inventory.includes('ancient-key')) state.inventory.push('ancient-key');
+        } else {
+          // Fail trap: incapacitated
+          state.playerIncapacitated = true;
+        }
+        break;
+      case 'section13':
+        // Help forest mage: gain ally, key, protective enchantment
+        if (!state.forestMageAlly) {
+          state.forestMageAlly = true;
+          state.allies.push('forest-mage');
+        }
+        state.hasAncientKey = true;
+        if (!state.inventory.includes('ancient-key')) state.inventory.push('ancient-key');
+        state.protectiveEnchantment = true;
+        break;
+      case 'section14':
+        // After defeating wolves, find key and trap active
+        state.hasAncientKey = true;
+        if (!state.inventory.includes('ancient-key')) state.inventory.push('ancient-key');
+        state.trapActive = true;
+        break;
+      case 'section15':
+        // Escape with key, injured
+        state.injured = true;
+        state.location = 'forest-edge';
+        break;
+      case 'section16':
+        // At temple entrance, unseal temple, traps active
+        state.location = 'temple-of-the-sun-entrance';
+        state.templeSealed = false;
+        state.templeUnsealed = true;
+        state.templeTrapsActive = true;
+        break;
+      case 'section17':
+        // Rest and prepare: health restored
+        state.wounded = false;
+        state.injured = false;
+        state.healthRestored = true;
+        break;
+      case 'section18':
+        // Explore deeper forest: gain talisman
+        state.magicalTalisman = true;
+        if (!state.inventory.includes('magical-talisman')) state.inventory.push('magical-talisman');
+        state.location = 'deeper-whispering-forest';
+        break;
+      case 'section19':
+        // Solve puzzles: traps disabled, gain spear
+        state.templeTrapsActive = false;
+        state.hasSpearOfLight = true;
+        if (!state.inventory.includes('spear-of-light')) state.inventory.push('spear-of-light');
+        break;
+      case 'section20':
+        // Explore cautiously: traps remain active
+        state.templeTrapsActive = true;
+        break;
+      case 'section21':
+        // Call allies: traps disabled if allies present
+        if (state.mercenaryAlly || state.forestMageAlly) {
+          state.templeTrapsActive = false;
+        }
+        break;
+      case 'section22':
+        // Prepare to face dragon: location base of mountains, dragon active
+        state.location = 'base-of-dark-mountains';
+        state.dragonActive = true;
+        break;
+      case 'section23':
+        // Final battle: dragon defeated
+        state.dragonActive = false;
+        state.dragonDefeated = true;
+        break;
+      case 'section24':
+        // Victory: quest complete, player at village
+        state.questComplete = true;
+        state.location = 'village-of-ardent';
+        break;
+      case 'section1F':
+        // Failure incapacitated
+        state.playerIncapacitated = true;
+        break;
+      case 'section1R':
+        // Failure retreat wounded without key
+        state.wounded = true;
+        state.hasAncientKey = false;
+        state.location = 'village-of-ardent';
+        break;
+    }
+    renderCurrentSection();
+  }
+
+  // Buy item helper
+  function buyItem(item) {
+    if (!state.coins) {
+      alert('Non hai abbastanza monete per acquistare questo oggetto.');
+      return;
+    }
+    if (item === 'healingPotion') {
+      state.healingPotion = true;
+      if (!state.inventory.includes('healing-potion')) state.inventory.push('healing-potion');
+    } else if (item === 'smokeBomb') {
+      state.smokeBomb = true;
+      if (!state.inventory.includes('smoke-bomb')) state.inventory.push('smoke-bomb');
+    }
+    state.coins = false;
+    state.merchantTrustworthy = true;
+    goToSection('section6');
+  }
+
+  // Restart game resets state and shows start page
+  function restartGame() {
+    state = {
+      location: 'village-of-ardent',
+      inventory: ['common-sword', 'pouch-of-coins'],
+      allies: [],
+      knowledge: [],
+      magicalItems: [],
+      coins: true,
+      wounded: false,
+      injured: false,
+      merchantTrustworthy: null,
+      wolvesActive: false,
+      wolvesDefeated: false,
+      trapActive: false,
+      trapTriggered: false,
+      templeSealed: true,
+      templeUnsealed: false,
+      templeTrapsActive: false,
+      hasAncientKey: false,
+      hasSpearOfLight: false,
+      hamletHelped: false,
+      dragonActive: true,
+      dragonDefeated: false,
+      questComplete: false,
+      playerIncapacitated: false,
+      protectiveEnchantment: false,
+      magicalAmulet: false,
+      magicalTalisman: false,
+      healingPotion: false,
+      smokeBomb: false,
+      forestMageAlly: false,
+      mercenaryAlly: false,
+      map: false,
+      currentSection: 'start',
+    };
+    renderCurrentSection();
+  }
+
+  // Render current section content and choices
+  async function renderCurrentSection() {
+    const sec = sections[state.currentSection];
+    if (!sec) {
+      container.innerHTML = `<h2>Errore: sezione non trovata.</h2>`;
+      return;
+    }
+    // Narrative text can be string or function returning string
+    const narrativeText = typeof sec.narrative === 'function' ? sec.narrative() : sec.narrative;
+
+    // Compose inventory and allies status text
+    const invText = inventoryText();
+    const allyText = alliesText();
+
+    // Compose choices buttons
+    let choices = typeof sec.choices === 'function' ? sec.choices() : sec.choices;
+    if (!choices || choices.length === 0) {
+      choices = [];
+    }
+
+    // Build HTML content
+    let html = `<h1>L'Ombra del Drago</h1>`;
+    html += `<h2>${sec.title}</h2>`;
+    html += `<p>${narrativeText}</p>`;
+    html += `<p><strong>Inventario:</strong> ${invText}</p>`;
+    html += `<p><strong>Alleati:</strong> ${allyText}</p>`;
+    if (state.wounded) {
+      html += `<p style="color:#b45309;"><strong>Sei ferito e la tua efficacia è ridotta.</strong></p>`;
+    }
+    if (state.injured) {
+      html += `<p style="color:#b45309;"><strong>Hai subito una ferita minore.</strong></p>`;
+    }
+    if (state.playerIncapacitated) {
+      html += `<p style="color:#991b1b;"><strong>Sei incapacitato e non puoi proseguire.</strong></p>`;
+    }
+    if (choices.length > 0) {
+      html += `<div id="choices">`;
+      choices.forEach((choice, i) => {
+        html += `<button class="choice-btn" data-choice="${i}" aria-label="Scelta: ${choice.text}">${choice.text}</button>`;
+      });
+      html += `</div>`;
+    } else {
+      // No choices: show restart button
+      html += `<button id="restart-btn" aria-label="Ricomincia il gioco">Ricomincia</button>`;
+    }
+
+    await fadeContent(html);
+
+    // Attach event listeners for choices
+    if (choices.length > 0) {
+      const buttons = container.querySelectorAll('button.choice-btn');
+      buttons.forEach(btn => {
+        btn.addEventListener('click', e => {
+          const idx = parseInt(e.currentTarget.getAttribute('data-choice'), 10);
+          if (choices[idx] && typeof choices[idx].action === 'function') {
+            choices[idx].action();
+          }
+        });
+      });
+    } else {
+      const restartBtn = container.querySelector('#restart-btn');
+      if (restartBtn) {
+        restartBtn.addEventListener('click', () => restartGame());
+      }
+    }
+  }
+
+  // Render start page with story summary and start button
+  async function renderStartPage() {
+    const summary = `
+      In Eldoria, un antico drago chiamato Vharax è tornato dopo secoli di sonno, portando distruzione.  
+      Sei l'eroe solitario destinato a recuperare la Lancia di Luce, l'unica arma capace di sconfiggere il drago, nascosta nel Tempio del Sole sigillato.  
+      Dovrai affrontare foreste ingannevoli, trappole antiche, alleati incerti e pericoli nascosti.  
+      La tua avventura inizia nel villaggio di Ardent, con solo una spada comune e un sacco di monete.  
+      Riuscirai a salvare Eldoria dall'ombra del drago?  
+    `;
+    const html = `
+      <h1>L'Ombra del Drago</h1>
+      <p id="summary">${summary}</p>
+      <button id="start-btn" aria-label="Inizia il gioco">Inizia il gioco</button>
+    `;
+    await fadeContent(html);
+    const startBtn = container.querySelector('#start-btn');
+    startBtn.addEventListener('click', () => {
+      goToSection('start');
+    });
+  }
+
+  // Initialize game
+  function init() {
+    renderStartPage();
+  }
+
+  // Start
+  init();
+})();
+</script>
+</body>
+</html>

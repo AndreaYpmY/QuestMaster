@@ -1,0 +1,45 @@
+Lore Document – "The Shadow of the Dragon"
+
+Quest Description: In the lands of Eldoria, an ancient dragon named Vharax has returned after centuries of slumber, spreading destruction across nearby villages. The kingdom, now in decline, no longer has an army strong enough to face him. Only a lone hero – the player – can embark on a perilous adventure to retrieve the **Spear of Light**, the only weapon capable of harming the dragon, which is kept in the ruins of the Temple of the Sun.
+
+#World Background
+Eldoria is a medieval fantasy world, characterized by ancient ruins, isolated villages, and magical creatures. The dragon Vharax is a semi-divine being, survivor of ancient wars between gods and men.
+#Key locations:
+- Village of Ardent: starting point, safe place for supplies.
+- Whispering Forest: a living forest where the trees whisper truths and lies.
+- Temple of the Sun: sacred ruins full of traps and ancient puzzles.
+- Dark Mountains: final lair of the dragon.
+#Narrative Hooks
+- An old sage in the village guides the hero with cryptic clues.
+- The player can obtain temporary allies (a mercenary or a forest mage).
+- Minor magical items can be collected to aid the journey.
+#Example of Actions
+- Explore forest (may lead to finding the key or being attacked by magic wolves).
+- Talk to merchant (may provide hints or deceptive traps).
+- Open temple (requires the key).
+- Fight the dragon (only if you possess the Spear of Light).
+
+Initial State:
+- The player is in the village of Ardent, without any powerful weapons.
+- The dragon Vharax hides in the Dark Mountains.
+- The Temple of the Sun is sealed and can only be accessed through an ancient key hidden in the Whispering Forest.
+- The player has few resources (a common sword and a pouch of coins).
+
+Goal:
+- Retrieve the Spear of Light and defeat the dragon Vharax.
+
+Possible Obstacles:
+- Wild creatures in the forest.
+- Ancient traps in the Temple of the Sun.
+- Deceptive merchants and false paths (e.g., allying with a false character).
+- Moral choices that affect NPC trust (e.g., helping or ignoring a village under attack).
+
+
+Branching Factor
+- Minimum: 2 actions per narrative state.
+- Maximum: 4 actions per narrative state.
+
+
+Depth Constraints
+- Minimum: 8 steps to reach the goal.
+- Maximum: 15 steps, including side quests or false leads.

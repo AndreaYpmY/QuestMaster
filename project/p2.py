@@ -1,29 +1,23 @@
 import subprocess
 import os
-
 from dotenv import load_dotenv
 load_dotenv()
-
 from langchain_openai import ChatOpenAI
-
 from typing import List
 from langchain_ollama import ChatOllama
 from langchain_core.prompts import ChatPromptTemplate, MessagesPlaceholder
-
 from langgraph.graph import StateGraph, START, END
 from typing_extensions import TypedDict
 from pydantic import BaseModel
 
 # ----- VARIABILI -----
-MODEL="llama3.2" #gpt-4o-mini o llama3.2
+MODEL="llama3.2" #gpt-4.1-mini o llama3.2
 TEMPERATURE_STORY=0.7
 TEMPERATURE_PDDL=0.05
 TEMPERATURE_PDDL_DOMAIN=0.05
 TEMPERATURE_PDDL_PROBLEM=0.05
 TEMPERATURE_PDDL_REFLECTION=0.05
 TEMPERATURE_HTML=0.1
-
-TOP_P = 1.0
 
 FASTDOWNWARD_PATH = "../downward"  
 LORE_DOCUMENT_PATH = "lore_document.txt"  
@@ -405,9 +399,6 @@ def GenerateStory_node(state: QuestMasterState):
     if response == "IMPOSSIBLE" or "IMPOSSIBLE" in response:
         return {"is_valid_story": False}
     else:
-        story_file = open("storia.txt", "w")
-        story_file.write(response)
-        story_file.close()
         return{"story": response, "is_valid_story": True}
 
 
@@ -918,13 +909,14 @@ def GenerateHTML_node(state: QuestMasterState):
     template.write(response)
     template.close()
 
-    #os.remove(PLAN_PATH)
+    os.remove(PLAN_PATH)
     print("HTML generato: FINE \n")
     return {"HTML": response}
 
 
 # --- Costruzione del Grafo ---
 builder = StateGraph(QuestMasterState)
+
 
 # --- Aggiunta dei nodi al grafo ---
 # 1. Carica il documento di lore
@@ -973,6 +965,7 @@ builder.add_edge("human", "fix")
 builder.add_edge("fix", "validate_pddl")
 
 builder.add_edge("generate_html", END)
+
 
 
 # --- Compila il grafo ---
