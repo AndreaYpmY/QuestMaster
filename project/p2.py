@@ -1,7 +1,5 @@
 import subprocess
-import tempfile
 import os
-import requests
 
 from dotenv import load_dotenv
 load_dotenv()
@@ -12,7 +10,7 @@ from typing import List
 from langchain_ollama import ChatOllama
 from langchain_core.prompts import ChatPromptTemplate, MessagesPlaceholder
 
-from langgraph.graph import (StateGraph, START, END)
+from langgraph.graph import StateGraph, START, END
 from typing_extensions import TypedDict
 from pydantic import BaseModel
 
@@ -22,7 +20,7 @@ TEMPERATURE_STORY=0.7
 TEMPERATURE_PDDL=0.05
 TEMPERATURE_PDDL_DOMAIN=0.05
 TEMPERATURE_PDDL_PROBLEM=0.05
-TEMPERATURE_PDDL_REFLECTION=0.25
+TEMPERATURE_PDDL_REFLECTION=0.05
 TEMPERATURE_HTML=0.1
 
 TOP_P = 1.0
@@ -39,7 +37,7 @@ OPENAI_API_KEY = os.getenv("OPENAI_API_KEY")
 
 
 # ESEMPI DI PDDL
-esempi = [
+exemples = [
     {"description": "Linehaul refers to the transportation of goods or freight between two major hubs or terminals, typically over long distances. It is a crucial part of the logistics and supply chain process, particularly in trucking, air cargo, rail, and maritime shipping.",
      "PDDL": {"domain": f"""(define (domain linehaul_without_costs)
     (:requirements :strips :typing)
@@ -263,22 +261,40 @@ esempi = [
 
 
 # Conversione nel formato richiesto per langchain
-messaggi_esempi_problem = [
+exemple_problem = [
     [
         ("user", ex["description"]),
         ("assistant", str(ex["PDDL"]))
     ]
-    for ex in esempi
+    for ex in exemples
 ]
 
-messaggi_esempi_domain = [
+exemple_domain = [
     [
         ("user", ex["description"]),
         ("assistant", str(ex["PDDL"]))
     ]
-    for ex in esempi
+    for ex in exemples
 ]
 
+class IssueDetail(BaseModel):
+    issue: str
+    fix: str
+    priority: str
+
+class LoreIssueDetail(BaseModel):
+    problem: str
+    suggestion: str
+
+class PDDLIssue(BaseModel):
+    domain_issue: List[IssueDetail]
+    problem_issue: List[IssueDetail]
+
+class PDDLfix(BaseModel):
+    pddl_issue: PDDLIssue
+
+class LoreIssue(BaseModel):
+    lore_problem: List[LoreIssueDetail]
 
 
 # Definizione dello stato del QuestMaster
@@ -302,6 +318,8 @@ def get_model(temp: float, top_p: float | None = None):
 
     try:
         if MODEL == "gpt-4.1-mini":
+            if OPENAI_API_KEY == "":
+                raise Exception("OPENAI_API_KEY non presente nel file .env")
             kwargs = {"model": MODEL, "temperature": temp, "openai_api_key": OPENAI_API_KEY}
             if top_p is not None:
                 kwargs["top_p"] = top_p
@@ -314,7 +332,7 @@ def get_model(temp: float, top_p: float | None = None):
 
 
 # 1. Carica il documento di lore
-def CaricaLore_node(state: QuestMasterState):
+def Lore_node(state: QuestMasterState):
     with open(state["file_path"], 'r') as f:
             print("1# Lore document aperto con successo \n")
             content = f.read()
@@ -322,7 +340,9 @@ def CaricaLore_node(state: QuestMasterState):
 
 
 # 2. Genera la storia interattiva
-def GeneraStoria_node(state: QuestMasterState):
+def GenerateStory_node(state: QuestMasterState):
+    print("2# LLM invocato per la creazione della storia \n")
+
     llm = get_model(TEMPERATURE_STORY)
 
     prompt = ChatPromptTemplate.from_messages([("system", 
@@ -373,12 +393,11 @@ def GeneraStoria_node(state: QuestMasterState):
             4. Actions have clear preconditions and effects
             5. All obstacles from lore are incorporated
             6. Story is complete with all paths written
-        If is impossible to create the story with the given lore document and respect the constraints, returns ONLY the word "IMPOSSIBLE".
+        If one of this point is not valid and for this reason is impossible to create the story with the given lore document and respect all the constraints, returns ONLY the word "IMPOSSIBLE".
 
         Generate the COMPLETE story structure now and do not insert the validation checklist or summary at the end."""),
     ("user", "Lore Document: {lore_text}\n Generate a complete structured interactive story respecting ALL constraints.")])
     
-    print("2# LLM invocato per la creazione della storia \n")
     formatted_prompt = prompt.invoke({"lore_text": state["lore"]})
     response_llm = llm.invoke(formatted_prompt)
     response = response_llm.content
@@ -392,8 +411,10 @@ def GeneraStoria_node(state: QuestMasterState):
         return{"story": response, "is_valid_story": True}
 
 
-def modifica_lore_node(state: QuestMasterState):
-    llm= get_model(TEMPERATURE_PDDL_REFLECTION)
+def ModifyLore_node(state: QuestMasterState):
+    print("# LLM per riflettere sul lore e correggerlo \n")
+
+    llm= get_model(TEMPERATURE_PDDL_REFLECTION).with_structured_output(LoreIssue)
 
     prompt = ChatPromptTemplate.from_messages([("system", f"""You are an expert narrative engine that creates structured interactive storie and logical reasoning agent.
             Analyze the lore document which you can found at the end, and reflect on these file to detect problems.
@@ -405,36 +426,29 @@ def modifica_lore_node(state: QuestMasterState):
                 ✓ All obstacles from lore are incorporated
                 ✓ Story is complete with all paths written
                                                 
-            Provide a structured report with a bullet list of problems followed by the possible fixes and separate each output with "---"
-            Return ONLY the bullet list of problems followed by the possible fixes and separate each output with "---", no other text.
-            Return at max the 3 most important problems.
+            Provide a structured report with a bullet list of problems followed by the possible fix's suggestions
+            Return at max the 3 most importants problems.
                                                 
             Example of expected output:
-                    - PROBLEM: "Impossible to respect the depth constraints"; SUGGESTION: "Change the min depth constraint to x and the max depth constraint to y"; ---
-                    - PROBLEM: "Impossible to respect the branching factor"; SUGGESTION: "Change the min branching factor to x and the max branching factor to y"; ---
-                    - PROBLEM: "Goal state is not reachable within depth constraints"; SUGGESTION: "Add 1 to the max depth constraint"; ---"""),
+                    - PROBLEM: "Impossible to respect the depth constraints" SUGGESTION: "Change the min depth constraint to x and the max depth constraint to y"
+                    - PROBLEM: "Impossible to respect the branching factor" SUGGESTION: "Change the min branching factor to x and the max branching factor to y"
+                    - PROBLEM: "Goal state is not reachable within depth constraints"; SUGGESTION: "Add 1 to the max depth constraint" """),
             
             
             ("user", "Please analyze the following lore document and suggest changes to fix the problems and permit to create a narrative story. \n Lore document: {lore}")])
     
     formatted_prompt = prompt.invoke({"lore": state["lore"]})
     
-    print("# LLM per riflettere sul lore e correggerlo \n")
-    response_llm = llm.invoke(formatted_prompt)
-    response = response_llm.content.strip()
+    response = llm.invoke(formatted_prompt)
 
-    try:
-        suggestion = response.split("---")
-        del suggestion[-1]
-    except Exception as e:
-        return f"4# Errore nella ricezione dei suggerimenti. Separatore non corretti: {e}"
-    
     accepted_suggestion = []
-    for s in suggestion:
-        print("> " + s + "\n")
-        u_input = input("Vuoi accettare questa modifica? (y/n): ")
+    print("Il Lore non permette una creazione di una storia. Possibili cambi da poter effettuare \n")
+    for i, item in enumerate(response.lore_problem, 1):
+        print(f"{i}. Issue: {item.problem} \n Fix: {item.suggestion}")
+        u_input = input("> Vuoi accettare questa modifica? (y/n): ")
         if u_input == "y":
-            accepted_suggestion.append(s)
+            accepted_suggestion.append(item)
+
     
     prompt2 = ChatPromptTemplate.from_messages([("system", f"""You are an expert in create lore document to creare narrative stories.
             Analyze the lore document which you can found at the end and modify it by the suggestions.
@@ -458,8 +472,9 @@ def modifica_lore_node(state: QuestMasterState):
 
 
 # 3A. Genera il PDDL domain
-def GeneraPDDLdomain_node(state: QuestMasterState):
-    
+def GeneratePDDLdomain_node(state: QuestMasterState):
+    print("3A# LLM invocato per generare il PDDL domain\n")
+
     llm = get_model(TEMPERATURE_PDDL_DOMAIN)
     
     prompt = ChatPromptTemplate.from_messages([("system", f"""You are an expert PDDL domain generator for the QuestMaster interactive story system.
@@ -511,7 +526,7 @@ def GeneraPDDLdomain_node(state: QuestMasterState):
                     )
                 )
                                                 
-                To prevent "Undefined object" errors in the problem file:
+                 To prevent "Undefined object" errors in the problem file:
                     - Declare all objects in :objects with their types, matching the narrative.
                     - Ensure object names in the problem file match the kebab-case identifiers in the domain.
                     - Verify that all objects referenced in :init are declared in :objects.
@@ -522,11 +537,8 @@ def GeneraPDDLdomain_node(state: QuestMasterState):
                 MessagesPlaceholder(variable_name="PDDL examples"),
                 ("user", "Given the interactive story, generate the corresponding PDDL domain file with detailed comments. Check the validation of the output \n Story: {story_text}. \n Lore: {lore}. ")])
         
-    formatted_prompt = prompt.invoke({"story_text": state["story"], "PDDL examples": [msg for esempi in messaggi_esempi_domain for msg in esempi], "lore": state["lore"]})
+    formatted_prompt = prompt.invoke({"story_text": state["story"], "PDDL examples": [msg for example in exemple_domain for msg in example], "lore": state["lore"]})
     
-
-    
-    print("3A# LLM per generare il PDDL domain invocato \n")
     response_llm = llm.invoke(formatted_prompt)
     domain_pddl = response_llm.content.strip()
 
@@ -538,7 +550,8 @@ def GeneraPDDLdomain_node(state: QuestMasterState):
     
 
 # 3B. Genera il PDDL problem
-def GeneraPDDLproblem_node(state: QuestMasterState):
+def GeneratePDDLproblem_node(state: QuestMasterState):
+    print("3B# LLM invocato per generare il PDDL problem \n")
     
     llm= get_model(TEMPERATURE_PDDL_PROBLEM)
 
@@ -563,7 +576,9 @@ def GeneraPDDLproblem_node(state: QuestMasterState):
                 14. Do not include predicates in init or goal that refer to undefined constants or omit required parameters.
                 15. Each line must have a comment explaining what it does
                 16. Ensure consistency with the provided domain file
-
+                                                
+            TO PREVENT UNDEFINED OBJECTS: First, create a table of all objects (with types) and all predicates that will appear in init and goal. Validate them against the domain. Only after confirming validity, generate the final PDDL problem file.
+            
             STEPS TO FOLLOW:
                 1. Extract all objects and assign them types based on the domain and narrative, EXCLUDING any constants already declared in the domain as fixed constants.
                 2. Instantiate the initial state from the lore using only valid predicates, including object locations.
@@ -589,16 +604,23 @@ def GeneraPDDLproblem_node(state: QuestMasterState):
                         )
                     )
                 )
+                                                
+                                
+                                                
+            Before finalizing the problem file, verify that:
+                1. All constants used in :init and :goal are declared in :objects.
+                2. All objects in :objects use only types defined in the domain.
+                3. No extra objects or predicates not in the domain are added.
+                4. For every predicate used in :init and :goal, check that it exactly matches a predicate from the domain file, including parameter count and types.
             
             DO A DOUBLE CHECK of the output for syntax errors and for be sure the PDDL problem file MUST be solvable by a classical planner as Fast Downward given the domain.
+            Ensure the final PDDL is valid, with matching parentheses, and can be parsed by a classical planner WITHOUT UNDEFINED OBJECT errors.
             Return ONLY the PDDL problem code, which begins with "(define (problem...", no other text at begin or end of the PDDL file."""), 
             MessagesPlaceholder(variable_name="PDDL examples"),
             ("user", "Given the lore, the interactive story and the corrisponding PDDL domain file, generate the corresponding PDDL problem file, with detailed comments, in order to be solvable by a classical planner with the domain PDLL. \n Domain PDDL: {domain_pddl}. \n Story: {story_text}. \n Lore: {lore}")])
     
-    formatted_prompt = prompt.invoke({"domain_pddl": state["domain_pddl"], "story_text": state["story"], "PDDL examples": [msg for esempi in messaggi_esempi_problem for msg in esempi], "lore": state["lore"]})
+    formatted_prompt = prompt.invoke({"domain_pddl": state["domain_pddl"], "story_text": state["story"], "PDDL examples": [msg for example in exemple_problem for msg in example], "lore": state["lore"]})
     
-
-    print("3B# LLM per generare il PDDL problem invocato \n")
     response_llm = llm.invoke(formatted_prompt)
     problem_pddl = response_llm.content.strip()
 
@@ -610,7 +632,7 @@ def GeneraPDDLproblem_node(state: QuestMasterState):
 
 
 
-def validate_with_downward(
+def validate_with_fast_downward(
         domain_file:str = DOMAIN_PDDL_PATH,
         problem_file:str = PROBLEM_PDDL_PATH,
         downward_path:str = FASTDOWNWARD_PATH):
@@ -650,39 +672,19 @@ def validate_with_downward(
         print(error_msg)
         return False, error_msg
     
-
-
-def extract_planner_error_block(log_text):
-    lines = log_text.strip().splitlines()
-    lenght = len(lines)
-    error_block = lines[lenght-6:lenght-3]
-    return error_block
-
     
 def ValidatePDDL_node(state: QuestMasterState):
-    is_valid, log = validate_with_downward()
+    is_valid, log = validate_with_fast_downward()
     print(f"4# Validazione PDDL completata: {is_valid}, log: {log} \n")
     return {"is_valid": is_valid, "log": log}
 
 
 
-class IssueDetail(BaseModel):
-    issue: str
-    fix: str
-    priority: str
-
-class PDDLIssue(BaseModel):
-    domain_issue: List[IssueDetail]
-    problem_issue: List[IssueDetail]
-
-class PDDLfix(BaseModel):
-    pddl_issue: PDDLIssue
-
-
 
 # ---Reflection pattern ---
-def reflection_node(state: QuestMasterState):
-    #errors = extract_planner_error_block(state["log"])
+def Reflection_node(state: QuestMasterState):
+    print("4# LLM per riflettere sui PDDL e correggerli \n")
+
     error = state["log"]
 
     llm= get_model(TEMPERATURE_PDDL_REFLECTION).with_structured_output(PDDLfix)
@@ -725,7 +727,6 @@ def reflection_node(state: QuestMasterState):
     
     formatted_prompt = prompt.invoke({"domain_pddl": state["domain_pddl"], "problem_pddl": state["problem_pddl"], "error": error, "story": state["story"]})
     
-    print("4# LLM per riflettere sui PDDL e correggerli \n")
     response_llm = llm.invoke(formatted_prompt)
     response = response_llm
 
@@ -735,7 +736,7 @@ def reflection_node(state: QuestMasterState):
 
 
 
-def human_in_the_loop_node(state: QuestMasterState):
+def Human_in_the_loop_node(state: QuestMasterState):
     print("5# Proposte di modifica: \n")
 
     suggestion = state["suggestion"]
@@ -755,13 +756,16 @@ def human_in_the_loop_node(state: QuestMasterState):
         u_input = input("> Vuoi accettare questa modifica? (y/n): ")
         if u_input == "y":
             accepted_suggestion_problem.append(item)
+    
+    print("\n")
           
     return {"acepted_suggestion_domain": accepted_suggestion_domain, "acepted_suggestion_problem": accepted_suggestion_problem}
 
 
 
-def fix_pddl_node(state: QuestMasterState):
+def FixPDDL_node(state: QuestMasterState):
     print("6# Generazione nuovi PDDL \n")
+
     domain_pddl = state["domain_pddl"]
     problem_pddl = state["problem_pddl"]
 
@@ -804,7 +808,7 @@ def fix_pddl_node(state: QuestMasterState):
                     - The goal must correspond to the outcome of a high-level success action defined in the domain.
                     - Every object used in the goal must appear in init or be the result of a reachable action.
                     - Do not include predicates in init or goal that refer to undefined constants or omit required parameters. 
-                
+                                                        
                 Return ONLY the PDDL problem code, which begins with "(define (problem...", no other text at begin or end of the PDDL file."""),
             ("user", "Apply the following FIXES one by one to the given PDDL problem, in ordert to correct the issue and make the PDDLs solvable by a classical planner. Generate the new corresponding PDDL problem file accordingly to the PDDL new domain file. \n FIXES: {suggestion}. \n New Domain PDDL: {domain_pddl}. \n Old Problem PDDL: {problem_pddl}.")])
     
@@ -832,7 +836,9 @@ def fix_pddl_node(state: QuestMasterState):
 
 
 
-def generate_HTML_node(state: QuestMasterState):
+def GenerateHTML_node(state: QuestMasterState):
+    print("7# Generazione HTML \n")
+
     lore = state["lore"]
     problem_pddl = state["problem_pddl"]
     domain_pddl = state["domain_pddl"]
@@ -841,8 +847,6 @@ def generate_HTML_node(state: QuestMasterState):
 
     with open(PLAN_PATH, 'r') as f:
         plan = f.read()
-    
-    print("7# Generazione HTML \n")
 
     llm= get_model(TEMPERATURE_HTML)
 
@@ -915,7 +919,7 @@ def generate_HTML_node(state: QuestMasterState):
     template.close()
 
     #os.remove(PLAN_PATH)
-    print("HTML generato: FINE")
+    print("HTML generato: FINE \n")
     return {"HTML": response}
 
 
@@ -923,52 +927,44 @@ def generate_HTML_node(state: QuestMasterState):
 builder = StateGraph(QuestMasterState)
 
 # --- Aggiunta dei nodi al grafo ---
-
 # 1. Carica il documento di lore
-builder.add_node("carica_lore", CaricaLore_node)
-
+builder.add_node("load_lore", Lore_node)
 # 2. Genera la storia
-builder.add_node("genera_storia", GeneraStoria_node)
-builder.add_node("invalid_story", modifica_lore_node)
-
-
+builder.add_node("generate_story", GenerateStory_node)
+builder.add_node("invalid_story", ModifyLore_node)
 # 3. Genera i file PDDL
-builder.add_node("genera_domain_pddl", GeneraPDDLdomain_node)
-builder.add_node("genera_problem_pddl", GeneraPDDLproblem_node)
-
-
+builder.add_node("generate_domain_pddl", GeneratePDDLdomain_node)
+builder.add_node("generate_problem_pddl", GeneratePDDLproblem_node)
 # 4. Validazione del PDDL
 builder.add_node("validate_pddl", ValidatePDDL_node)
-
 # 5. Pattern reflection per aggiustare il PDDL
-builder.add_node("reflect", reflection_node)
-builder.add_node("human", human_in_the_loop_node)
-builder.add_node("fix", fix_pddl_node)
-
+builder.add_node("reflect", Reflection_node)
+builder.add_node("human", Human_in_the_loop_node)
+builder.add_node("fix", FixPDDL_node)
 #6. Generazione HTML
-builder.add_node("genera_HTML", generate_HTML_node)
+builder.add_node("generate_html", GenerateHTML_node)
 
 
 # --- Collegamento dei nodi ---
-builder.add_edge(START, "carica_lore")
-builder.add_edge("carica_lore", "genera_storia")
+builder.add_edge(START, "load_lore")
+builder.add_edge("load_lore", "generate_story")
 
-builder.add_conditional_edges("genera_storia",
+builder.add_conditional_edges("generate_story",
     lambda x: "valid" if x["is_valid_story"] else "invalid",
     {
-        "valid": "genera_domain_pddl",
+        "valid": "generate_domain_pddl",
         "invalid": "invalid_story"
     })
 
-builder.add_edge("invalid_story", "genera_storia")
+builder.add_edge("invalid_story", "generate_story")
 
-builder.add_edge("genera_domain_pddl", "genera_problem_pddl")
-builder.add_edge("genera_problem_pddl", "validate_pddl")
+builder.add_edge("generate_domain_pddl", "generate_problem_pddl")
+builder.add_edge("generate_problem_pddl", "validate_pddl")
 
 builder.add_conditional_edges("validate_pddl", 
     lambda x: "valid" if x["is_valid"] else "invalid",
     {
-        "valid": "genera_HTML",
+        "valid": "generate_html",
         "invalid": "reflect"
     })
 
@@ -976,19 +972,16 @@ builder.add_edge("reflect", "human")
 builder.add_edge("human", "fix")
 builder.add_edge("fix", "validate_pddl")
 
-builder.add_edge("genera_HTML", END)
+builder.add_edge("generate_html", END)
 
 
 # --- Compila il grafo ---
 graph = builder.compile()
-print("Costruzione del grafo avvenuta con successo")
+print("Costruzione del grafo avvenuta con successo \n")
 
 
 def select_model():
-    print("=== Seleziona il Modello ===")
-    print("1 - llama3.2")
-    print("2 - gpt-4.1-mini")
-    print("3 - Scegli modello manualmente")
+    print("=== Seleziona il Modello === \n 1 - llama3.2 \n 2 - gpt-4.1-mini \n 3 - Scegli modello manualmente \n")
     choice = 0
     
     while choice != "1" and choice != "2" and choice != "3":
@@ -1006,5 +999,4 @@ def select_model():
 # --- Avvia l'esecuzione ---
 if __name__ == "__main__":
     MODEL = select_model()
-    # Eseguo il grafo
     result = graph.invoke({"file_path": LORE_DOCUMENT_PATH}, {"recursion_limit": 100})
