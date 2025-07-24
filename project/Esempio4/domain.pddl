@@ -1,639 +1,701 @@
 (define (domain shadow-of-the-dragon)
     (:requirements :strips :typing :negative-preconditions)
     (:types
-        location character item ally obstacle status - object
+        player npc item location ally obstacle - object
     )
     (:constants
-        faded-map - item
+        magic-wolves - obstacle
+        village-of-ardent whispering-forest tavern village-outskirts temple-of-the-sun-entrance temple-of-the-sun-inner-sanctum temple-of-the-sun-altar-chamber temple-of-the-sun-near-exit temple-of-the-sun dark-mountains-dragon-lair - location
+        healing-potion smoke-bomb enchanted-arrow common-sword pouch-coins - item
+        herb crystal scrolls artifacts - item
     )
     (:predicates
-        ;; Player location predicate: player is at a location
-        (player-at ?l - location) ; Player is at location ?l
-        ;; Inventory predicates: player has an item
-        (has-item ?i - item) ; Player has item ?i
-        ;; Ally presence predicate: ally is present with player
-        (ally-present ?a - ally) ; Ally ?a accompanies player
-        ;; Knowledge predicates: player has knowledge about something
-        (knows-key-location) ; Player knows key is in Whispering Forest
-        (knows-temple-traps) ; Player knows about temple traps
-        (knows-false-allies-warning) ; Player warned about false allies
-        ;; Obstacle predicates: obstacles active or defeated
-        (wolves-active) ; Magic wolves are active in Whispering Forest
-        (wolves-defeated) ; Magic wolves defeated
-        (trap-active) ; Trap in forest clearing is active
-        (trap-triggered) ; Trap in forest clearing triggered
-        (temple-sealed) ; Temple of the Sun is sealed
-        (temple-unsealed) ; Temple of the Sun is unsealed
-        (temple-traps-active) ; Temple traps are active
-        ;; Key and Spear possession predicates
-        (has-ancient-key) ; Player has ancient key
-        (has-spear-of-light) ; Player has Spear of Light
-        ;; Player status predicates
-        (wounded) ; Player is wounded
-        (injured) ; Player is injured (minor)
-        (health-restored) ; Player health restored
-        (player-incapacitated) ; Player incapacitated
-        ;; Merchant trustworthiness
-        (merchant-trustworthy) ; Merchant is trustworthy
-        (merchant-deceptive) ; Merchant is deceptive
-        ;; Allies
-        (has-mercenary) ; Player has mercenary ally
-        (has-forest-mage) ; Player has forest mage ally
-        ;; Magical items
-        (has-healing-potion) ; Player has healing potion
-        (has-smoke-bomb) ; Player has smoke bomb
-        (has-magical-amulet) ; Player has magical amulet
-        (has-protective-enchantment) ; Player has protective enchantment
-        (has-magical-talisman) ; Player has magical talisman
-        ;; Side quest status
-        (hamlet-helped) ; Hamlet under goblin attack helped
-        ;; Dragon status
-        (dragon-active) ; Dragon Vharax is active
-        (dragon-defeated) ; Dragon Vharax defeated
-        ;; Quest completion
-        (quest-complete) ; Quest completed successfully
-        ;; Player coins count (abstracted as predicate for having coins)
-        (has-coins) ; Player has coins (simplified)
+        ;; Player location
+        (at ?p - player ?l - location) ; player ?p is at location ?l
+        ;; Player inventory
+        (has ?p - player ?i - item) ; player ?p has item ?i
+        ;; Ally presence and loyalty
+        (ally-present ?a - ally ?l - location) ; ally ?a is present at location ?l
+        (ally-loyal ?a - ally) ; ally ?a is loyal to player
+        ;; Obstacles and threats
+        (trap-active ?o - obstacle ?l - location) ; obstacle ?o is active at location ?l
+        (trap-disarmed ?o - obstacle ?l - location) ; obstacle ?o is disarmed at location ?l
+        (threat-present ?o - obstacle ?l - location) ; threat ?o (e.g. magic wolves) present at location ?l
+        (threat-defeated ?o - obstacle ?l - location) ; threat ?o defeated at location ?l
+        ;; Quest progress predicates
+        (map-to-forest) ; player has map to Whispering Forest
+        (ancient-key-found) ; player has found ancient key
+        (temple-sealed) ; temple is sealed
+        (temple-open) ; temple is open
+        (spear-of-light) ; player has Spear of Light
+        (elara-favor) ; player accepted Elara's favor
+        (elara-ally) ; Elara is ally and loyal
+        (roran-ally) ; Roran is ally and loyal
+        (villager-trust-high) ; villagers trust player
+        (villager-trust-low) ; villagers distrust player
+        (player-damaged) ; player is wounded/damaged
+        (dragon-alive) ; dragon Vharax is alive
+        (dragon-defeated) ; dragon Vharax defeated
+        (mercenary-distrust) ; mercenary distrusts player
+        (forest-mage-ally) ; forest mage ally present (alias for elara-ally)
+        (in-combat) ; player currently in combat
+        (rested) ; player rested and healed
+        (quest-completed) ; quest completion marker
     )
 
-    ;; Section 1: Talk to old sage for guidance → Section 2
+    ;; Section 1 actions: initial choices in Village of Ardent
     (:action talk-to-old-sage
-        :parameters (?loc - location)
-        :precondition (player-at ?loc)
+        :parameters (?p - player)
+        :precondition (and (at ?p village-of-ardent) (temple-sealed) (dragon-alive) (not (map-to-forest)) (not (ancient-key-found)))
         :effect (and
-            (has-item faded-map) ; Player receives faded map
-            (knows-key-location) ; Player learns key is in Whispering Forest
+            (map-to-forest) ; player receives map to Whispering Forest
         )
     )
 
-    ;; Section 1: Visit village merchant → Section 3
     (:action visit-merchant
-        :parameters (?loc - location)
-        :precondition (player-at ?loc)
+        :parameters (?p - player)
+        :precondition (and (at ?p village-of-ardent) (temple-sealed) (dragon-alive))
         :effect (and
-            ;; No state change, action kept for narrative progression
+            ;; No state change; action kept for narrative progression
         )
     )
 
-    ;; Section 1: Explore village → Section 4
     (:action explore-village
-        :parameters (?loc - location)
-        :precondition (player-at ?loc)
+        :parameters (?p - player)
+        :precondition (and (at ?p village-of-ardent) (temple-sealed) (dragon-alive))
         :effect (and
-            ;; No state change, action kept for narrative progression
+            ;; No state change; action kept for narrative progression
         )
     )
 
-    ;; Section 2: Head to Whispering Forest → Section 5
-    (:action go-to-whispering-forest-from-sage
-        :parameters (?from - location ?to - location)
-        :precondition (and (player-at ?from) (has-item faded-map))
+    ;; Section 2 actions: after talking to old sage
+    (:action seek-mercenary
+        :parameters (?p - player ?r - ally)
+        :precondition (and (at ?p village-of-ardent) (map-to-forest) (temple-sealed) (dragon-alive))
         :effect (and
-            (not (player-at ?from)) ; Leaving previous location
-            (player-at ?to) ; Arriving at forest
-            (wolves-active) ; Magic wolves present
+            (ally-present ?r tavern) ; mercenary present in tavern
+            (not (at ?p village-of-ardent))
+            (at ?p tavern)
         )
     )
 
-    ;; Section 2: Visit merchant from sage → Section 3
-    (:action visit-merchant-from-sage
-        :parameters (?loc - location)
-        :precondition (and (player-at ?loc) (has-item faded-map))
+    (:action seek-forest-mage
+        :parameters (?p - player ?e - ally)
+        :precondition (and (at ?p village-of-ardent) (map-to-forest) (temple-sealed) (dragon-alive))
         :effect (and
-            ;; No state change, action kept for narrative progression
+            (ally-present ?e village-outskirts) ; forest mage present at outskirts
+            (not (at ?p village-of-ardent))
+            (at ?p village-outskirts)
         )
     )
 
-    ;; Section 2: Explore village from sage → Section 4
-    (:action explore-village-from-sage
-        :parameters (?loc - location)
-        :precondition (and (player-at ?loc) (has-item faded-map))
+    (:action head-to-whispering-forest
+        :parameters (?p - player)
+        :precondition (and (at ?p village-of-ardent) (map-to-forest) (temple-sealed) (dragon-alive))
         :effect (and
-            ;; No state change, action kept for narrative progression
+            (not (at ?p village-of-ardent))
+            (at ?p whispering-forest)
+            (threat-present magic-wolves whispering-forest)
         )
     )
 
-    ;; Section 3: Buy healing potion → Section 6
+    ;; Section 3 actions: after visiting merchant
     (:action buy-healing-potion
-        :parameters (?loc - location)
-        :precondition (and (player-at ?loc) (has-coins))
+        :parameters (?p - player)
+        :precondition (and (at ?p village-of-ardent) (temple-sealed) (dragon-alive))
         :effect (and
-            (has-healing-potion) ; Player gains healing potion
-            (not (has-coins)) ; Coins spent
-            (merchant-trustworthy) ; Merchant may be trustworthy after sale
+            (has ?p healing-potion)
         )
     )
 
-    ;; Section 3: Buy smoke bomb → Section 6
     (:action buy-smoke-bomb
-        :parameters (?loc - location)
-        :precondition (and (player-at ?loc) (has-coins))
+        :parameters (?p - player)
+        :precondition (and (at ?p village-of-ardent) (temple-sealed) (dragon-alive))
         :effect (and
-            (has-smoke-bomb) ; Player gains smoke bomb
-            (not (has-coins)) ; Coins spent
-            (merchant-trustworthy)
+            (has ?p smoke-bomb)
         )
     )
 
-    ;; Section 3: Gather info from merchant → Section 7
-    (:action gather-info-merchant
-        :parameters (?loc - location)
-        :precondition (player-at ?loc)
+    (:action buy-enchanted-arrow
+        :parameters (?p - player)
+        :precondition (and (at ?p village-of-ardent) (temple-sealed) (dragon-alive))
         :effect (and
-            (knows-temple-traps) ; Player learns about temple traps
-            (knows-false-allies-warning) ; Warning about false allies
-            (merchant-deceptive) ; Merchant may be deceptive
+            (has ?p enchanted-arrow)
         )
     )
 
-    ;; Section 3: Decline and leave merchant → Section 2
-    (:action decline-merchant
-        :parameters (?loc - location)
-        :precondition (player-at ?loc)
+    (:action decline-purchases-ask-rumors
+        :parameters (?p - player)
+        :precondition (and (at ?p village-of-ardent) (temple-sealed) (dragon-alive))
         :effect (and
-            (has-item faded-map) ; Return to sage knowledge state
+            ;; No state change; action kept for narrative progression
         )
     )
 
-    ;; Section 4: Hire mercenary → Section 8
-    (:action hire-mercenary
-        :parameters (?loc - location)
-        :precondition (and (player-at ?loc) (has-coins))
+    ;; Section 4 actions: after exploring village
+    (:action help-villagers
+        :parameters (?p - player ?r - ally)
+        :precondition (and (at ?p village-of-ardent) (temple-sealed) (dragon-alive) (not (villager-trust-high)))
         :effect (and
-            (has-mercenary) ; Mercenary joins player
-            (not (has-coins)) ; Coins spent
+            (villager-trust-high)
+            (ally-present ?r village-of-ardent) ; mercenary joins after trust gained
+            (not (villager-trust-low))
         )
     )
 
-    ;; Section 4: Help hamlet → Section 9
-    (:action help-hamlet
-        :parameters (?from - location ?to - location)
-        :precondition (player-at ?from)
+    (:action ignore-villagers
+        :parameters (?p - player ?r - ally)
+        :precondition (and (at ?p village-of-ardent) (temple-sealed) (dragon-alive) (not (villager-trust-low)))
         :effect (and
-            (hamlet-helped) ; Hamlet helped
-            (has-magical-amulet) ; Player gains magical amulet
-            (not (player-at ?from))
-            (player-at ?to) ; Player moves to hamlet location
+            (villager-trust-low)
+            (not (villager-trust-high))
+            (not (ally-present ?r village-of-ardent))
         )
     )
 
-    ;; Section 4: Ignore side quests → Section 5
-    (:action ignore-side-quests
-        :parameters (?from - location ?to - location)
-        :precondition (player-at ?from)
+    ;; Section 5 actions: after seeking mercenary
+    (:action offer-help-to-mercenary
+        :parameters (?p - player ?r - ally)
+        :precondition (and (at ?p tavern) (ally-present ?r tavern) (villager-trust-high) (temple-sealed) (dragon-alive))
         :effect (and
-            (not (player-at ?from))
-            (player-at ?to)
-            (wolves-active)
+            (ally-loyal ?r)
+            (roran-ally)
+            (not (at ?p tavern))
+            (at ?p village-of-ardent)
         )
     )
 
-    ;; Section 5: Talk to forest mage → Section 10
-    (:action talk-to-forest-mage
-        :parameters (?loc - location)
-        :precondition (and (player-at ?loc) (wolves-active))
+    (:action recruit-mercenary-without-help
+        :parameters (?p - player ?r - ally)
+        :precondition (and (at ?p tavern) (ally-present ?r tavern) (villager-trust-low) (temple-sealed) (dragon-alive))
         :effect (and
-            (has-forest-mage) ; Forest mage ally gained
-            (not (wolves-active))
-            (wolves-defeated)
+            (mercenary-distrust)
+            (not (ally-loyal ?r))
+            (not (roran-ally))
+            (not (at ?p tavern))
+            (at ?p village-of-ardent)
         )
     )
 
-    ;; Section 5: Fight magic wolves → Section 11
+    ;; Section 6 actions: after seeking forest mage
+    (:action agree-to-retrieve-elara-relic
+        :parameters (?p - player ?e - ally)
+        :precondition (and (at ?p village-outskirts) (ally-present ?e village-outskirts) (temple-sealed) (dragon-alive))
+        :effect (and
+            (elara-favor)
+            (ally-loyal ?e)
+            (elara-ally)
+        )
+    )
+
+    (:action decline-elara-favor
+        :parameters (?p - player ?e - ally)
+        :precondition (and (at ?p village-outskirts) (ally-present ?e village-outskirts) (temple-sealed) (dragon-alive))
+        :effect (and
+            (not (elara-favor))
+            (not (ally-loyal ?e))
+            (not (elara-ally))
+            (not (at ?p village-outskirts))
+            (at ?p whispering-forest)
+            (threat-present magic-wolves whispering-forest)
+        )
+    )
+
+    ;; Section 7 actions: heading directly to Whispering Forest
     (:action fight-magic-wolves
-        :parameters (?loc - location)
-        :precondition (and (player-at ?loc) (wolves-active))
+        :parameters (?p - player ?l - location)
+        :precondition (and (at ?p ?l) (threat-present magic-wolves ?l) (has ?p common-sword) (temple-sealed) (dragon-alive))
         :effect (and
-            (wolves-defeated) ; Wolves defeated
-            (not (wolves-active))
+            (threat-defeated magic-wolves ?l)
+            (not (threat-present magic-wolves ?l))
+            (ancient-key-found)
+            (player-damaged)
         )
     )
 
-    ;; Section 5: Sneak around wolves → Section 12
-    (:action sneak-around-wolves
-        :parameters (?loc - location)
-        :precondition (and (player-at ?loc) (wolves-active))
+    (:action sneak-past-wolves
+        :parameters (?p - player ?l - location)
+        :precondition (and (at ?p ?l) (threat-present magic-wolves ?l) (has ?p common-sword) (temple-sealed) (dragon-alive))
         :effect (and
-            (trap-active) ; Trap triggered possibility
-            (not (wolves-active))
-            (wolves-defeated)
+            (ancient-key-found)
+            (not (threat-present magic-wolves ?l))
+            (not (player-damaged))
         )
     )
 
-    ;; Section 6: Head to Whispering Forest → Section 5
-    (:action head-to-forest-from-merchant
-        :parameters (?from - location ?to - location)
-        :precondition (player-at ?from)
+    (:action call-elara-for-aid
+        :parameters (?p - player ?l - location)
+        :precondition (and (at ?p ?l) (threat-present magic-wolves ?l) (elara-ally) (temple-sealed) (dragon-alive))
         :effect (and
-            (not (player-at ?from))
-            (player-at ?to)
-            (wolves-active)
+            (threat-defeated magic-wolves ?l)
+            (not (threat-present magic-wolves ?l))
+            (ancient-key-found)
         )
     )
 
-    ;; Section 6: Explore village → Section 4
-    (:action explore-village-from-merchant
-        :parameters (?loc - location)
-        :precondition (player-at ?loc)
+    ;; Section 8 actions: after buying items from merchant
+    (:action proceed-to-forest-after-purchase
+        :parameters (?p - player ?l - location)
+        :precondition (and (at ?p ?l) (temple-sealed) (dragon-alive) (or (has ?p healing-potion) (has ?p smoke-bomb) (has ?p enchanted-arrow)))
         :effect (and
-            ;; No state change, action kept for narrative progression
+            (not (at ?p ?l))
+            (at ?p whispering-forest)
+            (threat-present magic-wolves whispering-forest)
         )
     )
 
-    ;; Section 7: Head to Whispering Forest → Section 5
-    (:action head-to-forest-from-info
-        :parameters (?from - location ?to - location)
-        :precondition (player-at ?from)
+    (:action seek-mercenary-after-purchase
+        :parameters (?p - player ?r - ally)
+        :precondition (and (at ?p village-of-ardent) (temple-sealed) (dragon-alive))
         :effect (and
-            (not (player-at ?from))
-            (player-at ?to)
-            (wolves-active)
+            (ally-present ?r tavern)
+            (not (at ?p village-of-ardent))
+            (at ?p tavern)
         )
     )
 
-    ;; Section 7: Explore village → Section 4
-    (:action explore-village-from-info
-        :parameters (?loc - location)
-        :precondition (player-at ?loc)
+    (:action seek-forest-mage-after-purchase
+        :parameters (?p - player ?e - ally)
+        :precondition (and (at ?p village-of-ardent) (temple-sealed) (dragon-alive))
         :effect (and
-            ;; No state change, action kept for narrative progression
+            (ally-present ?e village-outskirts)
+            (not (at ?p village-of-ardent))
+            (at ?p village-outskirts)
         )
     )
 
-    ;; Section 8: Head to Whispering Forest → Section 5
-    (:action head-to-forest-from-mercenary
-        :parameters (?from - location ?to - location)
-        :precondition (and (player-at ?from) (has-mercenary))
+    ;; Section 9 actions: after asking merchant for rumors
+    (:action visit-mercenary-after-rumors
+        :parameters (?p - player ?r - ally)
+        :precondition (and (at ?p village-of-ardent) (temple-sealed) (dragon-alive))
         :effect (and
-            (not (player-at ?from))
-            (player-at ?to)
-            (wolves-active)
+            (ally-present ?r tavern)
+            (not (at ?p village-of-ardent))
+            (at ?p tavern)
         )
     )
 
-    ;; Section 8: Explore village for side quests → Section 9
-    (:action explore-village-for-side-quests
-        :parameters (?loc - location)
-        :precondition (and (player-at ?loc) (has-mercenary))
+    (:action visit-forest-mage-after-rumors
+        :parameters (?p - player ?e - ally)
+        :precondition (and (at ?p village-of-ardent) (temple-sealed) (dragon-alive))
         :effect (and
-            ;; No state change, action kept for narrative progression
+            (ally-present ?e village-outskirts)
+            (not (at ?p village-of-ardent))
+            (at ?p village-outskirts)
         )
     )
 
-    ;; Section 9: Return to Ardent → Section 4
-    (:action return-to-village-from-hamlet
-        :parameters (?from - location ?to - location)
-        :precondition (player-at ?from)
+    (:action proceed-to-forest-after-rumors
+        :parameters (?p - player ?l - location)
+        :precondition (and (at ?p ?l) (temple-sealed) (dragon-alive))
         :effect (and
-            (not (player-at ?from))
-            (player-at ?to)
+            (not (at ?p ?l))
+            (at ?p whispering-forest)
+            (threat-present magic-wolves whispering-forest)
         )
     )
 
-    ;; Section 9: Head to Whispering Forest → Section 5
-    (:action head-to-forest-from-hamlet
-        :parameters (?from - location ?to - location)
-        :precondition (player-at ?from)
+    ;; Section 10 actions: after helping villagers fend off bandits
+    (:action seek-forest-mage-after-help
+        :parameters (?p - player ?e - ally ?r - ally)
+        :precondition (and (at ?p village-of-ardent) (villager-trust-high) (ally-loyal ?r) (temple-sealed) (dragon-alive))
         :effect (and
-            (not (player-at ?from))
-            (player-at ?to)
-            (wolves-active)
+            (ally-present ?e village-outskirts)
+            (not (at ?p village-of-ardent))
+            (at ?p village-outskirts)
         )
     )
 
-    ;; Section 10: Agree to help forest mage → Section 13
-    (:action agree-help-forest-mage
-        :parameters (?loc - location)
-        :precondition (and (player-at ?loc) (has-forest-mage))
+    (:action proceed-to-forest-after-help
+        :parameters (?p - player ?r - ally)
+        :precondition (and (at ?p village-of-ardent) (villager-trust-high) (ally-loyal ?r) (temple-sealed) (dragon-alive))
         :effect (and
-            (has-ancient-key) ; Key acquired
-            (has-protective-enchantment) ; Protective enchantment gained
-            (not (wolves-active))
+            (not (at ?p village-of-ardent))
+            (at ?p whispering-forest)
+            (threat-present magic-wolves whispering-forest)
         )
     )
 
-    ;; Section 10: Decline help → Section 12
-    (:action decline-help-forest-mage
-        :parameters (?loc - location)
-        :precondition (and (player-at ?loc) (has-forest-mage))
+    (:action visit-merchant-after-help
+        :parameters (?p - player ?r - ally)
+        :precondition (and (at ?p village-of-ardent) (villager-trust-high) (ally-loyal ?r) (temple-sealed) (dragon-alive))
         :effect (and
-            (not (has-forest-mage)) ; Mage not allied
-            (trap-active) ; Trap may be active
+            ;; No state change; action kept for narrative progression
         )
     )
 
-    ;; Section 10: Fight wolves yourself → Section 11
-    (:action fight-wolves-alone
-        :parameters (?loc - location)
-        :precondition (and (player-at ?loc) (wolves-active))
+    ;; Section 11 actions: after ignoring villagers under attack
+    (:action seek-mercenary-after-ignore
+        :parameters (?p - player ?r - ally)
+        :precondition (and (at ?p village-of-ardent) (villager-trust-low) (temple-sealed) (dragon-alive))
         :effect (and
-            (wolves-defeated)
-            (not (wolves-active))
+            (ally-present ?r tavern)
+            (not (at ?p village-of-ardent))
+            (at ?p tavern)
         )
     )
 
-    ;; Section 11: Search area for key → Section 14
-    (:action search-area-after-wolves
-        :parameters (?loc - location)
-        :precondition (and (player-at ?loc) (wolves-defeated))
+    (:action visit-forest-mage-after-ignore
+        :parameters (?p - player ?e - ally)
+        :precondition (and (at ?p village-of-ardent) (villager-trust-low) (temple-sealed) (dragon-alive))
         :effect (and
-            (has-ancient-key)
-            (trap-active)
+            (ally-present ?e village-outskirts)
+            (not (at ?p village-of-ardent))
+            (at ?p village-outskirts)
         )
     )
 
-    ;; Section 11: Seek forest mage → Section 10
-    (:action seek-forest-mage-after-wolves
-        :parameters (?loc - location)
-        :precondition (and (player-at ?loc) (wolves-defeated))
+    (:action proceed-to-forest-after-ignore
+        :parameters (?p - player ?l - location)
+        :precondition (and (at ?p ?l) (villager-trust-low) (temple-sealed) (dragon-alive))
         :effect (and
-            (has-forest-mage)
+            (not (at ?p ?l))
+            (at ?p whispering-forest)
+            (threat-present magic-wolves whispering-forest)
         )
     )
 
-    ;; Section 11: Retreat wounded → Section 1R
-    (:action retreat-wounded
-        :parameters (?from - location ?to - location)
-        :precondition (and (player-at ?from) (wounded))
+    ;; Section 12 actions: after attempting to recruit mercenary without helping villagers
+    (:action seek-forest-mage-after-mercenary-reject
+        :parameters (?p - player ?e - ally)
+        :precondition (and (at ?p village-of-ardent) (mercenary-distrust) (temple-sealed) (dragon-alive))
         :effect (and
-            (not (player-at ?from))
-            (player-at ?to)
-            (wounded)
-            (not (has-ancient-key))
+            (ally-present ?e village-outskirts)
+            (not (at ?p village-of-ardent))
+            (at ?p village-outskirts)
         )
     )
 
-    ;; Section 12: Escape after trap → Section 15
-    (:action escape-after-trap
-        :parameters (?from - location ?to - location)
-        :precondition (and (player-at ?from) (trap-triggered))
+    (:action proceed-to-forest-alone-after-mercenary-reject
+        :parameters (?p - player ?l - location)
+        :precondition (and (at ?p ?l) (mercenary-distrust) (temple-sealed) (dragon-alive))
         :effect (and
-            (not (player-at ?from))
-            (player-at ?to)
-            (injured)
-            (has-ancient-key)
+            (not (at ?p ?l))
+            (at ?p whispering-forest)
+            (threat-present magic-wolves whispering-forest)
         )
     )
 
-    ;; Section 12: Search for forest mage → Section 10
-    (:action search-for-forest-mage-after-trap
-        :parameters (?loc - location)
-        :precondition (and (player-at ?loc) (trap-triggered))
+    ;; Section 13 actions: after agreeing to retrieve Elara’s relic
+    (:action enter-forest-with-elara
+        :parameters (?p - player ?l - location ?e - ally)
+        :precondition (and (at ?p ?l) (elara-favor) (ally-loyal ?e) (temple-sealed) (dragon-alive))
         :effect (and
-            (has-forest-mage)
+            (not (at ?p ?l))
+            (at ?p whispering-forest)
+            (ancient-key-found)
+            (not (threat-present magic-wolves whispering-forest))
         )
     )
 
-    ;; Section 12: Fail trap and call for help → Section 1F
-    (:action fail-trap-call-for-help
-        :parameters (?loc - location)
-        :precondition (and (player-at ?loc) (trap-triggered) (not (injured)))
+    (:action delay-and-prepare-in-village
+        :parameters (?p - player ?l - location ?e - ally)
+        :precondition (and (at ?p ?l) (elara-favor) (ally-loyal ?e) (temple-sealed) (dragon-alive))
         :effect (and
-            (player-incapacitated)
+            (not (at ?p ?l))
+            (at ?p village-of-ardent)
         )
     )
 
-    ;; Section 13: Exit forest to temple → Section 16
-    (:action exit-forest-to-temple
-        :parameters (?from - location ?to - location)
-        :precondition (and (player-at ?from) (has-ancient-key) (has-forest-mage))
+    ;; Section 14 actions: after fighting magic wolves
+    (:action take-key-and-proceed-temple
+        :parameters (?p - player ?l - location)
+        :precondition (and (at ?p ?l) (ancient-key-found) (threat-defeated magic-wolves ?l) (temple-sealed) (dragon-alive))
         :effect (and
-            (not (player-at ?from))
-            (player-at ?to)
-            (temple-unsealed)
-            (temple-traps-active)
+            (not (at ?p ?l))
+            (at ?p temple-of-the-sun-entrance)
+            (not (temple-sealed))
+            (temple-open)
         )
     )
 
-    ;; Section 13: Rest and prepare → Section 17
-    (:action rest-and-prepare-forest
-        :parameters (?loc - location)
-        :precondition (player-at ?loc)
+    (:action search-forest-for-magical-items
+        :parameters (?p - player ?l - location ?herb - item ?crystal - item)
+        :precondition (and (at ?p ?l) (ancient-key-found) (threat-defeated magic-wolves ?l) (temple-open) (dragon-alive))
         :effect (and
-            (health-restored)
+            (has ?p ?herb)
+            (has ?p ?crystal)
+            (not (at ?p ?l))
+            (at ?p whispering-forest)
         )
     )
 
-    ;; Section 14: Head to temple → Section 16
-    (:action head-to-temple-from-forest-clearing
-        :parameters (?from - location ?to - location)
-        :precondition (and (player-at ?from) (has-ancient-key))
+    ;; Section 15 actions: after sneaking past wolves
+    (:action proceed-temple-with-key
+        :parameters (?p - player ?l - location)
+        :precondition (and (at ?p ?l) (ancient-key-found) (not (player-damaged)) (temple-open) (dragon-alive))
         :effect (and
-            (not (player-at ?from))
-            (player-at ?to)
-            (temple-unsealed)
-            (temple-traps-active)
+            (not (at ?p ?l))
+            (at ?p temple-of-the-sun-entrance)
         )
     )
 
-    ;; Section 14: Explore deeper forest → Section 18
-    (:action explore-deeper-forest
-        :parameters (?from - location ?to - location)
-        :precondition (player-at ?from)
+    (:action search-glade-for-magical-items
+        :parameters (?p - player ?l - location ?herb - item ?crystal - item)
+        :precondition (and (at ?p ?l) (ancient-key-found) (not (player-damaged)) (temple-open) (dragon-alive))
         :effect (and
-            (has-magical-talisman)
-            (not (player-at ?from))
-            (player-at ?to)
+            (has ?p ?herb)
+            (has ?p ?crystal)
+            (not (at ?p ?l))
+            (at ?p whispering-forest)
         )
     )
 
-    ;; Section 15: Return to village → Section 17
-    (:action return-to-village-from-forest-edge
-        :parameters (?from - location ?to - location)
-        :precondition (and (player-at ?from) (injured))
+    ;; Section 16 actions: calling Elara’s aid in forest
+    (:action head-to-temple-with-elara
+        :parameters (?p - player ?l - location ?e - ally)
+        :precondition (and (at ?p ?l) (elara-ally) (ancient-key-found) (temple-open) (dragon-alive))
         :effect (and
-            (not (player-at ?from))
-            (player-at ?to)
-            (health-restored)
+            (not (at ?p ?l))
+            (at ?p temple-of-the-sun-inner-sanctum)
         )
     )
 
-    ;; Section 15: Proceed to temple → Section 16
-    (:action proceed-to-temple-from-forest-edge
-        :parameters (?from - location ?to - location)
-        :precondition (player-at ?from)
+    (:action explore-forest-further-with-elara
+        :parameters (?p - player ?l - location ?e - ally ?herb - item ?crystal - item)
+        :precondition (and (at ?p ?l) (elara-ally) (ancient-key-found) (temple-open) (dragon-alive))
         :effect (and
-            (not (player-at ?from))
-            (player-at ?to)
-            (temple-unsealed)
-            (temple-traps-active)
+            (has ?p ?herb)
+            (has ?p ?crystal)
+            (not (at ?p ?l))
+            (at ?p whispering-forest)
         )
     )
 
-    ;; Section 16: Attempt puzzles → Section 19
-    (:action attempt-puzzles
-        :parameters (?loc - location)
-        :precondition (player-at ?loc)
+    ;; Section 17 actions: entering forest with Elara’s guidance
+    (:action travel-to-temple-use-key
+        :parameters (?p - player ?l - location ?e - ally)
+        :precondition (and (at ?p ?l) (elara-ally) (ancient-key-found) (temple-open) (dragon-alive))
         :effect (and
-            (not (temple-traps-active))
-            (has-spear-of-light)
+            (not (at ?p ?l))
+            (at ?p temple-of-the-sun-entrance)
         )
     )
 
-    ;; Section 16: Explore cautiously → Section 20
-    (:action explore-cautiously
-        :parameters (?loc - location)
-        :precondition (player-at ?loc)
+    (:action return-to-village-to-prepare
+        :parameters (?p - player ?l - location ?e - ally)
+        :precondition (and (at ?p ?l) (elara-ally) (temple-open) (dragon-alive))
         :effect (and
-            (temple-traps-active)
+            (not (at ?p ?l))
+            (at ?p village-of-ardent)
         )
     )
 
-    ;; Section 16: Call allies for assistance → Section 21
-    (:action call-allies-for-assistance
-        :parameters (?loc - location)
-        :precondition (and (player-at ?loc)
-                           (or (has-mercenary) (has-forest-mage)))
+    ;; Section 18 actions: arriving at temple with key
+    (:action explore-temple-carefully
+        :parameters (?p - player ?l - location)
+        :precondition (and (at ?p ?l) (ancient-key-found) (temple-open) (dragon-alive))
         :effect (and
-            (not (temple-traps-active))
+            (spear-of-light)
+            (not (at ?p ?l))
+            (at ?p temple-of-the-sun-altar-chamber)
         )
     )
 
-    ;; Section 17: Proceed to temple → Section 16
-    (:action proceed-to-temple-from-rest
-        :parameters (?from1 - location ?from2 - location ?to - location)
-        :precondition (and (or (player-at ?from1) (player-at ?from2)) (health-restored))
+    (:action rush-through-temple
+        :parameters (?p - player ?l - location)
+        :precondition (and (at ?p ?l) (ancient-key-found) (temple-open) (dragon-alive))
         :effect (and
-            (not (player-at ?from1))
-            (not (player-at ?from2))
-            (player-at ?to)
-            (temple-unsealed)
-            (temple-traps-active)
+            (spear-of-light)
+            (player-damaged)
+            (not (at ?p ?l))
+            (at ?p temple-of-the-sun-near-exit)
         )
     )
 
-    ;; Section 17: Explore village for preparations → Section 4
-    (:action explore-village-for-preparations
-        :parameters (?loc - location)
-        :precondition (player-at ?loc)
+    ;; Section 19 actions: searching forest for minor magical items
+    (:action proceed-to-temple-after-forest-search
+        :parameters (?p - player ?l - location ?herb - item ?crystal - item)
+        :precondition (and (at ?p ?l) (has ?p ?herb) (has ?p ?crystal) (ancient-key-found) (temple-open) (dragon-alive))
         :effect (and
-            ;; No state change, action kept for narrative progression
+            (not (at ?p ?l))
+            (at ?p temple-of-the-sun-entrance)
         )
     )
 
-    ;; Section 18: Return to temple → Section 16
-    (:action return-to-temple-from-deeper-forest
-        :parameters (?from - location ?to - location)
-        :precondition (player-at ?from)
+    (:action rest-briefly-in-forest
+        :parameters (?p - player ?l - location ?herb - item ?crystal - item)
+        :precondition (and (at ?p ?l) (has ?p ?herb) (has ?p ?crystal) (ancient-key-found) (temple-open) (dragon-alive))
         :effect (and
-            (not (player-at ?from))
-            (player-at ?to)
-            (temple-unsealed)
-            (temple-traps-active)
+            (rested)
+            (not (at ?p ?l))
+            (at ?p whispering-forest)
         )
     )
 
-    ;; Section 18: Rest near forest edge → Section 17
-    (:action rest-near-forest-edge
-        :parameters (?from - location ?to - location)
-        :precondition (player-at ?from)
+    ;; Section 20 actions: entering temple with Elara
+    (:action journey-to-dark-mountains
+        :parameters (?p - player ?l - location)
+        :precondition (and (at ?p ?l) (spear-of-light) (elara-ally) (temple-open) (dragon-alive))
         :effect (and
-            (not (player-at ?from))
-            (player-at ?to)
-            (health-restored)
+            (not (at ?p ?l))
+            (at ?p dark-mountains-dragon-lair)
         )
     )
 
-    ;; Section 19: Take Spear and prepare → Section 22
-    (:action take-spear-prepare
-        :parameters (?from - location ?to - location)
-        :precondition (and (player-at ?from) (has-spear-of-light))
+    (:action rest-and-prepare-in-village-with-elara
+        :parameters (?p - player ?l - location)
+        :precondition (and (at ?p ?l) (spear-of-light) (elara-ally) (temple-open) (dragon-alive))
         :effect (and
-            (not (player-at ?from))
-            (player-at ?to)
-            (dragon-active)
+            (rested)
+            (not (at ?p ?l))
+            (at ?p village-of-ardent)
         )
     )
 
-    ;; Section 19: Search temple for clues → Section 20
-    (:action search-temple-for-clues
-        :parameters (?loc - location)
-        :precondition (player-at ?loc)
+    ;; Section 21 actions: carefully exploring temple
+    (:action take-spear-and-exit
+        :parameters (?p - player ?l - location)
+        :precondition (and (at ?p ?l) (spear-of-light) (temple-open) (dragon-alive))
         :effect (and
-            (knows-temple-traps)
+            (not (at ?p ?l))
+            (at ?p dark-mountains-dragon-lair)
         )
     )
 
-    ;; Section 20: Attempt puzzles → Section 19
-    (:action attempt-puzzles-from-explore
-        :parameters (?loc - location)
-        :precondition (player-at ?loc)
+    (:action search-for-additional-relics
+        :parameters (?p - player ?l - location ?scrolls - item ?artifacts - item)
+        :precondition (and (at ?p ?l) (spear-of-light) (temple-open) (dragon-alive))
         :effect (and
-            (has-spear-of-light)
+            (has ?p ?scrolls)
+            (has ?p ?artifacts)
+            (not (at ?p ?l))
+            (at ?p temple-of-the-sun)
         )
     )
 
-    ;; Section 20: Search for dragon weakness → Section 21
-    (:action search-dragon-weakness
-        :parameters (?loc - location)
-        :precondition (player-at ?loc)
+    ;; Section 22 actions: rushing through temple
+    (:action exit-temple-immediately
+        :parameters (?p - player ?l - location)
+        :precondition (and (at ?p ?l) (spear-of-light) (player-damaged) (temple-open) (dragon-alive))
         :effect (and
-            (knows-false-allies-warning)
+            (not (at ?p ?l))
+            (at ?p dark-mountains-dragon-lair)
         )
     )
 
-    ;; Section 21: Solve puzzles with allies → Section 19
-    (:action solve-puzzles-with-allies
-        :parameters (?loc - location)
-        :precondition (and (player-at ?loc)
-                           (or (has-mercenary) (has-forest-mage)))
+    (:action rest-and-heal-before-journey
+        :parameters (?p - player ?l - location)
+        :precondition (and (at ?p ?l) (spear-of-light) (player-damaged) (temple-open) (dragon-alive))
         :effect (and
-            (has-spear-of-light)
+            (rested)
+            (not (at ?p ?l))
+            (at ?p temple-of-the-sun)
         )
     )
 
-    ;; Section 21: Search for strategic info → Section 20
-    (:action search-strategic-info
-        :parameters (?loc - location)
-        :precondition (player-at ?loc)
+    ;; Section 23 actions: resting and healing
+    (:action proceed-to-dark-mountains-after-rest
+        :parameters (?p - player ?l - location)
+        :precondition (and (at ?p ?l) (rested) (or (spear-of-light) (ancient-key-found)) (dragon-alive))
         :effect (and
-            (knows-temple-traps)
+            (not (at ?p ?l))
+            (at ?p dark-mountains-dragon-lair)
         )
     )
 
-    ;; Section 22: Ascend mountains to confront dragon → Section 23
-    (:action ascend-mountains
-        :parameters (?loc - location)
-        :precondition (and (player-at ?loc) (has-spear-of-light) (dragon-active))
+    (:action return-to-village-for-supplies
+        :parameters (?p - player ?l - location)
+        :precondition (and (at ?p ?l) (rested) (dragon-alive))
         :effect (and
-            (not (dragon-active))
+            (not (at ?p ?l))
+            (at ?p village-of-ardent)
+        )
+    )
+
+    ;; Section 24 actions: confronting dragon in Dark Mountains
+    (:action fight-dragon-with-spear
+        :parameters (?p - player ?l - location)
+        :precondition (and (at ?p ?l) (spear-of-light) (dragon-alive))
+        :effect (and
             (dragon-defeated)
+            (not (dragon-alive))
         )
     )
 
-    ;; Section 22: Rest before battle → Section 17
-    (:action rest-before-battle
-        :parameters (?loc - location)
-        :precondition (player-at ?loc)
+    (:action attempt-negotiate-distract-dragon
+        :parameters (?p - player ?l - location)
+        :precondition (and (at ?p ?l) (dragon-alive) (not (spear-of-light)))
         :effect (and
-            (health-restored)
+            (in-combat)
         )
     )
 
-    ;; Section 23: Celebrate victory → Section 24
-    (:action celebrate-victory
-        :parameters ()
-        :precondition (dragon-defeated)
+    ;; Section 25 actions: searching for additional relics in temple
+    (:action exit-temple-head-to-mountains
+        :parameters (?p - player ?l - location ?scrolls - item ?artifacts - item)
+        :precondition (and (at ?p ?l) (has ?p ?scrolls) (has ?p ?artifacts) (spear-of-light) (temple-open) (dragon-alive))
         :effect (and
-            (quest-complete)
+            (not (at ?p ?l))
+            (at ?p dark-mountains-dragon-lair)
         )
     )
 
-    ;; Section 1F: Failure state - incapacitated
-    (:action failure-incapacitated
-        :parameters ()
-        :precondition (player-incapacitated)
+    (:action rest-before-journey-after-relics
+        :parameters (?p - player ?l - location ?scrolls - item ?artifacts - item)
+        :precondition (and (at ?p ?l) (has ?p ?scrolls) (has ?p ?artifacts) (spear-of-light) (temple-open) (dragon-alive))
         :effect (and
-            ;; No further actions possible
+            (rested)
+            (not (at ?p ?l))
+            (at ?p temple-of-the-sun)
         )
     )
 
-    ;; Section 1R: Failure state - retreat wounded without key
-    (:action failure-retreat-wounded
-        :parameters (?loc - location)
-        :precondition (and (player-at ?loc) (wounded) (not (has-ancient-key)))
+    ;; Section 26 actions: fighting dragon with Spear of Light (success)
+    (:action end-quest-victory
+        :parameters (?p - player ?l - location)
+        :precondition (and (at ?p ?l) (dragon-defeated))
         :effect (and
-            ;; No further actions possible
+            (quest-completed)
+        )
+    )
+
+    ;; Section 27 actions: attempt to negotiate or distract dragon (risky)
+    (:action fight-in-desperation
+        :parameters (?p - player ?l - location)
+        :precondition (and (at ?p ?l) (in-combat) (not (spear-of-light)))
+        :effect (and
+            ;; Failure leads to quest failure state
+            (not (dragon-defeated))
+            (not (dragon-alive))
+        )
+    )
+
+    (:action attempt-escape
+        :parameters (?p - player ?l - location ?r - ally ?e - ally)
+        :precondition (and (at ?p ?l) (in-combat) (or (has ?p smoke-bomb) (ally-loyal ?r) (ally-loyal ?e)))
+        :effect (and
+            (not (in-combat))
+            ;; Do not remove dragon-defeated as it may never be true here
+            (not (at ?p ?l))
+            (at ?p village-of-ardent)
+        )
+    )
+
+    ;; Section 28 actions: defeat by dragon (failure)
+    (:action end-quest-failure
+        :parameters (?p - player ?l - location)
+        :precondition (and (at ?p ?l) (not (dragon-defeated)) (dragon-alive))
+        :effect (and
+            (quest-completed)
+        )
+    )
+
+    ;; Section 29 actions: escape attempt
+    (:action rest-and-prepare-after-escape
+        :parameters (?p - player ?l - location)
+        :precondition (and (at ?p ?l) (not (dragon-defeated)) (dragon-alive))
+        :effect (and
+            (rested)
+        )
+    )
+
+    (:action return-to-village-after-escape
+        :parameters (?p - player ?l - location)
+        :precondition (and (at ?p ?l) (not (dragon-defeated)) (dragon-alive))
+        :effect (and
+            (not (at ?p ?l))
+            (at ?p village-of-ardent)
         )
     )
 )

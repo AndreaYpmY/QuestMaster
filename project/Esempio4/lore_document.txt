@@ -41,5 +41,5 @@ Branching Factor
 
 
 Depth Constraints
-- Minimum: 8 steps to reach the goal.
+- Minimum: 6 steps to reach the goal.
 - Maximum: 15 steps, including side quests or false leads.
