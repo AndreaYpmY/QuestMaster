@@ -33,7 +33,7 @@ Narrative Themes:
 - Time as a destroyer and judge
  
 Branching Factor:
-- Minimum: 2 
+- Minimum: 1 
 - Maximum: 4 
  
 Depth Constraints:
